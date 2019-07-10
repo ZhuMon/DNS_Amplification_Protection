@@ -30,6 +30,14 @@ from ryu.topology.switches import LLDPPacket
 SWITCH_TO_HOST_PORT = 1
 SWITCH_TO_SWITCH_PORT = 2
 
+def GePacketOut(egress_port, mcast, padding):
+    out1 = "{0:09b}".format(egress_port)
+    out2 = "{0:016b}".format(mcast)
+    out3 = "{0:07b}".format(padding)
+    out = out1+out2+out3
+    a = bytearray([int(out[0:8],2),int(out[8:16],2),int(out[16:24],2),int(out[24:32],2)])
+    return a
+
 
 def writeIPRules(p4info_helper, ingress_sw, dst_eth_addr, dst_ip, mask, port):
     table_entry = p4info_helper.buildTableEntry(
@@ -177,12 +185,15 @@ def main(p4info_file_path, bmv2_file_path, runtimeAPI):
         new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
         runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
+        packet = GePacketOut(0,0,0)
+        packet_out = p4info_helper.buildPacketOut(payload = packet)
+        s1.SendLLDP(packet_out)
 
-        content = s1.RecvLLDP()
-        if content.WhichOneof('update')=='packet':
-            packet = content.packet.payload
-            pkt = Ether(_pkt=packet)
-            print pkt.show()
+        # content = s1.RecvLLDP()
+        # if content.WhichOneof('update')=='packet':
+            # packet = content.packet.payload
+            # pkt = Ether(_pkt=packet)
+        #     print pkt.show()
 
         m = 0
         total_res_num = 0

@@ -81,20 +81,15 @@ class SwitchConnection(object):
             for item in self.stream_msg_resp:
                 return item # just one
 
-    def SendLLDP(self, dry_run=False, **kwargs):
+    def SendLLDP(self, packet, dry_run=False, **kwargs):
         request = p4runtime_pb2.StreamMessageRequest()
-        # request.packet.payload = "\000"
+        request.packet.CopyFrom(packet)
 
         if dry_run:
             print "P4 Runtime WritePacketOut: ", request
         else:
             self.requests_stream.put(request)
-            # stream_msg_resp = self.client_stub.StreamChannel(request)
-            print "hi, in switch"
-            print self.stream_msg_resp
-            
             for item in self.stream_msg_resp:
-                # print item
                 return item
     
     def RecvLLDP(self, dry_run=False, **kwargs):

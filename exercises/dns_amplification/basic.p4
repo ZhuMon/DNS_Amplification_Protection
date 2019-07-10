@@ -84,30 +84,40 @@ header dns_t {
 }
 
 header lldp_t {
-    bit<7> chassis_id;
-    bit<9> chassis_len;
-    bit<8> chassis_subtype;
-    bit<168> dpid;
-    bit<7> port_id;
-    bit<9> port_len;
-    bit<8> port_subtype;
-    bit<32> port;
-    bit<7> ttl_id;
-    bit<9> ttl_len;
-    bit<16> ttl;
-    bit<7> end_type;
-    bit<9> end_len;
-    bit<72> padding;
+    /*bit<7> chassis_id;*/
+    /*bit<9> chassis_len;*/
+    /*bit<8> chassis_subtype;*/
+    /*bit<168> dpid;*/
+    /*bit<7> port_id;*/
+    /*bit<9> port_len;*/
+    /*bit<8> port_subtype;*/
+    /*bit<32> port;*/
+    /*bit<7> ttl_id;*/
+    /*bit<9> ttl_len;*/
+    /*bit<16> ttl;*/
+    /*bit<7> end_type;*/
+    /*bit<9> end_len;*/
+    /*bit<72> padding;*/
+    bit<9> port;
+    bit<7> padding;
 }
 
 @controller_header("packet_in")
 header packet_in_t {
+    bit<9> igress_port;
+    bit<48> srcAddr
+    bit<48> dstAddr
+    bit<9> sport
+    bit<9> dport
+    bit<6> padding
 }
 
 
 @controller_header("packet_out")
 header packet_out_t {
-
+    bit<9> egress_port;    //for controller to tell switches to forward the packet-out packet through this field
+    bit<16> mcast;     //for controller to specify a multicast group if needed
+    bit<7> padding;
 }
 
 struct metadata {
@@ -120,6 +130,7 @@ struct headers {
     udp_t        udp;
     dns_t        dns;
     lldp_t       lldp;
+    packet_out_header_t packet_out;
 }
 
 /*************************************************************************
@@ -140,6 +151,7 @@ parser MyParser(packet_in packet,
     }
 
     state parse_packet_out{
+        packet.extract(hdr.packet_out);
         transition accept;
     }
     state parse_ethernet {
@@ -285,16 +297,36 @@ control MyIngress(inout headers hdr,
         /*default_action = NoAction;*/
     /*}*/
 
-    action lldp_forward(){
+    action send_to_cpu(){
         standard_metadata.egress_spec = CPU_PORT;
-        hdr.lldp.ttl = hdr.lldp.ttl - 1;
-        /*hdr.packet_in.setValid();*/
-        //hdr.packet_in.ingress_port = standard_metadata.ingress_port;
+        hdr.lldp.setInvalid();
+        hdr.packet_in.setValid();
+        hdr.packet_in.ingress_port = standard_metadata.ingress_port;
     }
 
-    table lldp_lpm{
+    table pkt_in_table{
         key = {
             hdr.ethernet.srcAddr: lpm;
+        }
+        actions = {
+            send_to_cpu;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction;
+    }
+
+    action lldp_forward(){
+        standard_metadata.egress_spec = hdr.packet_out.egress_port;
+        hdr.ethernet.setValid();
+        hdr.ethernet.srcAddr = 
+        hdr.lldp.setValid();
+        hdr.lldp.port = hdr.packet_out.egress_port;
+    }
+
+    table pkt_out_table{
+        key = {
+            hdr.packet_out.egress_port: exact;
         }
         actions = {
             lldp_forward;
@@ -349,7 +381,9 @@ control MyIngress(inout headers hdr,
                 drop();
             }
         } else if(hdr.lldp.isValid()){
-            lldp_lpm.apply();
+            pkt_in_table.apply();
+        } else if(hdr.packet_out.isValid()){
+            pkt_out_table.apply();
         }
     }
 }
@@ -401,6 +435,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.udp);
         packet.emit(hdr.dns);
         packet.emit(hdr.lldp);
+        packet.emit(hdr.packet_in);
         //packet.emit(hdr.dns_qd);
     }
 }
