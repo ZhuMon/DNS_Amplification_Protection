@@ -5,10 +5,11 @@
 
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<16> TYPE_IPV6 = 0x86dd;
+const bit<16> TYPE_LLDP = 0x88cc;
 const bit<8>  TYPE_UDP  = 0x11;
 const bit<32> NUM = 65536;
 const bit<32> MAX_NUM = 8;
-
+const bit<9> CPU_PORT = 255;
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
@@ -23,7 +24,7 @@ const MeterColor MeterColor_GREEN = 2w1;
 const MeterColor MeterColor_YELLOW = 2w2;
 
 header ethernet_t {
-    macAddr_t dstAddr;
+    macAddr_t dstAddr; 
     macAddr_t srcAddr;
     bit<16>   etherType;
 }
@@ -82,6 +83,43 @@ header dns_t {
     bit<16> qclass;
 }
 
+header lldp_t {
+    /*bit<7> chassis_id;*/
+    /*bit<9> chassis_len;*/
+    /*bit<8> chassis_subtype;*/
+    /*bit<168> dpid;*/
+    /*bit<7> port_id;*/
+    /*bit<9> port_len;*/
+    /*bit<8> port_subtype;*/
+    /*bit<32> port;*/
+    /*bit<7> ttl_id;*/
+    /*bit<9> ttl_len;*/
+    /*bit<16> ttl;*/
+    /*bit<7> end_type;*/
+    /*bit<9> end_len;*/
+    /*bit<72> padding;*/
+    bit<9> port;
+    bit<7> padding;
+}
+
+@controller_header("packet_in")
+header packet_in_t {
+    bit<9> igress_port;
+    bit<48> srcAddr
+    bit<48> dstAddr
+    bit<9> sport
+    bit<9> dport
+    bit<6> padding
+}
+
+
+@controller_header("packet_out")
+header packet_out_t {
+    bit<9> egress_port;    //for controller to tell switches to forward the packet-out packet through this field
+    bit<16> mcast;     //for controller to specify a multicast group if needed
+    bit<7> padding;
+}
+
 struct metadata {
     //bit<32>   meter_tag;
 }
@@ -91,6 +129,8 @@ struct headers {
     ipv4_t       ipv4;
     udp_t        udp;
     dns_t        dns;
+    lldp_t       lldp;
+    packet_out_header_t packet_out;
 }
 
 /*************************************************************************
@@ -98,28 +138,41 @@ struct headers {
 *************************************************************************/
 
 parser MyParser(packet_in packet,
-                out headers hdr,
+                out headers hdr, 
                 inout metadata meta,
                 inout standard_metadata_t standard_metadata
                ) {
 
     state start {
-        transition parse_ethernet;
+        transition select(standard_metadata.ingress_port){
+            CPU_PORT: parse_packet_out;// if is packect-out packet then extract packet-out header
+            default: parse_ethernet;
+         }
     }
 
+    state parse_packet_out{
+        packet.extract(hdr.packet_out);
+        transition accept;
+    }
     state parse_ethernet {
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
-            TYPE_IPV4: parse_ipv4;
+            TYPE_IPV4: parse_ipv4; 
             //TYPE_IPV6: parse_ipv6;
+            TYPE_LLDP: parse_lldp;
             default: accept;
         }
+    }
+
+    state parse_lldp {
+        packet.extract(hdr.lldp);
+        transition accept;
     }
 
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
         transition select(hdr.ipv4.protocol) {
-            TYPE_UDP: parse_udp;
+            TYPE_UDP: parse_udp; 
             default: accept;
         }
     }
@@ -180,30 +233,138 @@ control MyIngress(inout headers hdr,
         default_action = drop();
     }
 
+    action record_response(){
+        bit<32> tmp;
+        r_reg.read(tmp, 0);
+        r_reg.write(0, tmp+1);
+    }
     
+    table dns_response_record {
+        key = { 
+            hdr.dns.qr: exact;
+        }
+        actions = {
+            record_response;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction;
+    }
+
+    action dns_request_hash_1(ip4Addr_t srcAddr){
+        bit<32> index;
+        bit<32> tmp;
+        index = (srcAddr << 24) >> 24;
+        index = index % 64;
+        index = index << 10;
+        index = index + ((bit<32>)hdr.dns.id % 1024);
+        reg_ingress.read(tmp, index);
+        reg_ingress.write(index, tmp+10);
+    }
+
+    table dns_request_hash_lpm{
+        key = {
+            hdr.ipv4.srcAddr: lpm;
+        }
+        actions = {
+            dns_request_hash_1;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction;
+    }
+    
+    /*action dns_response_hash_1(ip4Addr_t dstAddr, bit<16> id){*/
+        /*bit<32> index;*/
+        /*bit<32> tmp;*/
+        /*index = (dstAddr << 24) >> 24;*/
+        /*index = index % 64;*/
+        /*index = index << 10;*/
+        /*index = index + ((bit<32>)hdr.dns.id % 1024);*/
+        /*ingress_meter_stats.execute_meter<MeterColor>((bit<32>) standard_metadata.ingress_port, ingress_meter_output);*/
+    /*}*/
+
+    /*table dns_response_hash_lpm{*/
+        /*key = {*/
+            /*hdr.ipv4.dstAddr: lpm;*/
+            /*hdr.dns.id: exact;*/
+        /*}*/
+        /*actions = {*/
+            /*dns_response_hash_1;*/
+            /*NoAction;*/
+        /*}*/
+        /*size = 1024;*/
+        /*default_action = NoAction;*/
+    /*}*/
+
+    action send_to_cpu(){
+        standard_metadata.egress_spec = CPU_PORT;
+        hdr.lldp.setInvalid();
+        hdr.packet_in.setValid();
+        hdr.packet_in.ingress_port = standard_metadata.ingress_port;
+    }
+
+    table pkt_in_table{
+        key = {
+            hdr.ethernet.srcAddr: lpm;
+        }
+        actions = {
+            send_to_cpu;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction;
+    }
+
+    action lldp_forward(){
+        standard_metadata.egress_spec = hdr.packet_out.egress_port;
+        hdr.ethernet.setValid();
+        hdr.ethernet.srcAddr = 
+        hdr.lldp.setValid();
+        hdr.lldp.port = hdr.packet_out.egress_port;
+    }
+
+    table pkt_out_table{
+        key = {
+            hdr.packet_out.egress_port: exact;
+        }
+        actions = {
+            lldp_forward;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction;
+    }
     apply {
+        bit<32> index;
 	bit<32> tmp;
         bit<32> flag;
-        ingress_meter_stats.execute_meter<MeterColor>((bit<32>) standard_metadata.ingress_port, ingress_meter_output);
 
         if (hdr.ipv4.isValid()) {
-            if (hdr.dns.isValid()){
+            if (hdr.dns.isValid()){ 
                 if(hdr.dns.qr == 1){
-                    r_reg.read(tmp, 0);
-                    r_reg.write(0, tmp+1);
+                    dns_response_record.apply();
                 }
 
                 f_reg.read(flag, 0);
                 if (flag > 0){
                     if (hdr.dns.qr == 0){ //dns is request
-                        reg_ingress.read(tmp, (bit<32>)hdr.dns.id);
-                        reg_ingress.write((bit<32>)hdr.dns.id, tmp+10);
+                        dns_request_hash_lpm.apply();
                         ipv4_lpm.apply();
                     } else { //dns is response
+                        /*dns_request_hash_lpm.apply()*/
+                        ingress_meter_stats.execute_meter<MeterColor>((bit<32>) standard_metadata.ingress_port, ingress_meter_output);
+                        index = (hdr.ipv4.dstAddr << 24) >> 24;
+                        index = index % 64;
+                        index = index << 10;
+                        index = index + ((bit<32>)hdr.dns.id % 1024);
                         
-                        reg_ingress.read(tmp, (bit<32>)hdr.dns.id);
-                        if (tmp > 0){
-                            reg_ingress.write((bit<32>)hdr.dns.id, 0);
+                        reg_ingress.read(tmp, index);
+                        if (tmp > 10){
+                            reg_ingress.write(index, tmp - 10);
+                            ipv4_lpm.apply();
+                        } else if (tmp > 0){
+                            reg_ingress.write(index, 0);
                             ipv4_lpm.apply();
                         } else if(ingress_meter_output == MeterColor_YELLOW) {
                             drop();
@@ -216,9 +377,13 @@ control MyIngress(inout headers hdr,
                     ipv4_lpm.apply();
                 }
             } else {
-                //ipv4_lpm.apply();
+                /*ipv4_lpm.apply();*/
                 drop();
             }
+        } else if(hdr.lldp.isValid()){
+            pkt_in_table.apply();
+        } else if(hdr.packet_out.isValid()){
+            pkt_out_table.apply();
         }
     }
 }
@@ -269,6 +434,8 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.ipv4);
         packet.emit(hdr.udp);
         packet.emit(hdr.dns);
+        packet.emit(hdr.lldp);
+        packet.emit(hdr.packet_in);
         //packet.emit(hdr.dns_qd);
     }
 }
