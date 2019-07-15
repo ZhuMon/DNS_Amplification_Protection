@@ -8,5 +8,6 @@ for i in range(0, int(N)):
     out = random.randint(0,1471)
     while out in only_query:
         out = random.randint(0,1471)
+    wait = random.randint(0,4)
+    print wait
     print out
-
