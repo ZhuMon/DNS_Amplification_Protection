@@ -38,6 +38,12 @@ def GePacketOut(egress_port, mcast, padding):
     a = bytearray([int(out[0:8],2),int(out[8:16],2),int(out[16:24],2),int(out[24:32],2)])
     return a
 
+def ParsePacketIn(pin):
+    pkt = "{0:08b}".format(pin[0]) +"{0:08b}".format(pin[1])+"{0:08b}".format(pin[2])
+    sport = int(pkt[0:9],2)
+    dport = int(pkt[9:18],2)
+    padding = int(pkt[18:24],2)
+    return sport, dport, padding
 
 def writeIPRules(p4info_helper, ingress_sw, dst_eth_addr, dst_ip, mask, port):
     table_entry = p4info_helper.buildTableEntry(
@@ -70,20 +76,33 @@ def writeHash1Rule(p4info_helper, ingress_sw , srcAddr):
         },
         action_name = "MyIngress.dns_request_hash_1",
         action_params={
-            "srcAddr":srcAddr,
+            "srcAddr":srcAddr
         })
     ingress_sw.WriteTableEntry(table_entry)
 
-def writeLLDPRule(p4info_helper, ingress_sw, srcAddr):
+def writePInRule(p4info_helper, ingress_sw, etherType, sw_addr):
     table_entry = p4info_helper.buildTableEntry(
-        table_name = "MyIngress.lldp_lpm",
+        table_name = "MyIngress.pkt_in_table",
         match_fields = {
-            "hdr.ethernet.srcAddr": (srcAddr,48)
+            "hdr.ethernet.etherType": etherType
         },
-        action_name = "lldp_forward"
-        )
+        action_name = "MyIngress.send_to_cpu",
+        action_params={
+            "swAddr": sw_addr
+        })
     ingress_sw.WriteTableEntry(table_entry)
     
+def writePOutRule(p4info_helper, ingress_sw, padding, sw_addr):
+    table_entry = p4info_helper.buildTableEntry(
+        table_name = "MyIngress.pkt_out_table",
+        match_fields = {
+            "hdr.packet_out.padding": padding
+        },
+        action_name = "MyIngress.lldp_forward",
+        action_params={
+            "swAddr": sw_addr
+        })
+    ingress_sw.WriteTableEntry(table_entry)
 
 def printGrpcError(e):
     print "gRPC Error:", e.details(),
@@ -120,61 +139,51 @@ def main(p4info_file_path, bmv2_file_path, runtimeAPI):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
+    switch_num = 3
     try:
         # Create a switch connection object for s1 s2 s3;
         # this is backed by a P4Runtime gRPC connection.
         # Also, dump all P4Runtime messages sent to switch to given txt files.
-        s1 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-                name='s1',
-                address='127.0.0.1:50051',
-                device_id=0,
-                proto_dump_file='logs/s1-p4runtime-requests.txt')
+        sw = []
+        for i in range(1,switch_num+1):
+            s = p4runtime_lib.bmv2.Bmv2SwitchConnection(
+                    name='s'+str(i),
+                    address='127.0.0.1:5005'+str(i),
+                    device_id=i-1,
+                    proto_dump_file='logs/s'+str(i)+'-p4runtime-requests.txt')
+            # Send master arbitration update message to establish this controller as
+            # master (required by P4Runtime before performing any other write operation)
+            s.MasterArbitrationUpdate()
 
-        s2 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-                name='s2',
-                address='127.0.0.1:50052',
-                device_id=1,
-                proto_dump_file='logs/s2-p4runtime-requests.txt')
+            # Install the P4 program on the switches
+            s.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
+                    bmv2_json_file_path=bmv2_file_path)
+            print "Installed P4 Program using SetForwardingPipelineConfig on s"+str(i)
+            sw.append(s)
 
-        s3 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-                name='s3',
-                address='127.0.0.1:50053',
-                device_id=2,
-                proto_dump_file='logs/s3-p4runtime-requests.txt')
-
-        # Send master arbitration update message to establish this controller as
-        # master (required by P4Runtime before performing any other write operation)
-        s1.MasterArbitrationUpdate()
-        s2.MasterArbitrationUpdate()
-        s3.MasterArbitrationUpdate()
-
-        # Install the P4 program on the switches
-        s1.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
-                bmv2_json_file_path=bmv2_file_path)
-        print "Installed P4 Program using SetForwardingPipelineConfig on s1"
-
-        s2.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
-                bmv2_json_file_path=bmv2_file_path)
-        print "Installed P4 Program using SetForwardingPipelineConfig on s2"
-
-        s3.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
-                bmv2_json_file_path=bmv2_file_path)
-        print "Installed P4 Program using SetForwardingPipelineConfig on s3"
 
         #############################################################################
-        writeIPRules(p4info_helper, ingress_sw=s1, dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
-        writeIPRules(p4info_helper, ingress_sw=s1, dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
-        writeIPRules(p4info_helper, ingress_sw=s2, dst_eth_addr="00:00:00:00:02:02", dst_ip="10.0.2.2", mask=32, port=1)
-        writeIPRules(p4info_helper, ingress_sw=s2, dst_eth_addr="00:00:00:02:03:00", dst_ip="10.0.3.3", mask=32, port=2)
-        writeIPRules(p4info_helper, ingress_sw=s3, dst_eth_addr="00:00:00:00:03:03", dst_ip="10.0.3.3", mask=32, port=1)
-        writeIPRules(p4info_helper, ingress_sw=s3, dst_eth_addr="00:00:00:01:03:00", dst_ip="10.0.1.1", mask=32, port=2)
-        writeIPRules(p4info_helper, ingress_sw=s3, dst_eth_addr="00:00:00:02:03:00", dst_ip="10.0.2.2", mask=32, port=3)
 
-        writeRecordRules(p4info_helper, ingress_sw=s1, qr_code=1)
+        writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
+        writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
+        writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:00:02:02", dst_ip="10.0.2.2", mask=32, port=1)
+        writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
+        writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:00:03:03", dst_ip="10.0.3.3", mask=32, port=1)
+        writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:01:03:00", dst_ip="10.0.1.1", mask=32, port=2)
+        writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:02:03:00", dst_ip="10.0.2.2", mask=32, port=3)
 
-        writeHash1Rule(p4info_helper, ingress_sw=s1, srcAddr="10.0.1.1")
+        writeRecordRules(p4info_helper, ingress_sw=sw[0], qr_code=1)
 
-        writeLLDPRule(p4info_helper, ingress_sw=s1, srcAddr="00:00:00:00:01:01")
+        writeHash1Rule(p4info_helper, ingress_sw=sw[0], srcAddr="10.0.1.1")
+
+        writePInRule(p4info_helper, ingress_sw=sw[0], etherType=0x88cc, sw_addr="00:00:00:01:03:00")
+        writePInRule(p4info_helper, ingress_sw=sw[1], etherType=0x88cc, sw_addr="00:00:00:02:03:00")
+        writePInRule(p4info_helper, ingress_sw=sw[2], etherType=0x88cc, sw_addr="00:00:00:03:03:00")
+
+        writePOutRule(p4info_helper, ingress_sw=sw[0], padding=0, sw_addr="00:00:00:01:03:00")
+        writePOutRule(p4info_helper, ingress_sw=sw[1], padding=0, sw_addr="00:00:00:02:03:00")
+        writePOutRule(p4info_helper, ingress_sw=sw[2], padding=0, sw_addr="00:00:00:03:03:00")
+ 
             #############################################################################
 
         # set meter
@@ -185,15 +194,29 @@ def main(p4info_file_path, bmv2_file_path, runtimeAPI):
         new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
         runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
-        packet = GePacketOut(0,0,0)
-        packet_out = p4info_helper.buildPacketOut(payload = packet)
-        s1.SendLLDP(packet_out)
 
-        # content = s1.RecvLLDP()
-        # if content.WhichOneof('update')=='packet':
-            # packet = content.packet.payload
-            # pkt = Ether(_pkt=packet)
-        #     print pkt.show()
+        for i in range(1,5):
+            packet = GePacketOut(i,65535,0) #padding must be 0
+            packet_out = p4info_helper.buildPacketOut(payload = str(packet))
+            # print packet_out
+            sw[0].SendLLDP(packet_out)
+
+        for i in range(1,5):
+            try:
+                content = sw[i].RecvLLDP()
+                if content.WhichOneof('update')=='packet':
+                    packet = content.packet.payload
+                    print content
+                    pkt = bytearray(packet)
+                    # print pkt[0]
+                    # pkt = Ether(_pkt=packet)
+                    # pkt.show()
+                    sport, dport, padding = ParsePacketIn([pkt[len(pkt)-3],pkt[len(pkt)-2],pkt[len(pkt)-1]])
+                    print len(pkt)
+                    print "sport: ", sport
+                    print "dport: ", dport
+            except:
+                print "Oops!"
 
         m = 0
         total_res_num = 0

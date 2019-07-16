@@ -54,8 +54,6 @@ class SwitchConnection(object):
         self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
         self.requests_stream = IterableQueue()
         self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream))
-        # res = self.client_stub.StreamChannel(p4runtime_pb2.StreamMessageRequest())
-        # print res
         self.proto_dump_file = proto_dump_file
         connections.append(self)
 
@@ -77,29 +75,23 @@ class SwitchConnection(object):
             print "P4Runtime MasterArbitrationUpdate: ", request
         else:
             self.requests_stream.put(request)
-            # print self.stream_msg_resp
             for item in self.stream_msg_resp:
                 return item # just one
 
     def SendLLDP(self, packet, dry_run=False, **kwargs):
         request = p4runtime_pb2.StreamMessageRequest()
         request.packet.CopyFrom(packet)
+        print "send a packet to switch..."
 
         if dry_run:
             print "P4 Runtime WritePacketOut: ", request
         else:
             self.requests_stream.put(request)
-            for item in self.stream_msg_resp:
-                return item
     
     def RecvLLDP(self, dry_run=False, **kwargs):
         print "wait for packet in..."
-        request = p4runtime_pb2.StreamMessageRequest()
 
-        if dry_run:
-            print "P4 Runtime ReadPacketIn: ", request
-        else:
-            self.requests_stream.put(request)
+        if self.stream_msg_resp:
             for item in self.stream_msg_resp:
                 return item
 

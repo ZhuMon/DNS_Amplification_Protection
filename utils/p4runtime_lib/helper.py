@@ -215,7 +215,7 @@ class P4InfoHelper(object):
  
     def buildPacketOut(self, payload, metadata=None):
         packet_out = p4runtime_pb2.PacketOut()
-        packet_out.payload = payload
+        packet_out.payload = str(payload)
         if metadata:
             packet_out.metadata.extend([
                 self.get_packetout_metadata_pb(metadata_name, value)
