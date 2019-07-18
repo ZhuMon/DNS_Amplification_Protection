@@ -202,9 +202,16 @@ def write_register(runtimeAPI, name, index, value):
                             runtime_CLI.ResType.register_array)
     runtimeAPI.client.bm_register_write(0, register.name, index, value)
 
+def connectThrift(port, bmv2_file_path):
+    standard_client, mc_client = utils.thrift_connect(
+        'localhost', port,
+        runtime_CLI.RuntimeAPI.get_thrift_services(runtime_CLI.PreType.SimplePre)
+    )
 
+    runtime_CLI.load_json_config(standard_client, bmv2_file_path)
+    return runtime_CLI.RuntimeAPI(runtime_CLI.PreType.SimplePre, standard_client, mc_client)
 
-def main(p4info_file_path, bmv2_file_path, runtimeAPI):
+def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
@@ -255,6 +262,10 @@ def main(p4info_file_path, bmv2_file_path, runtimeAPI):
         writePOutRule(p4info_helper, ingress_sw=sw[2], padding=0, sw_addr="00:00:00:03:03:00")
  
             #############################################################################
+
+        # connect to thrift
+        # set s1 to gateway switch
+        runtimeAPI = connectThrift(9090,bmv2_file_path)
 
         # set meter
         # runtimeAPI.do_meter_array_set_rates("meter_array_set_rates ingress_meter_stats 0.00000128:9000 0.00000128:9000")
@@ -339,12 +350,4 @@ if __name__ == '__main__':
         print "\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json
         parser.exit(1)
 
-
-    standard_client, mc_client = utils.thrift_connect(
-        args.thrift_ip, args.thrift_port,
-        runtime_CLI.RuntimeAPI.get_thrift_services(args.pre)
-    )
-
-    runtime_CLI.load_json_config(standard_client, args.bmv2_json)
-    runtimeAPI = runtime_CLI.RuntimeAPI(args.pre, standard_client, mc_client)
-    main(args.p4info, args.bmv2_json, runtimeAPI)
+    main(args.p4info, args.bmv2_json)
