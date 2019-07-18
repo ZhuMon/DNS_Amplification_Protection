@@ -50,12 +50,12 @@ def ParsePacketIn(pin):
 
     for i in range(0,6):
         dstAddr = dstAddr + str("{0:02}".format(int("{0:08b}".format(pin[i]),2)))
-        if i != 11:
+        if i != 5:
             dstAddr = dstAddr + ":"
 
     for i in range(6,12):
         srcAddr = srcAddr + str("{0:02}".format(int("{0:08b}".format(pin[i]),2)))
-        if i != 5:
+        if i != 11:
             srcAddr = srcAddr + ":"
 
     pktIn = {}
@@ -104,13 +104,13 @@ def recvPacketIn(sw):
         content = sw.RecvLLDP()
         if content != None and content.WhichOneof('update')=='packet':
             packet = content.packet.payload
-            print content
+            # print content
             pkt = bytearray(packet)
             p = ParsePacketIn(pkt)
-            print p
+            # print p
             recordLink(p)
     except Exception, e:
-        print ""
+        None
 
 def writeIPRules(p4info_helper, ingress_sw, dst_eth_addr, dst_ip, mask, port):
     table_entry = p4info_helper.buildTableEntry(
