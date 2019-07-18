@@ -4,6 +4,7 @@ import grpc
 import os
 import sys
 from time import sleep
+import signal
 
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
@@ -30,6 +31,11 @@ from ryu.topology.switches import LLDPPacket
 SWITCH_TO_HOST_PORT = 1
 SWITCH_TO_SWITCH_PORT = 2
 
+topology = {}
+link_num = 0
+
+
+
 def GePacketOut(egress_port, mcast, padding):
     out1 = "{0:09b}".format(egress_port)
     out2 = "{0:016b}".format(mcast)
@@ -39,11 +45,72 @@ def GePacketOut(egress_port, mcast, padding):
     return a
 
 def ParsePacketIn(pin):
-    pkt = "{0:08b}".format(pin[0]) +"{0:08b}".format(pin[1])+"{0:08b}".format(pin[2])
-    sport = int(pkt[0:9],2)
-    dport = int(pkt[9:18],2)
-    padding = int(pkt[18:24],2)
-    return sport, dport, padding
+    srcAddr = ""
+    dstAddr = ""
+
+    for i in range(0,6):
+        dstAddr = dstAddr + str("{0:02}".format(int("{0:08b}".format(pin[i]),2)))
+        if i != 11:
+            dstAddr = dstAddr + ":"
+
+    for i in range(6,12):
+        srcAddr = srcAddr + str("{0:02}".format(int("{0:08b}".format(pin[i]),2)))
+        if i != 5:
+            srcAddr = srcAddr + ":"
+
+    pktIn = {}
+    pktIn["srcAddr"] = srcAddr
+    pktIn["dstAddr"] = dstAddr
+    
+    etype = ""
+    for i in range(12,14):
+        etype = etype + "{0:08b}".format(pin[i])
+    pktIn["type"] = hex(int(etype,2))
+    
+    pkt = ""
+
+    for i in range(16,19):
+        pkt = pkt + "{0:08b}".format(pin[i])
+
+    pktIn["sport"] = int(pkt[0:9],2)
+    pktIn["dport"] = int(pkt[9:18],2)
+    # pktIn["padding"] = int(pkt[18:24],2)
+
+    return pktIn
+
+def recordLink(p):
+    link = {}
+    link[p['srcAddr']] = p['sport']
+    link[p['dstAddr']] = p['dport']
+    flag = 0 # check if link already exist in topology
+    for index, l in topology.items():
+        if l == link:
+            flag = 1
+            break
+
+    if flag == 0:
+        global link_num
+        topology[link_num] = link
+        link_num += 1
+        
+def sendPacketOut(p4info_helper, sw, port, mcast):
+    packet = GePacketOut(port, mcast, 0) #padding must be 0
+    packet_out = p4info_helper.buildPacketOut(payload = str(packet))
+    # print packet_out
+    sw.SendLLDP(packet_out)
+
+def recvPacketIn(sw):
+    try:
+        content = sw.RecvLLDP()
+        if content != None and content.WhichOneof('update')=='packet':
+            packet = content.packet.payload
+            print content
+            pkt = bytearray(packet)
+            p = ParsePacketIn(pkt)
+            print p
+            recordLink(p)
+    except Exception, e:
+        print ""
 
 def writeIPRules(p4info_helper, ingress_sw, dst_eth_addr, dst_ip, mask, port):
     table_entry = p4info_helper.buildTableEntry(
@@ -135,11 +202,14 @@ def write_register(runtimeAPI, name, index, value):
                             runtime_CLI.ResType.register_array)
     runtimeAPI.client.bm_register_write(0, register.name, index, value)
 
+
+
 def main(p4info_file_path, bmv2_file_path, runtimeAPI):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
     switch_num = 3
+
     try:
         # Create a switch connection object for s1 s2 s3;
         # this is backed by a P4Runtime gRPC connection.
@@ -195,28 +265,17 @@ def main(p4info_file_path, bmv2_file_path, runtimeAPI):
         runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 
-        for i in range(1,5):
-            packet = GePacketOut(i,65535,0) #padding must be 0
-            packet_out = p4info_helper.buildPacketOut(payload = str(packet))
-            # print packet_out
-            sw[0].SendLLDP(packet_out)
+        # sendPacketOut(p4info_helper, sw[2], 3, 0) # s3 port3
+        for j in range(0,3):
+            for i in range(1,5):
+                sendPacketOut(p4info_helper, sw[j], i, 0)
 
-        for i in range(1,5):
-            try:
-                content = sw[i].RecvLLDP()
-                if content.WhichOneof('update')=='packet':
-                    packet = content.packet.payload
-                    print content
-                    pkt = bytearray(packet)
-                    # print pkt[0]
-                    # pkt = Ether(_pkt=packet)
-                    # pkt.show()
-                    sport, dport, padding = ParsePacketIn([pkt[len(pkt)-3],pkt[len(pkt)-2],pkt[len(pkt)-1]])
-                    print len(pkt)
-                    print "sport: ", sport
-                    print "dport: ", dport
-            except:
-                print "Oops!"
+        # recvPacketIn(sw[1])
+        for j in range(0,3):
+            for i in range(0,3):
+                recvPacketIn(sw[i])
+            
+        print topology
 
         m = 0
         total_res_num = 0

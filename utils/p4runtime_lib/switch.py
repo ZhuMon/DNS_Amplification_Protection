@@ -21,14 +21,7 @@ from p4.v1 import p4runtime_pb2
 from p4.v1 import p4runtime_pb2_grpc
 from p4.tmp import p4config_pb2
 
-import six
-from ryu.exception import RyuException
-from ryu.lib.packet import packet, ethernet
-from ryu.lib.packet import lldp, ether_types
-from ryu.ofproto.ether import ETH_TYPE_LLDP
-from ryu.topology.switches import Port, Switch, Link, Host
-from ryu.topology.switches import PortState, PortData, PortDataState
-from ryu.topology.switches import LinkState, HostState, LLDPPacket
+import signal
 
 MSG_LOG_MAX_LEN = 1024
 
@@ -53,7 +46,7 @@ class SwitchConnection(object):
             self.channel = grpc.intercept_channel(self.channel, interceptor)
         self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
         self.requests_stream = IterableQueue()
-        self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream))
+        self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=1)
         self.proto_dump_file = proto_dump_file
         connections.append(self)
 
@@ -81,20 +74,19 @@ class SwitchConnection(object):
     def SendLLDP(self, packet, dry_run=False, **kwargs):
         request = p4runtime_pb2.StreamMessageRequest()
         request.packet.CopyFrom(packet)
-        print "send a packet to switch..."
+        # print "send a packet to switch..."
 
         if dry_run:
             print "P4 Runtime WritePacketOut: ", request
         else:
             self.requests_stream.put(request)
     
+
     def RecvLLDP(self, dry_run=False, **kwargs):
-        print "wait for packet in..."
+        # print "wait for packet in..."
 
-        if self.stream_msg_resp:
-            for item in self.stream_msg_resp:
-                return item
-
+        for item in self.stream_msg_resp:
+            return item
 
     def SetForwardingPipelineConfig(self, p4info, dry_run=False, **kwargs):
         device_config = self.buildDeviceConfig(**kwargs)

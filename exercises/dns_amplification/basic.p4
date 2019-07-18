@@ -297,8 +297,8 @@ control MyIngress(inout headers hdr,
         hdr.ethernet.dstAddr = swAddr;
         hdr.packet_in.setValid();
         /*hdr.ethernet.etherType = TYPE_LLDP;*/
-        hdr.packet_in.dport = standard_metadata.ingress_port;
         hdr.packet_in.sport = hdr.lldp.port;
+        hdr.packet_in.dport = standard_metadata.ingress_port;
         /*hdr.lldp.setInvalid();*/
     }
 
@@ -316,13 +316,12 @@ control MyIngress(inout headers hdr,
 
     action lldp_forward(macAddr_t swAddr){
         standard_metadata.egress_spec = hdr.packet_out.egress_port;
-        hdr.packet_out.setInvalid();
+        /*hdr.packet_out.setInvalid();*/
         hdr.ethernet.setValid();
-        /*hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;*/
         hdr.lldp.setValid();
         hdr.ethernet.etherType = TYPE_LLDP;
         hdr.ethernet.srcAddr = swAddr;
-        hdr.lldp.port = standard_metadata.egress_spec;
+        hdr.lldp.port = hdr.packet_out.egress_port;
     }
 
     table pkt_out_table{
