@@ -5,6 +5,7 @@ import os
 import sys
 from time import sleep
 import signal
+import json
 
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
@@ -135,16 +136,14 @@ def writeRecordRules(p4info_helper, ingress_sw, qr_code):
         )
     ingress_sw.WriteTableEntry(table_entry)
 
-def writeHash1Rule(p4info_helper, ingress_sw , srcAddr):
+def writeHash1Rule(p4info_helper, ingress_sw):
     table_entry = p4info_helper.buildTableEntry(
         table_name = "MyIngress.dns_request_hash_lpm",
         match_fields = {
-            "hdr.ipv4.srcAddr": (srcAddr, 32)
+            "hdr.dns.qr": 0
         },
         action_name = "MyIngress.dns_request_hash_1",
-        action_params={
-            "srcAddr":srcAddr
-        })
+        )
     ingress_sw.WriteTableEntry(table_entry)
 
 def writePInRule(p4info_helper, ingress_sw, etherType, sw_addr):
@@ -240,6 +239,29 @@ def main(p4info_file_path, bmv2_file_path):
 
 
         #############################################################################
+        
+        sw_mac = {}
+        with open("switch.txt", "r") as f:
+            for line in f:
+                sw_mac[line.split()[0]] = line.split()[1]
+        
+        for s, mac in sw_mac.items():
+            writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
+            writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
+
+        for j in range(0,len(sw)):
+            for i in range(1,5):
+                sendPacketOut(p4info_helper, sw[j], i, 0)
+
+
+        with open("host.json", "r") as host_file:
+            host_inf = json.load(host_file)
+            for s, sw_inf in host_inf.items():
+                for port, p_inf in sw_inf.items():
+                    recordLink({"srcAddr":sw_mac[s], "sport":int(port),
+                                 "dstAddr":p_inf["mac"], "dport":1})
+        print topology
+
 
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
@@ -251,15 +273,21 @@ def main(p4info_file_path, bmv2_file_path):
 
         writeRecordRules(p4info_helper, ingress_sw=sw[0], qr_code=1)
 
-        writeHash1Rule(p4info_helper, ingress_sw=sw[0], srcAddr="10.0.1.1")
+        writeHash1Rule(p4info_helper, ingress_sw=sw[0])
 
-        writePInRule(p4info_helper, ingress_sw=sw[0], etherType=0x88cc, sw_addr="00:00:00:01:03:00")
-        writePInRule(p4info_helper, ingress_sw=sw[1], etherType=0x88cc, sw_addr="00:00:00:02:03:00")
-        writePInRule(p4info_helper, ingress_sw=sw[2], etherType=0x88cc, sw_addr="00:00:00:03:03:00")
+        for j in range(0,len(sw)):
+            for i in range(0,4):
+                recvPacketIn(sw[j])
+            
+        print topology
 
-        writePOutRule(p4info_helper, ingress_sw=sw[0], padding=0, sw_addr="00:00:00:01:03:00")
-        writePOutRule(p4info_helper, ingress_sw=sw[1], padding=0, sw_addr="00:00:00:02:03:00")
-        writePOutRule(p4info_helper, ingress_sw=sw[2], padding=0, sw_addr="00:00:00:03:03:00")
+        # writePInRule(p4info_helper, ingress_sw=sw[0], etherType=0x88cc, sw_addr="00:00:00:01:03:00")
+        # writePInRule(p4info_helper, ingress_sw=sw[1], etherType=0x88cc, sw_addr="00:00:00:02:03:00")
+        # writePInRule(p4info_helper, ingress_sw=sw[2], etherType=0x88cc, sw_addr="00:00:00:03:03:00")
+
+        # writePOutRule(p4info_helper, ingress_sw=sw[0], padding=0, sw_addr="00:00:00:01:03:00")
+        # writePOutRule(p4info_helper, ingress_sw=sw[1], padding=0, sw_addr="00:00:00:02:03:00")
+        # writePOutRule(p4info_helper, ingress_sw=sw[2], padding=0, sw_addr="00:00:00:03:03:00")
  
             #############################################################################
 
@@ -276,17 +304,6 @@ def main(p4info_file_path, bmv2_file_path):
         runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 
-        # sendPacketOut(p4info_helper, sw[2], 3, 0) # s3 port3
-        for j in range(0,3):
-            for i in range(1,5):
-                sendPacketOut(p4info_helper, sw[j], i, 0)
-
-        # recvPacketIn(sw[1])
-        for j in range(0,3):
-            for i in range(0,3):
-                recvPacketIn(sw[i])
-            
-        print topology
 
         m = 0
         total_res_num = 0

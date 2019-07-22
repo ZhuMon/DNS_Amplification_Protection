@@ -246,10 +246,10 @@ control MyIngress(inout headers hdr,
         default_action = NoAction;
     }
 
-    action dns_request_hash_1(ip4Addr_t srcAddr){
+    action dns_request_hash_1(){
         bit<32> index;
         bit<32> tmp;
-        index = (srcAddr << 24) >> 24;
+        index = (hdr.ipv4.srcAddr << 24) >> 24;
         index = index % 64;
         index = index << 10;
         index = index + ((bit<32>)hdr.dns.id % 1024);
@@ -259,7 +259,7 @@ control MyIngress(inout headers hdr,
 
     table dns_request_hash_lpm{
         key = {
-            hdr.ipv4.srcAddr: lpm;
+            hdr.dns.qr: exact;
         }
         actions = {
             dns_request_hash_1;
