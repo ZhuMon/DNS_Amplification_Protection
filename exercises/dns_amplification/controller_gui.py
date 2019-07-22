@@ -20,6 +20,9 @@ class ControllerGui():
 
         self.create_node()
 
+        button_quit = Button(root, text="Quit", fg='white', bg='red', font=("arial", 12, "bold"), command=quit)
+        button_quit.place(x=130, y=450)
+
         self.cv.pack()
         self.cv.bind('<Motion>' , self.move_handler)
         root.mainloop()
@@ -50,6 +53,9 @@ class ControllerGui():
             else:
                 host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 hosts.append(host)
+
+    def quit():
+        exit()
 
     def move_handler(self, event):
         self.var.set('')
