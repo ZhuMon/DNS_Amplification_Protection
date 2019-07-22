@@ -5,10 +5,10 @@ import numpy as np
 g_height = 500
 g_width = 500
 
-img_sw = Image.open("/home/p4/tutorials/exercises/dns_amplification/Img/switch.png").resize((10, 10), Image.ANTIALIAS)
-img_ctr = Image.open("Img/controller.png").resize((50, 50), Image.ANTIALIAS)
-img_host = Image.open("Img/host.png").resize((50, 50), Image.ANTIALIAS)
-img_pkt = Image.open("Img/packet.png").resize((50, 50), Image.ANTIALIAS)
+img_sw = Image.open("Img/switch.png").resize((40, 40), Image.ANTIALIAS)
+# img_ctr = Image.open("Img/controller.png").resize((40, 40), Image.ANTIALIAS)
+img_host = Image.open("Img/host.png").resize((40, 40), Image.ANTIALIAS)
+# img_pkt = Image.open("Img/packet.png").resize((40, 40), Image.ANTIALIAS)
 
 class ControllerGui():
     def __init__(self, links, nodes):
@@ -29,17 +29,14 @@ class ControllerGui():
         root.mainloop()
 
     def create_node(self):
-        photo_sw = ImageTk.PhotoImage(img_sw)
-        #photo_sw =PhotoImage(file="Img/switch.png")
-        photo_ctr = ImageTk.PhotoImage(img_ctr)
-        photo_host = ImageTk.PhotoImage(img_host)
-        photo_pkt = ImageTk.PhotoImage(img_pkt)
+        self.photo_sw = ImageTk.PhotoImage(img_sw)
+        # self.photo_ctr = ImageTk.PhotoImage(img_ctr)
+        self.photo_host = ImageTk.PhotoImage(img_host)
+        # self.photo_pkt = ImageTk.PhotoImage(img_pkt)
 
         for node, pos in self.nodes.items():
             pos[0] = (pos[0]+2)*125
             pos[1] = (pos[1]+2)*125
-            # if node[15:] == '00':
-                # print "is switch"
 
         for link in self.links:
             self.cv.create_line(self.nodes[link[0]][0]+10, self.nodes[link[0]][1]+10, self.nodes[link[1]][0]+10, self.nodes[link[1]][1]+10)
@@ -48,10 +45,10 @@ class ControllerGui():
         hosts = []
         for node, pos in self.nodes.items():
             if node[15:] == "00" :
-                sw = self.cv.create_image(pos[0], pos[1], image=photo_sw)
+                sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
                 switches.append(sw)
             else:
-                host = self.cv.create_image(pos[0], pos[1], image=photo_host)
+                host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 hosts.append(host)
 
     def move_handler(self, event):
