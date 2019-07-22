@@ -23,7 +23,7 @@ endif
 
 all: run
 
-run: build
+run: ge_link build
 	sudo python $(RUN_SCRIPT) -t $(TOPO) $(run_args)
 
 stop:
@@ -37,6 +37,10 @@ $(BUILD_DIR)/%.json: %.p4
 dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 
+ge_link:
+	python ge_link.py
+
 clean: stop
+	rm switch.txt host.json
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)

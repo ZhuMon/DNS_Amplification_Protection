@@ -27,7 +27,9 @@ from scapy.packet import bind_layers
 # from p4.v1 import p4runtime_pb2
 # from p4.v1 import p4runtime_pb2_grpc
 
-from ryu.topology.switches import LLDPPacket
+import networkx as nx
+import matplotlib.pyplot as plt
+
 
 SWITCH_TO_HOST_PORT = 1
 SWITCH_TO_SWITCH_PORT = 2
@@ -50,12 +52,12 @@ def ParsePacketIn(pin):
     dstAddr = ""
 
     for i in range(0,6):
-        dstAddr = dstAddr + str("{0:02}".format(int("{0:08b}".format(pin[i]),2)))
+        dstAddr = dstAddr + str("{0:02x}".format(int("{0:08b}".format(pin[i]),2)))
         if i != 5:
             dstAddr = dstAddr + ":"
 
     for i in range(6,12):
-        srcAddr = srcAddr + str("{0:02}".format(int("{0:08b}".format(pin[i]),2)))
+        srcAddr = srcAddr + str("{0:02x}".format(int("{0:08b}".format(pin[i]),2)))
         if i != 11:
             srcAddr = srcAddr + ":"
 
@@ -91,7 +93,7 @@ def recordLink(p):
 
     if flag == 0:
         global link_num
-        topology[link_num] = link
+        topology[str(link_num)] = link
         link_num += 1
         
 def sendPacketOut(p4info_helper, sw, port, mcast):
@@ -210,21 +212,49 @@ def connectThrift(port, bmv2_file_path):
     runtime_CLI.load_json_config(standard_client, bmv2_file_path)
     return runtime_CLI.RuntimeAPI(runtime_CLI.PreType.SimplePre, standard_client, mc_client)
 
+def draw_topology(sw_mac, hosts):
+    G = nx.Graph()
+    reverse = {}
+    for s, mac in sw_mac.items():
+        G.add_node(mac.encode('utf-8'))
+        reverse[mac] = s
+
+    for h, mac in hosts.items():
+        G.add_node(mac.encode('utf-8'))
+        reverse[mac] = h
+
+    # print topology
+    edge = []
+    for link in topology.values():
+        keys = link.keys()
+        edge.append((keys[0],keys[1]))
+
+    G.add_edges_from(edge)
+    
+    pos=nx.spring_layout(G)
+    nx.draw_networkx_labels(G,pos,reverse,font_size=12)
+    print pos
+    nx.draw(G, pos = pos)
+    plt.show()
+
 def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
-    switch_num = 3
 
     try:
+        sw_mac = {}
+        with open("switch.txt", "r") as f:
+            for line in f:
+                sw_mac[line.split()[0]] = line.split()[1]
         # Create a switch connection object for s1 s2 s3;
         # this is backed by a P4Runtime gRPC connection.
         # Also, dump all P4Runtime messages sent to switch to given txt files.
         sw = []
-        for i in range(1,switch_num+1):
+        for i in range(1,len(sw_mac)+1):
             s = p4runtime_lib.bmv2.Bmv2SwitchConnection(
                     name='s'+str(i),
-                    address='127.0.0.1:5005'+str(i),
+                    address='127.0.0.1:'+str(50050+i),
                     device_id=i-1,
                     proto_dump_file='logs/s'+str(i)+'-p4runtime-requests.txt')
             # Send master arbitration update message to establish this controller as
@@ -240,27 +270,18 @@ def main(p4info_file_path, bmv2_file_path):
 
         #############################################################################
         
-        sw_mac = {}
-        with open("switch.txt", "r") as f:
-            for line in f:
-                sw_mac[line.split()[0]] = line.split()[1]
         
-        for s, mac in sw_mac.items():
-            writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
-            writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
+        
 
-        for j in range(0,len(sw)):
-            for i in range(1,5):
-                sendPacketOut(p4info_helper, sw[j], i, 0)
-
-
+        hosts = {}
         with open("host.json", "r") as host_file:
             host_inf = json.load(host_file)
             for s, sw_inf in host_inf.items():
                 for port, p_inf in sw_inf.items():
                     recordLink({"srcAddr":sw_mac[s], "sport":int(port),
                                  "dstAddr":p_inf["mac"], "dport":1})
-        print topology
+                    hosts[p_inf["name"]] = p_inf["mac"]
+
 
 
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
@@ -275,11 +296,20 @@ def main(p4info_file_path, bmv2_file_path):
 
         writeHash1Rule(p4info_helper, ingress_sw=sw[0])
 
+        for s, mac in sw_mac.items():
+            writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
+            writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
+
         for j in range(0,len(sw)):
-            for i in range(0,4):
+            for i in range(1,15):
+                sendPacketOut(p4info_helper, sw[j], i, 0)
+
+        for j in range(0,len(sw)):
+            for i in range(0,14):
                 recvPacketIn(sw[j])
             
-        print topology
+        draw_topology(sw_mac, hosts)
+        # print topology
 
         # writePInRule(p4info_helper, ingress_sw=sw[0], etherType=0x88cc, sw_addr="00:00:00:01:03:00")
         # writePInRule(p4info_helper, ingress_sw=sw[1], etherType=0x88cc, sw_addr="00:00:00:02:03:00")
