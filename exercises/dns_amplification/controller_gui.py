@@ -5,10 +5,6 @@ import numpy as np
 g_height = 500
 g_width = 500
 
-img_sw = Image.open("Img/switch.png").resize((40, 40), Image.ANTIALIAS)
-# img_ctr = Image.open("Img/controller.png").resize((40, 40), Image.ANTIALIAS)
-img_host = Image.open("Img/host.png").resize((40, 40), Image.ANTIALIAS)
-# img_pkt = Image.open("Img/packet.png").resize((40, 40), Image.ANTIALIAS)
 
 class ControllerGui():
     def __init__(self, links, nodes):
@@ -29,6 +25,10 @@ class ControllerGui():
         root.mainloop()
 
     def create_node(self):
+        img_sw = Image.open("Img/switch.png").resize((40, 40), Image.ANTIALIAS)
+        # img_ctr = Image.open("Img/controller.png").resize((40, 40), Image.ANTIALIAS)
+        img_host = Image.open("Img/host.png").resize((40, 40), Image.ANTIALIAS)
+        # img_pkt = Image.open("Img/packet.png").resize((40, 40), Image.ANTIALIAS)
         self.photo_sw = ImageTk.PhotoImage(img_sw)
         # self.photo_ctr = ImageTk.PhotoImage(img_ctr)
         self.photo_host = ImageTk.PhotoImage(img_host)

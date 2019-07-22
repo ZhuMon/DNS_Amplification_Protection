@@ -6,6 +6,7 @@ import sys
 from time import sleep
 import signal
 import json
+import threading
 
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
@@ -29,6 +30,8 @@ from scapy.packet import bind_layers
 
 import networkx as nx
 import matplotlib.pyplot as plt
+
+from controller_gui import ControllerGui
 
 
 SWITCH_TO_HOST_PORT = 1
@@ -225,19 +228,20 @@ def draw_topology(sw_mac, hosts):
 
     # print topology
     edge = []
-    for no, link in topology.items():
+    for no, link in sorted(topology.items()):
         keys = link.keys()
         edge.append((keys[0],keys[1]))
 
     G.add_edges_from(edge)
     
     pos=nx.spring_layout(G)
-    nx.draw_networkx_labels(G,pos,reverse,font_size=12)
-    nx.draw_networkx_edge_labels(G,pos,font_size=10,alpha=0.5,rotate=True);
-    print pos
-    print G.edges
-    nx.draw(G, pos = pos)
-    plt.show()
+    # nx.draw_networkx_labels(G,pos,reverse,font_size=12)
+    # nx.draw_networkx_edge_labels(G,pos,font_size=10,alpha=0.5,rotate=True);
+    # print pos
+    # print G.edges
+    # nx.draw(G, pos = pos)
+    # plt.show()
+    ControllerGui(G.edges, pos)
 
 def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
@@ -310,7 +314,10 @@ def main(p4info_file_path, bmv2_file_path):
             for i in range(0,14):
                 recvPacketIn(sw[j])
             
-        draw_topology(sw_mac, hosts)
+        th = threading.Thread(target=draw_topology,args=(sw_mac,hosts,))
+        th.setDaemon(True)
+        th.start()
+        # draw_topology(sw_mac, hosts)
         # print topology
 
         # writePInRule(p4info_helper, ingress_sw=sw[0], etherType=0x88cc, sw_addr="00:00:00:01:03:00")
