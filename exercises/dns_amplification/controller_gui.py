@@ -1,9 +1,14 @@
 from Tkinter import *
+from PIL import Image, ImageTk
 import numpy as np
 
 g_height = 500
 g_width = 500
 
+img_sw = Image.open("/home/p4/tutorials/exercises/dns_amplification/Img/switch.png").resize((10, 10), Image.ANTIALIAS)
+img_ctr = Image.open("Img/controller.png").resize((50, 50), Image.ANTIALIAS)
+img_host = Image.open("Img/host.png").resize((50, 50), Image.ANTIALIAS)
+img_pkt = Image.open("Img/packet.png").resize((50, 50), Image.ANTIALIAS)
 
 class ControllerGui():
     def __init__(self, links, nodes):
@@ -24,6 +29,11 @@ class ControllerGui():
         root.mainloop()
 
     def create_node(self):
+        photo_sw = ImageTk.PhotoImage(img_sw)
+        #photo_sw =PhotoImage(file="Img/switch.png")
+        photo_ctr = ImageTk.PhotoImage(img_ctr)
+        photo_host = ImageTk.PhotoImage(img_host)
+        photo_pkt = ImageTk.PhotoImage(img_pkt)
 
         for node, pos in self.nodes.items():
             pos[0] = (pos[0]+2)*125
@@ -35,9 +45,14 @@ class ControllerGui():
             self.cv.create_line(self.nodes[link[0]][0]+10, self.nodes[link[0]][1]+10, self.nodes[link[1]][0]+10, self.nodes[link[1]][1]+10)
 
         switches = []
+        hosts = []
         for node, pos in self.nodes.items():
-            sw = self.cv.create_oval(pos[0], pos[1], pos[0]+20, pos[1]+20, fill="white")
-            switches.append(sw)
+            if node[15:] == "00" :
+                sw = self.cv.create_image(pos[0], pos[1], image=photo_sw)
+                switches.append(sw)
+            else:
+                host = self.cv.create_image(pos[0], pos[1], image=photo_host)
+                hosts.append(host)
 
     def move_handler(self, event):
         self.var.set('')
@@ -50,6 +65,16 @@ class ControllerGui():
 def main():
     nodes = {'00:00:00:00:03:03': np.array([ 0.01580925, -0.60809051]), '00:00:00:01:03:00': np.array([-0.54357307,  0.07891845]), '00:00:00:02:03:00': np.array([0.53874966, 0.10701586]), '00:00:00:03:03:00': np.array([ 0.00307517, -0.11810217]), '00:00:00:00:02:02': np.array([0.98593898, 0.29597483]), '00:00:00:00:01:01': np.array([-1.        ,  0.24428355])}
     links = [('00:00:00:00:03:03', '00:00:00:03:03:00'), ('00:00:00:01:03:00', '00:00:00:03:03:00'), ('00:00:00:01:03:00', '00:00:00:00:01:01'), ('00:00:00:02:03:00', '00:00:00:03:03:00'), ('00:00:00:02:03:00', '00:00:00:00:02:02')]
+
+    #img_sw = Image.open("Img/switch.png").resize((50, 50), Image.ANTIALIAS)
+    #img_ctr = Image.open("Img/controller.png").resize((50, 50), Image.ANTIALIAS)
+    #img_host = Image.open("Img/host.png").resize((50, 50), Image.ANTIALIAS)
+    #img_pkt = Image.open("Img/packet.png").resize((50, 50), Image.ANTIALIAS)
+    #photo_sw = ImageTk.PhotoImage(img_sw)
+    #photo_ctr = ImageTk.PhotoImage(img_ctr)
+    #photo_host = ImageTk.PhotoImage(img_host)
+    #photo_pkt = ImageTk.PhotoImage(img_pkt)
+
     c = ControllerGui(links, nodes)
 if __name__ == '__main__':
     main()
