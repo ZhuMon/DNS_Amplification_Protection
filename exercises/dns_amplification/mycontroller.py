@@ -225,7 +225,7 @@ def draw_topology(sw_mac, hosts):
 
     # print topology
     edge = []
-    for link in topology.values():
+    for no, link in topology.items():
         keys = link.keys()
         edge.append((keys[0],keys[1]))
 
@@ -233,7 +233,9 @@ def draw_topology(sw_mac, hosts):
     
     pos=nx.spring_layout(G)
     nx.draw_networkx_labels(G,pos,reverse,font_size=12)
+    nx.draw_networkx_edge_labels(G,pos,font_size=10,alpha=0.5,rotate=True);
     print pos
+    print G.edges
     nx.draw(G, pos = pos)
     plt.show()
 
