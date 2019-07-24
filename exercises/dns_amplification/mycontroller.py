@@ -215,35 +215,12 @@ def connectThrift(port, bmv2_file_path):
     runtime_CLI.load_json_config(standard_client, bmv2_file_path)
     return runtime_CLI.RuntimeAPI(runtime_CLI.PreType.SimplePre, standard_client, mc_client)
 
-def draw_topology(sw_mac, hosts):
-    G = nx.Graph()
-    reverse = {}
-    for s, mac in sw_mac.items():
-        G.add_node(mac.encode('utf-8'))
-        reverse[mac] = s
-
-    for h, mac in hosts.items():
-        G.add_node(mac.encode('utf-8'))
-        reverse[mac] = h
-
-    # print topology
-    edge = []
-    for no, link in sorted(topology.items()):
-        keys = link.keys()
-        edge.append((keys[0],keys[1]))
-
-    G.add_edges_from(edge)
-    
-    pos=nx.spring_layout(G)
-    # nx.draw_networkx_labels(G,pos,reverse,font_size=12)
-    # nx.draw_networkx_edge_labels(G,pos,font_size=10,alpha=0.5,rotate=True);
-    # print pos
-    # print G.edges
-    # nx.draw(G, pos = pos)
-    # plt.show()
-    ControllerGui(G.edges, pos)
 
 def main(p4info_file_path, bmv2_file_path):
+    """
+        main function
+    """
+
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
@@ -289,7 +266,6 @@ def main(p4info_file_path, bmv2_file_path):
                     hosts[p_inf["name"]] = p_inf["mac"]
 
 
-
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
         writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:00:02:02", dst_ip="10.0.2.2", mask=32, port=1)
@@ -314,19 +290,11 @@ def main(p4info_file_path, bmv2_file_path):
             for i in range(0,14):
                 recvPacketIn(sw[j])
             
-        th = threading.Thread(target=draw_topology,args=(sw_mac,hosts,))
+        th = threading.Thread(target=ControllerGui,args=(sw_mac,hosts, topology, ))
         th.setDaemon(True)
         th.start()
-        # draw_topology(sw_mac, hosts)
         # print topology
 
-        # writePInRule(p4info_helper, ingress_sw=sw[0], etherType=0x88cc, sw_addr="00:00:00:01:03:00")
-        # writePInRule(p4info_helper, ingress_sw=sw[1], etherType=0x88cc, sw_addr="00:00:00:02:03:00")
-        # writePInRule(p4info_helper, ingress_sw=sw[2], etherType=0x88cc, sw_addr="00:00:00:03:03:00")
-
-        # writePOutRule(p4info_helper, ingress_sw=sw[0], padding=0, sw_addr="00:00:00:01:03:00")
-        # writePOutRule(p4info_helper, ingress_sw=sw[1], padding=0, sw_addr="00:00:00:02:03:00")
-        # writePOutRule(p4info_helper, ingress_sw=sw[2], padding=0, sw_addr="00:00:00:03:03:00")
  
             #############################################################################
 

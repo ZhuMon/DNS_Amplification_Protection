@@ -46,7 +46,7 @@ class SwitchConnection(object):
             self.channel = grpc.intercept_channel(self.channel, interceptor)
         self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
         self.requests_stream = IterableQueue()
-        self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=1)
+        self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=2)
         self.proto_dump_file = proto_dump_file
         connections.append(self)
 

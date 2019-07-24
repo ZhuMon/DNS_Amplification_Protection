@@ -1,31 +1,70 @@
 from Tkinter import *
 from PIL import Image, ImageTk
+from math import sqrt
 import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
 
 g_height = 500
 g_width = 500
 
 
 class ControllerGui():
-    def __init__(self, links, nodes):
-        root = Tk()
-        self.cv = Canvas(root,bg = 'white', height = g_height, width = g_width)
-
-        self.links = links
-        self.nodes = nodes
+    def __init__(self, sw_mac, h_mac, topology):
+        self.root = Tk()
+        self.cv = Canvas(self.root,bg = 'white', height = g_height, width = g_width)
+        self.fonts = ("arial", 12, "bold")
 
         self.var = StringVar()
-        self.L1 = Label(root, textvariable=self.var, width=30, height=2)
+        self.L1 = Label(self.root, textvariable=self.var, width=30, height=2)
         self.L1.pack(side = LEFT )
 
+        self.sw_mac = sw_mac
+        self.h_mac = h_mac
+        self.topology = topology
+
+        self.ge_network()
+
+        self.node_size = 10
         self.create_node()
 
-        button_quit = Button(root, text="Quit", fg='white', bg='red', font=("arial", 12, "bold"), command=quit)
-        button_quit.place(x=130, y=450)
+        self.button_quit = Button(self.root, text="Quit", fg='white', bg='red', font=self.fonts, command=quit)
+        self.button_quit.place(x=130, y=450)
+
+        self.button_refresh = Button(self.root, text="Refresh", fg='white', bg='green', font=self.fonts, command=self.refresh_network)
+        self.button_refresh.place(x = 130, y = 420)
 
         self.cv.pack()
         self.cv.bind('<Motion>' , self.move_handler)
-        root.mainloop()
+        self.root.mainloop()
+
+    def ge_network(self):
+        """ generate network """
+
+        self.G = nx.Graph()
+        for s, mac in sorted(self.sw_mac.items()):
+            self.G.add_node(mac.encode('utf-8'))
+
+        for h, mac in sorted(self.h_mac.items()):
+            self.G.add_node(mac.encode('utf-8'))
+
+        edge = []
+        for no, link in sorted(self.topology.items()):
+            keys = link.keys()
+            edge.append((keys[0],keys[1]))
+
+        self.G.add_edges_from(edge)
+
+        self.links = self.G.edges
+        self.nodes = nx.spring_layout(self.G)
+        
+    def refresh_network(self):
+        """ refresh network """
+        self.G.clear()
+        self.ge_network()
+        self.cv.delete("all")
+        self.create_node()
+
 
     def create_node(self):
         img_sw = Image.open("Img/switch.png").resize((40, 40), Image.ANTIALIAS)
@@ -38,46 +77,54 @@ class ControllerGui():
         # self.photo_pkt = ImageTk.PhotoImage(img_pkt)
 
         for node, pos in self.nodes.items():
-            pos[0] = (pos[0]+2)*125
-            pos[1] = (pos[1]+2)*125
+            pos[0] = (self.extend(pos[0], 'x')+2)*125
+            pos[1] = (self.extend(pos[1], 'y')+2)*125
 
         for link in self.links:
-            self.cv.create_line(self.nodes[link[0]][0]+10, self.nodes[link[0]][1]+10, self.nodes[link[1]][0]+10, self.nodes[link[1]][1]+10)
+            self.cv.create_line(self.nodes[link[0]][0]+self.node_size/2, self.nodes[link[0]][1]+self.node_size/2, self.nodes[link[1]][0]+self.node_size/2, self.nodes[link[1]][1]+self.node_size/2)
 
-        switches = []
-        hosts = []
+        self.switches = []
+        self.hosts = []
         for node, pos in self.nodes.items():
             if node[15:] == "00" :
-                sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
-                switches.append(sw)
+                # sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
+                sw = self.cv.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill="white")
+                self.switches.append(sw)
             else:
-                host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
-                hosts.append(host)
+                host = self.cv.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1])
+                # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
+                self.hosts.append(host)
 
+    def extend(self, num, axis='x'):
+        if num < 0:
+            num = abs(num)
+            return sqrt(num) * sqrt(2) * (-1)
+        else:
+            return sqrt(num) * sqrt(2)
+                
     def quit():
-        exit()
+        #TODO clear others 
+        self.G.clear()
+        self.cv.delete("all")
+        self.root.destroy()
+        # exit()
 
     def move_handler(self, event):
         self.var.set('')
         
         for node, pos in self.nodes.items():
-            if  pos[0] < event.x < pos[0]+20 and pos[1] < event.y < pos[1]+20:
+            if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
                 self.var.set(node)
                 break
 
 def main():
-    nodes = {'00:00:00:00:03:03': np.array([ 0.01580925, -0.60809051]), '00:00:00:01:03:00': np.array([-0.54357307,  0.07891845]), '00:00:00:02:03:00': np.array([0.53874966, 0.10701586]), '00:00:00:03:03:00': np.array([ 0.00307517, -0.11810217]), '00:00:00:00:02:02': np.array([0.98593898, 0.29597483]), '00:00:00:00:01:01': np.array([-1.        ,  0.24428355])}
-    links = [('00:00:00:00:03:03', '00:00:00:03:03:00'), ('00:00:00:01:03:00', '00:00:00:03:03:00'), ('00:00:00:01:03:00', '00:00:00:00:01:01'), ('00:00:00:02:03:00', '00:00:00:03:03:00'), ('00:00:00:02:03:00', '00:00:00:00:02:02')]
 
-    #img_sw = Image.open("Img/switch.png").resize((50, 50), Image.ANTIALIAS)
-    #img_ctr = Image.open("Img/controller.png").resize((50, 50), Image.ANTIALIAS)
-    #img_host = Image.open("Img/host.png").resize((50, 50), Image.ANTIALIAS)
-    #img_pkt = Image.open("Img/packet.png").resize((50, 50), Image.ANTIALIAS)
-    #photo_sw = ImageTk.PhotoImage(img_sw)
-    #photo_ctr = ImageTk.PhotoImage(img_ctr)
-    #photo_host = ImageTk.PhotoImage(img_host)
-    #photo_pkt = ImageTk.PhotoImage(img_pkt)
+    sw_mac = {'s16': '00:00:00:10:15:00', 's9': '00:00:00:09:15:00', 's8': '00:00:00:08:15:00', 's17': '00:00:00:11:15:00', 's3': '00:00:00:03:15:00', 's2': '00:00:00:02:15:00', 's1': '00:00:00:01:15:00', 's10': '00:00:00:0a:15:00', 's7': '00:00:00:07:15:00', 's6': '00:00:00:06:15:00', 's5': '00:00:00:05:15:00', 's4': '00:00:00:04:15:00', 's13': '00:00:00:0d:15:00', 's20': '00:00:00:14:15:00', 's18': '00:00:00:12:15:00', 's15': '00:00:00:0f:15:00', 's12': '00:00:00:0c:15:00', 's19': '00:00:00:13:15:00', 's21': '00:00:00:15:15:00', 's14': '00:00:00:0e:15:00', 's11': '00:00:00:0b:15:00'}
+    
+    h_mac = {u'h8': u'00:00:00:00:0c:08', u'h9': u'00:00:00:00:0d:09', u'h7': u'00:00:00:00:0b:07', u'h1': u'00:00:00:00:01:01', u'h6': u'00:00:00:00:0a:06', u'h12': u'00:00:00:00:10:0c', u'h13': u'00:00:00:00:12:0d', u'h14': u'00:00:00:00:13:0e', u'h15': u'00:00:00:00:15:0f', u'h4': u'00:00:00:00:07:04', u'h5': u'00:00:00:00:08:05', u'h10': u'00:00:00:00:0e:0a', u'h2': u'00:00:00:00:02:02', u'h11': u'00:00:00:00:0f:0b', u'h3': u'00:00:00:00:03:03'}
 
-    c = ControllerGui(links, nodes)
+    topology = {'24': {'00:00:00:04:15:00': 1, '00:00:00:0b:15:00': 2}, '25': {'00:00:00:04:15:00': 2, '00:00:00:0c:15:00': 2}, '26': {'00:00:00:04:15:00': 3, '00:00:00:0d:15:00': 2}, '27': {'00:00:00:0e:15:00': 2, '00:00:00:04:15:00': 4}, '20': {'00:00:00:07:15:00': 2, '00:00:00:04:15:00': 12}, '21': {'00:00:00:08:15:00': 2, '00:00:00:04:15:00': 13}, '22': {'00:00:00:09:15:00': 2, '00:00:00:04:15:00': 14}, '23': {'00:00:00:0a:15:00': 2, '00:00:00:09:15:00': 1}, '28': {'00:00:00:0f:15:00': 2, '00:00:00:04:15:00': 5}, '29': {'00:00:00:10:15:00': 2, '00:00:00:04:15:00': 6}, '1': {u'00:00:00:00:12:0d': 1, '00:00:00:12:15:00': 1}, '0': {'00:00:00:13:15:00': 1, u'00:00:00:00:13:0e': 1}, '3': {'00:00:00:0d:15:00': 1, u'00:00:00:00:0d:09': 1}, '2': {'00:00:00:08:15:00': 1, u'00:00:00:00:08:05': 1}, '5': {'00:00:00:01:15:00': 1, u'00:00:00:00:01:01': 1}, '4': {u'00:00:00:00:0c:08': 1, '00:00:00:0c:15:00': 1}, '7': {'00:00:00:07:15:00': 1, u'00:00:00:00:07:04': 1}, '6': {'00:00:00:0a:15:00': 1, u'00:00:00:00:0a:06': 1}, '9': {u'00:00:00:00:0f:0b': 1, '00:00:00:0f:15:00': 1}, '8': {u'00:00:00:00:10:0c': 1, '00:00:00:10:15:00': 1}, '11': {u'00:00:00:00:03:03': 1, '00:00:00:03:15:00': 1}, '10': {'00:00:00:0e:15:00': 1, u'00:00:00:00:0e:0a': 1}, '13': {u'00:00:00:00:02:02': 1, '00:00:00:02:15:00': 1}, '12': {u'00:00:00:00:15:0f': 1, '00:00:00:15:15:00': 1}, '15': {'00:00:00:05:15:00': 1, '00:00:00:02:15:00': 2}, '14': {u'00:00:00:00:0b:07': 1, '00:00:00:0b:15:00': 1}, '17': {'00:00:00:05:15:00': 3, '00:00:00:04:15:00': 10}, '16': {'00:00:00:05:15:00': 2, '00:00:00:03:15:00': 2}, '19': {'00:00:00:06:15:00': 2, '00:00:00:04:15:00': 11}, '18': {'00:00:00:01:15:00': 2, '00:00:00:06:15:00': 1}, '31': {'00:00:00:11:15:00': 1, '00:00:00:12:15:00': 2}, '30': {'00:00:00:11:15:00': 2, '00:00:00:04:15:00': 7}, '34': {'00:00:00:14:15:00': 1, '00:00:00:15:15:00': 2}, '33': {'00:00:00:04:15:00': 9, '00:00:00:14:15:00': 2}, '32': {'00:00:00:04:15:00': 8, '00:00:00:13:15:00': 2}}
+    print len(topology)
+    c = ControllerGui(sw_mac, h_mac, topology)
 if __name__ == '__main__':
     main()
