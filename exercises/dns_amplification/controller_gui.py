@@ -4,13 +4,19 @@ from math import sqrt
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import threading
 
 g_height = 500
 g_width = 500
 
 
 class ControllerGui():
-    def __init__(self, sw_mac, h_mac, topology):
+    def __init__(self, event, sw_mac, h_mac, topology):
+        """ init
+
+        """
+        self.event = event
+
         self.root = Tk()
         self.cv = Canvas(self.root,bg = 'white', height = g_height, width = g_width)
         self.fonts = ("arial", 12, "bold")
@@ -28,7 +34,7 @@ class ControllerGui():
         self.node_size = 10
         self.create_node()
 
-        self.button_quit = Button(self.root, text="Quit", fg='white', bg='red', font=self.fonts, command=quit)
+        self.button_quit = Button(self.root, text="Quit", fg='white', bg='red', font=self.fonts, command=self.quit)
         self.button_quit.place(x=130, y=450)
 
         self.button_refresh = Button(self.root, text="Refresh", fg='white', bg='green', font=self.fonts, command=self.refresh_network)
@@ -36,6 +42,7 @@ class ControllerGui():
 
         self.cv.pack()
         self.cv.bind('<Motion>' , self.move_handler)
+
         self.root.mainloop()
 
     def ge_network(self):
@@ -58,15 +65,18 @@ class ControllerGui():
         self.links = self.G.edges
         self.nodes = nx.spring_layout(self.G)
         
+
     def refresh_network(self):
-        """ refresh network """
+        """refresh network """
+
         self.G.clear()
         self.ge_network()
+
         self.cv.delete("all")
         self.create_node()
 
-
     def create_node(self):
+        """ create node """
         img_sw = Image.open("Img/switch.png").resize((40, 40), Image.ANTIALIAS)
         # img_ctr = Image.open("Img/controller.png").resize((40, 40), Image.ANTIALIAS)
         img_host = Image.open("Img/host.png").resize((40, 40), Image.ANTIALIAS)
@@ -102,11 +112,12 @@ class ControllerGui():
         else:
             return sqrt(num) * sqrt(2)
                 
-    def quit():
+    def quit(self):
         #TODO clear others 
         self.G.clear()
         self.cv.delete("all")
         self.root.destroy()
+        self.event.clear()
         # exit()
 
     def move_handler(self, event):
@@ -124,7 +135,8 @@ def main():
     h_mac = {u'h8': u'00:00:00:00:0c:08', u'h9': u'00:00:00:00:0d:09', u'h7': u'00:00:00:00:0b:07', u'h1': u'00:00:00:00:01:01', u'h6': u'00:00:00:00:0a:06', u'h12': u'00:00:00:00:10:0c', u'h13': u'00:00:00:00:12:0d', u'h14': u'00:00:00:00:13:0e', u'h15': u'00:00:00:00:15:0f', u'h4': u'00:00:00:00:07:04', u'h5': u'00:00:00:00:08:05', u'h10': u'00:00:00:00:0e:0a', u'h2': u'00:00:00:00:02:02', u'h11': u'00:00:00:00:0f:0b', u'h3': u'00:00:00:00:03:03'}
 
     topology = {'24': {'00:00:00:04:15:00': 1, '00:00:00:0b:15:00': 2}, '25': {'00:00:00:04:15:00': 2, '00:00:00:0c:15:00': 2}, '26': {'00:00:00:04:15:00': 3, '00:00:00:0d:15:00': 2}, '27': {'00:00:00:0e:15:00': 2, '00:00:00:04:15:00': 4}, '20': {'00:00:00:07:15:00': 2, '00:00:00:04:15:00': 12}, '21': {'00:00:00:08:15:00': 2, '00:00:00:04:15:00': 13}, '22': {'00:00:00:09:15:00': 2, '00:00:00:04:15:00': 14}, '23': {'00:00:00:0a:15:00': 2, '00:00:00:09:15:00': 1}, '28': {'00:00:00:0f:15:00': 2, '00:00:00:04:15:00': 5}, '29': {'00:00:00:10:15:00': 2, '00:00:00:04:15:00': 6}, '1': {u'00:00:00:00:12:0d': 1, '00:00:00:12:15:00': 1}, '0': {'00:00:00:13:15:00': 1, u'00:00:00:00:13:0e': 1}, '3': {'00:00:00:0d:15:00': 1, u'00:00:00:00:0d:09': 1}, '2': {'00:00:00:08:15:00': 1, u'00:00:00:00:08:05': 1}, '5': {'00:00:00:01:15:00': 1, u'00:00:00:00:01:01': 1}, '4': {u'00:00:00:00:0c:08': 1, '00:00:00:0c:15:00': 1}, '7': {'00:00:00:07:15:00': 1, u'00:00:00:00:07:04': 1}, '6': {'00:00:00:0a:15:00': 1, u'00:00:00:00:0a:06': 1}, '9': {u'00:00:00:00:0f:0b': 1, '00:00:00:0f:15:00': 1}, '8': {u'00:00:00:00:10:0c': 1, '00:00:00:10:15:00': 1}, '11': {u'00:00:00:00:03:03': 1, '00:00:00:03:15:00': 1}, '10': {'00:00:00:0e:15:00': 1, u'00:00:00:00:0e:0a': 1}, '13': {u'00:00:00:00:02:02': 1, '00:00:00:02:15:00': 1}, '12': {u'00:00:00:00:15:0f': 1, '00:00:00:15:15:00': 1}, '15': {'00:00:00:05:15:00': 1, '00:00:00:02:15:00': 2}, '14': {u'00:00:00:00:0b:07': 1, '00:00:00:0b:15:00': 1}, '17': {'00:00:00:05:15:00': 3, '00:00:00:04:15:00': 10}, '16': {'00:00:00:05:15:00': 2, '00:00:00:03:15:00': 2}, '19': {'00:00:00:06:15:00': 2, '00:00:00:04:15:00': 11}, '18': {'00:00:00:01:15:00': 2, '00:00:00:06:15:00': 1}, '31': {'00:00:00:11:15:00': 1, '00:00:00:12:15:00': 2}, '30': {'00:00:00:11:15:00': 2, '00:00:00:04:15:00': 7}, '34': {'00:00:00:14:15:00': 1, '00:00:00:15:15:00': 2}, '33': {'00:00:00:04:15:00': 9, '00:00:00:14:15:00': 2}, '32': {'00:00:00:04:15:00': 8, '00:00:00:13:15:00': 2}}
-    print len(topology)
-    c = ControllerGui(sw_mac, h_mac, topology)
+
+    event = threading.Event()
+    c = ControllerGui(event, sw_mac, h_mac, topology)
 if __name__ == '__main__':
     main()

@@ -41,7 +41,6 @@ topology = {}
 link_num = 0
 
 
-
 def GePacketOut(egress_port, mcast, padding):
     out1 = "{0:09b}".format(egress_port)
     out2 = "{0:016b}".format(mcast)
@@ -215,6 +214,10 @@ def connectThrift(port, bmv2_file_path):
     runtime_CLI.load_json_config(standard_client, bmv2_file_path)
     return runtime_CLI.RuntimeAPI(runtime_CLI.PreType.SimplePre, standard_client, mc_client)
 
+# def stop_controller(event):
+    # while event.is_set() is True:
+        # None
+#     raise GUIQuit()
 
 def main(p4info_file_path, bmv2_file_path):
     """
@@ -290,10 +293,14 @@ def main(p4info_file_path, bmv2_file_path):
             for i in range(0,14):
                 recvPacketIn(sw[j])
             
-        th = threading.Thread(target=ControllerGui,args=(sw_mac,hosts, topology, ))
-        th.setDaemon(True)
-        th.start()
-        # print topology
+        event = threading.Event()
+        gui_th = threading.Thread(target=ControllerGui, args=(event, sw_mac, hosts, topology))
+        gui_th.setDaemon(True)
+        event.set()
+
+        # stop_th = threading.Thread(target=stop_controller, args=(event,))
+        # stop_th.start()
+        gui_th.start()
 
  
             #############################################################################
@@ -314,7 +321,8 @@ def main(p4info_file_path, bmv2_file_path):
 
         m = 0
         total_res_num = 0
-        while True:
+        while event.is_set() is True:
+
             print "------------"
             print m," minute"
             now_res_num = read_register(runtimeAPI, "r_reg", 0)
@@ -343,7 +351,10 @@ def main(p4info_file_path, bmv2_file_path):
             # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
             # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
             m += 1
-            sleep(30)
+            for i in range(0, 30):
+                if event.is_set() is False:
+                    break
+                sleep(1)
 
 
     except KeyboardInterrupt:
