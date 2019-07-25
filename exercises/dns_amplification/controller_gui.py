@@ -1,4 +1,5 @@
 from Tkinter import *
+import ttk
 from PIL import Image, ImageTk
 from math import sqrt
 import numpy as np
@@ -6,7 +7,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import threading
 
-g_height = 500
+g_height = 1000
 g_width = 500
 
 
@@ -25,9 +26,27 @@ class ControllerGui():
         self.L1 = Label(self.root, textvariable=self.var, width=30, height=2)
         self.L1.pack(side = LEFT )
 
+        self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3') ,show='headings')
+        self.tree.column('col1', width=150, anchor='center')
+        self.tree.column('col2', width=150, anchor='center')
+        self.tree.column('col3', width=50, anchor='center')
+        self.tree.heading('col1', text='mac_addr1')
+        self.tree.heading('col2', text='mac_addr2')
+        self.tree.heading('col3', text='ID')
+
         self.sw_mac = sw_mac
         self.h_mac = h_mac
         self.topology = topology
+
+        for no, link in sorted(self.topology.items()):
+            self.tree.insert('', no, values=(link.keys()[0], link.keys()[1], no))
+        
+        self.tree.bind("<Double-1>", self.dbClick)
+
+        self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscrollcommand=self.ybar.set)
+        self.tree.place(x=280, y=600)
+        self.ybar.place(x=630, y=600, height=218)
 
         self.ge_network()
 
@@ -111,6 +130,10 @@ class ControllerGui():
             return sqrt(num) * sqrt(2) * (-1)
         else:
             return sqrt(num) * sqrt(2)
+
+    def dbClick(self, event):
+        self.item = self.tree.selection()[0]
+        print "you clicked on ", self.tree.item(self.item, "values")
                 
     def quit(self):
         #TODO clear others 
