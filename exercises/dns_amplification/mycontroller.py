@@ -6,7 +6,7 @@ import sys
 from time import sleep
 import signal
 import json
-import threading
+from threading import Thread, _Event
 
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
@@ -39,8 +39,57 @@ SWITCH_TO_SWITCH_PORT = 2
 
 topology = {}
 link_num = 0
+mac_portNum = {}
+sw_mac = {}
+hosts = {}
 
+class myEvent(_Event):
+    def __init__(self, topology):
+        super(myEvent, self).__init__()
+        self.topology = topology
+        self.objID = {} # store the tkinter ID of edges {1:13241232, ...}
+        self.pkt_num = {} # store 10s # of pkts on every edges {1: 24}
+        self.all_pkt_num = {} # store all # of pkts on every edges {1: 134}
+        self.port = {} # how many port does every switch have {1:
 
+    def findEdge(self, mac1, mac2):
+        """ return the index in topology """
+        for no, link in self.topology.items():
+            m1 = link.keys()[0]
+            m2 = link.keys()[1]
+            if m1 == mac1 and m2 == mac2:
+                return no
+            elif m1 == mac2 and m2 == mac1:
+                return no
+
+    def putObjID(self, objID, mac1=None, mac2=None, edgeID=None):
+        if edgeID == None and mac1 != None and mac2 != None:
+            edgeID = self.findEdge(mac1, mac2)
+        elif mac1 == None or mac2 == None:
+            print "putObjID error"
+
+        self.objID[edgeID] = objID
+
+    def getObjID(self, mac1, mac2, edgeID=None):
+        if edgeID == None:
+            edgeID = self.findEdge(mac1, mac2)
+        
+        return self.objID[edgeID]
+
+    def getPktNum(self, mac1, mac2):
+        edgeID = self.findEdge(mac1, mac2)
+        return self.pkt_num[edgeID]
+
+    def putPktNum(self, num, mac1, mac2):
+        edgeID = self.findEdge(mac1, mac2)
+        if self.all_pkt_num.has_key(edgeID):
+            self.pkt_num[edgeID] = num - self.all_pkt_num[edgeID]
+        else:
+            self.pkt_num[edgeID] = num
+
+        self.all_pkt_num[edgeID] = num
+        
+        
 def GePacketOut(egress_port, mcast, padding):
     out1 = "{0:09b}".format(egress_port)
     out2 = "{0:016b}".format(mcast)
@@ -219,6 +268,91 @@ def connectThrift(port, bmv2_file_path):
         # None
 #     raise GUIQuit()
 
+def record_switch_port():
+    """ 
+        record how many port switch/host has
+        mac_portNum = {mac:num(port), ...}
+    """
+    tmp = {} # {mac1: [2,1,3], ...}
+    for no, links in topology.items():
+        m1 = links.keys()[0]
+        m2 = links.keys()[1]
+        if tmp.has_key(m1) is False:
+            tmp[m1] = []
+        if tmp.has_key(m2) is False:
+            tmp[m2] = []
+        
+        tmp[m1].append(links[m1])
+        tmp[m2].append(links[m2])
+
+    for mac, port in tmp.items():
+        mac_portNum[mac] = len(port)
+    
+def find_the_other_mac(mac1, port1):
+    """ from mac and port TO find the mac at the other side """
+
+    for no, link in topology.items():
+        m1 = link.keys()[0]
+        m2 = link.keys()[1]
+        p1 = link.values()[0]
+        p2 = link.values()[1]
+        if mac1 == m1 and port1 == p1:
+            return m2
+        elif mac1 == m2 and port1 == p2:
+            return m1
+    
+def mac2name(mac):
+    """ mac -> name """
+    for sw, m in sw_mac.items():
+        if mac == m:
+            return sw
+    for h, m in hosts.items():
+        if mac == m:
+            return h
+
+def read_all_reg(event, bmv2_file_path, sw_num):
+    API = {}
+    for sw, mac in sw_mac.items():
+        runtimeAPI = connectThrift(9089+int(sw[1:]),bmv2_file_path)
+        API[sw] = runtimeAPI
+
+    while event.is_set():
+        for mac, portNum in mac_portNum.items():
+            if mac2name(mac)[0] == 'h':
+                continue
+            for port in range(0, int(portNum)):
+                sw = mac2name(mac)
+
+                mac2 = find_the_other_mac(mac, port)
+
+                num = read_register(API[sw], "r_reg", port)
+                event.putPktNum(num, mac, mac2)
+
+        for i in range(0, 10):
+            if event.is_set() is False:
+                break
+            sleep(1)
+
+def find_path():
+    """ find all path of node to the other node """
+    sw_links = {}
+    for no, links in topology.items():
+        m1 = mac2name(links.keys()[0])
+        m2 = mac2name(links.keys()[1])
+        p1 = links.values()[0]
+        p2 = links.values()[1]
+        if sw_links.has_key(m1) is False and m1[0] == 's':
+            sw_links[m1] = [p2,m2]
+        elif m1[0] == 's':
+            sw_links[m1].append([p2, m2])
+
+        if sw_links.has_key(m2) is False and m2[0] == 's':
+            sw_links[m2] = [p1,m1]
+        elif m2[0] == 's':
+            sw_links[m2].append([p1, m1])
+
+    print sw_links
+
 def main(p4info_file_path, bmv2_file_path):
     """
         main function
@@ -229,7 +363,6 @@ def main(p4info_file_path, bmv2_file_path):
 
 
     try:
-        sw_mac = {}
         with open("switch.txt", "r") as f:
             for line in f:
                 sw_mac[line.split()[0]] = line.split()[1]
@@ -259,7 +392,6 @@ def main(p4info_file_path, bmv2_file_path):
         
         
 
-        hosts = {}
         with open("host.json", "r") as host_file:
             host_inf = json.load(host_file)
             for s, sw_inf in host_inf.items():
@@ -268,6 +400,19 @@ def main(p4info_file_path, bmv2_file_path):
                                  "dstAddr":p_inf["mac"], "dport":1})
                     hosts[p_inf["name"]] = p_inf["mac"]
 
+        for s, mac in sw_mac.items():
+            writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
+            writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
+
+        for j in range(0,len(sw)):
+            for i in range(1,15):
+                sendPacketOut(p4info_helper, sw[j], i, 0)
+
+        for j in range(0,len(sw)):
+            for i in range(0,14):
+                recvPacketIn(sw[j])
+        
+        print len(topology)
 
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
@@ -281,24 +426,18 @@ def main(p4info_file_path, bmv2_file_path):
 
         writeHash1Rule(p4info_helper, ingress_sw=sw[0])
 
-        for s, mac in sw_mac.items():
-            writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
-            writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
-
-        for j in range(0,len(sw)):
-            for i in range(1,15):
-                sendPacketOut(p4info_helper, sw[j], i, 0)
-
-        for j in range(0,len(sw)):
-            for i in range(0,14):
-                recvPacketIn(sw[j])
+        find_path()
+        record_switch_port()
+        print len(topology)
             
-        event = threading.Event()
-        gui_th = threading.Thread(target=ControllerGui, args=(event, sw_mac, hosts, topology))
+        event = myEvent(topology)
+        gui_th = Thread(target=ControllerGui, args=(event, sw_mac, hosts, topology))
         gui_th.setDaemon(True)
         event.set()
 
-        # stop_th = threading.Thread(target=stop_controller, args=(event,))
+        reg_th = Thread(target=read_all_reg, args=(event, bmv2_file_path,len(sw_mac)))
+        reg_th.start()
+        # stop_th = Thread(target=stop_controller, args=(event,))
         # stop_th.start()
         gui_th.start()
 

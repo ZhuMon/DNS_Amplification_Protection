@@ -197,7 +197,7 @@ control MyIngress(inout headers hdr,
                   ) {
 
     register<bit<32>>(NUM) reg_ingress;
-    register<bit<32>>(1) r_reg; // record # of DNS response 
+    register<bit<32>>(511) r_reg; // record # of DNS response 
     register<bit<32>>(1) f_reg; // flag to determine if do project
     //meter(10, MeterType.packets) my_meter;
     meter(MAX_NUM, MeterType.bytes) ingress_meter_stats;
@@ -230,8 +230,8 @@ control MyIngress(inout headers hdr,
 
     action record_response(){
         bit<32> tmp;
-        r_reg.read(tmp, 0);
-        r_reg.write(0, tmp+1);
+        r_reg.read(tmp, (bit<32>)standard_metadata.ingress_port);
+        r_reg.write((bit<32>)standard_metadata.ingress_port, tmp+1);
     }
     
     table dns_response_record {
