@@ -67,6 +67,10 @@ class SwitchConnection(object):
         if dry_run:
             print "P4Runtime MasterArbitrationUpdate: ", request
         else:
+            if self.stream_msg_resp._state.details == "Deadline Exceeded":
+                self.shutdown()
+                self.requests_stream = IterableQueue()
+                self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=2)
             self.requests_stream.put(request)
             for item in self.stream_msg_resp:
                 return item # just one
@@ -85,6 +89,9 @@ class SwitchConnection(object):
     def RecvLLDP(self, dry_run=False, **kwargs):
         # print "wait for packet in..."
 
+        # if self.stream_msg_resp.status == grpc.StatusCode.DEADLINE_EXCEED:
+            # self.stream_msg_resp.cancel()
+            # self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=2)
         for item in self.stream_msg_resp:
             return item
 
@@ -117,7 +124,14 @@ class SwitchConnection(object):
         if dry_run:
             print "P4Runtime Write:", request
         else:
-            self.client_stub.Write(request)
+            try:
+                self.client_stub.Write(request)
+            except Exception, e:
+                if self.stream_msg_resp._state.details == "Deadline Exceeded":
+                    self.stream_msg_resp.cancel()
+                    self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=2)
+
+                self.client_stub.Write(request)
 
     def ReadTableEntries(self, table_id=None, dry_run=False):
         request = p4runtime_pb2.ReadRequest()

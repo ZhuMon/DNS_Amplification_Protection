@@ -342,12 +342,12 @@ def find_path():
         p1 = links.values()[0]
         p2 = links.values()[1]
         if sw_links.has_key(m1) is False and m1[0] == 's':
-            sw_links[m1] = [p2,m2]
+            sw_links[m1] = [[p2,m2]]
         elif m1[0] == 's':
             sw_links[m1].append([p2, m2])
 
         if sw_links.has_key(m2) is False and m2[0] == 's':
-            sw_links[m2] = [p1,m1]
+            sw_links[m2] = [[p1,m1]]
         elif m2[0] == 's':
             sw_links[m2].append([p1, m1])
 
@@ -413,6 +413,9 @@ def main(p4info_file_path, bmv2_file_path):
                 recvPacketIn(sw[j])
         
         print len(topology)
+
+        for i in range(0, len(sw)):
+            sw[i].MasterArbitrationUpdate()
 
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
         writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
