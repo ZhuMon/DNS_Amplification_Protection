@@ -48,6 +48,8 @@ class myEvent(_Event):
 
     def getPktNum(self, mac1, mac2):
         edgeID = self.findEdge(mac1, mac2)
+        if self.pkt_num.has_key(edgeID) is False:
+            self.pkt_num[edgeID] = 0
         return self.pkt_num[edgeID]
 
     def putPktNum(self, num, mac1, mac2):

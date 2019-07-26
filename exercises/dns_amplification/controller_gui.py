@@ -1,17 +1,21 @@
+import threading
+import random
+from time import sleep
+from math import sqrt
+
 from Tkinter import *
 import ttk
 from PIL import Image, ImageTk
-from math import sqrt
+
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-import threading
+
 from event import myEvent
-import random
 
 g_height = 1000
 g_width = 700
-rpktThreshold = 20000
+rpktThreshold = 0
 
 
 class ControllerGui():
@@ -72,7 +76,8 @@ class ControllerGui():
         self.cv.pack()
         self.cv.bind('<Motion>' , self.move_handler)
 
-        self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn)
+        self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv))
+        self.edgeWarn_th.setDaemon(True)
         self.edgeWarn_th.start()
 
         self.root.mainloop()
@@ -154,14 +159,19 @@ class ControllerGui():
         else:
             return sqrt(num) * sqrt(2)
 
-    def edge_traffic_warn(self):
+    def edge_traffic_warn(self, event, topology, cv):
         """ detect which edge is busy, warn user via color changing """
-        for no, link in sorted(self.topology.items()):
-            mac1 = link.keys()[0]
-            mac2 = link.keys()[1]
-            pktNum = self.event.getPktNum(mac1, mac2)
-            if pktNum > rpktThreshold:
-                self.cv.itemconfig(self.event.getObjID(mac1, mac2), width=pktNum, fill="red")
+        while event.is_set() is True:
+            for no, link in sorted(topology.items()):
+                mac1 = link.keys()[0]
+                mac2 = link.keys()[1]
+                pktNum = event.getPktNum(mac1, mac2)
+                if pktNum > rpktThreshold:
+                    cv.itemconfig(event.getObjID(mac1, mac2), width=pktNum, fill="red")
+            for i in range(0, 10):
+                if event.is_set() is False:
+                    break
+                sleep(1)
 
     def dbClick(self, event):
         """ double click one row """
