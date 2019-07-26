@@ -7,7 +7,20 @@ class myEvent(_Event):
         self.objID = {} # store the tkinter ID of edges {1:13241232, ...}
         self.pkt_num = {} # store 10s # of pkts on every edges {1: 24}
         self.all_pkt_num = {} # store all # of pkts on every edges {1: 134}
-        self.port = {} # how many port does every switch have {1:
+        # self.port = {} # how many port does every switch have {1:2, 2:3}
+        self.edge_update_flag = {} # record the edge whether updated {1:True,2:False}
+        # init
+        self.cleanFlag()
+
+
+    def cleanFlag(self):
+        for no, link in self.topology.items():
+            self.edge_update_flag[no] = False
+
+    def isUpdated(self, mac1, mac2, no=None):
+        if no == None:
+            no = self.findEdge(mac1, mac2)
+        return self.edge_update_flag[no]
 
     def findEdge(self, mac1, mac2):
         """ return the index in topology """
@@ -45,3 +58,4 @@ class myEvent(_Event):
             self.pkt_num[edgeID] = num
 
         self.all_pkt_num[edgeID] = num
+        self.edge_update_flag[edgeID] = True

@@ -6,7 +6,7 @@ import sys
 from time import sleep
 import signal
 import json
-from threading import Thread, _Event
+from threading import Thread
 
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
@@ -32,7 +32,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from controller_gui import ControllerGui
-
+from event import myEvent
 
 SWITCH_TO_HOST_PORT = 1
 SWITCH_TO_SWITCH_PORT = 2
@@ -43,51 +43,6 @@ mac_portNum = {}
 sw_mac = {}
 hosts = {}
 
-class myEvent(_Event):
-    def __init__(self, topology):
-        super(myEvent, self).__init__()
-        self.topology = topology
-        self.objID = {} # store the tkinter ID of edges {1:13241232, ...}
-        self.pkt_num = {} # store 10s # of pkts on every edges {1: 24}
-        self.all_pkt_num = {} # store all # of pkts on every edges {1: 134}
-        self.port = {} # how many port does every switch have {1:
-
-    def findEdge(self, mac1, mac2):
-        """ return the index in topology """
-        for no, link in self.topology.items():
-            m1 = link.keys()[0]
-            m2 = link.keys()[1]
-            if m1 == mac1 and m2 == mac2:
-                return no
-            elif m1 == mac2 and m2 == mac1:
-                return no
-
-    def putObjID(self, objID, mac1=None, mac2=None, edgeID=None):
-        if edgeID == None and mac1 != None and mac2 != None:
-            edgeID = self.findEdge(mac1, mac2)
-        elif mac1 == None or mac2 == None:
-            print "putObjID error"
-
-        self.objID[edgeID] = objID
-
-    def getObjID(self, mac1, mac2, edgeID=None):
-        if edgeID == None:
-            edgeID = self.findEdge(mac1, mac2)
-        
-        return self.objID[edgeID]
-
-    def getPktNum(self, mac1, mac2):
-        edgeID = self.findEdge(mac1, mac2)
-        return self.pkt_num[edgeID]
-
-    def putPktNum(self, num, mac1, mac2):
-        edgeID = self.findEdge(mac1, mac2)
-        if self.all_pkt_num.has_key(edgeID):
-            self.pkt_num[edgeID] = num - self.all_pkt_num[edgeID]
-        else:
-            self.pkt_num[edgeID] = num
-
-        self.all_pkt_num[edgeID] = num
         
         
 def GePacketOut(egress_port, mcast, padding):
@@ -316,43 +271,95 @@ def read_all_reg(event, bmv2_file_path, sw_num):
         runtimeAPI = connectThrift(9089+int(sw[1:]),bmv2_file_path)
         API[sw] = runtimeAPI
 
+    # print mac_portNum
     while event.is_set():
+        event.cleanFlag()
         for mac, portNum in mac_portNum.items():
             if mac2name(mac)[0] == 'h':
                 continue
-            for port in range(0, int(portNum)):
+            for port in range(1, int(portNum)+1):
                 sw = mac2name(mac)
 
                 mac2 = find_the_other_mac(mac, port)
 
                 num = read_register(API[sw], "r_reg", port)
-                event.putPktNum(num, mac, mac2)
+                
+                if event.isUpdated(mac, mac2) is False:
+                    event.putPktNum(num, mac, mac2)
+                    n = event.getPktNum(mac, mac2)
+                    if n > 0:
+                        print mac, "<->", mac2, ":", n
 
+                # if num > 0:
+                    # print mac, "<->", mac2, ":", num
+                
+        print "---------------------"
         for i in range(0, 10):
             if event.is_set() is False:
                 break
             sleep(1)
 
-def find_path():
-    """ find all path of node to the other node """
-    sw_links = {}
+def find_path(p4info_helper, sw, host_ip):
+    """ find all path of node to the other node 
+        and write rule on switches
+    """
+    sw_links = {} # { s1: [[1,h1],[2,h5]], s2:...}
     for no, links in topology.items():
         m1 = mac2name(links.keys()[0])
         m2 = mac2name(links.keys()[1])
         p1 = links.values()[0]
         p2 = links.values()[1]
         if sw_links.has_key(m1) is False and m1[0] == 's':
-            sw_links[m1] = [[p2,m2]]
+            sw_links[m1] = [[p1,m2]]
         elif m1[0] == 's':
-            sw_links[m1].append([p2, m2])
+            sw_links[m1].append([p1, m2])
 
         if sw_links.has_key(m2) is False and m2[0] == 's':
-            sw_links[m2] = [[p1,m1]]
+            sw_links[m2] = [[p2,m1]]
         elif m2[0] == 's':
-            sw_links[m2].append([p1, m1])
+            sw_links[m2].append([p2, m1])
 
-    print sw_links
+    # print sw_links
+    path = {} # {s1: { h1: [1,2,4,2,1], h2: [...]}, s2:...}
+    for s, s_mac in sw_mac.items():
+        s = s.encode('utf-8')
+        path[s] = {}
+        for h, h_mac in hosts.items():
+            h = h.encode('utf-8')
+            h_mac = h_mac.encode('utf-8')
+            path[s][h] = [] # [1, 2, 10, 2, 1]
+            stack = [s]      # [s2, s4...]
+            stack, path[s][h] = recursive(sw_links, s, h, stack, path[s][h])
+            # print path[s][h] 
+            dst_eth_addr = find_the_other_mac(s_mac, path[s][h][0]).encode('utf-8')
+            writeIPRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], dst_eth_addr= dst_eth_addr, dst_ip=host_ip[h].encode('utf-8'), mask=32, port=path[s][h][0])
+            # print s, "->", h_mac, dst_eth_addr, path[s][h][0]
+        writeRecordRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], qr_code=1)
+    # print path
+def recursive(sw_links, src, dst, stack, path):
+    if src[0] == 'h':
+        return stack, path
+    
+    if stack != [] and stack[len(stack)-1] == dst:
+        return stack, path
 
+    for link in sw_links[src]:
+        if link[1] == dst:
+            path.append(link[0])
+            stack.append(link[1])
+            break
+        if link[1] not in stack and link[1][0] != 'h':
+            stack.append(link[1])
+            path_tmp = list(path)
+            path.append(link[0])
+            stack, path = recursive(sw_links, link[1], dst, stack, path)
+            if stack[len(stack)-1] == dst:
+                break
+            else:
+                path = path_tmp
+    
+    return stack, path
+        
 def main(p4info_file_path, bmv2_file_path):
     """
         main function
@@ -391,7 +398,7 @@ def main(p4info_file_path, bmv2_file_path):
         
         
         
-
+        host_ip = {}
         with open("host.json", "r") as host_file:
             host_inf = json.load(host_file)
             for s, sw_inf in host_inf.items():
@@ -399,6 +406,7 @@ def main(p4info_file_path, bmv2_file_path):
                     recordLink({"srcAddr":sw_mac[s], "sport":int(port),
                                  "dstAddr":p_inf["mac"], "dport":1})
                     hosts[p_inf["name"]] = p_inf["mac"]
+                    host_ip[p_inf["name"]] = p_inf["ip"]
 
         for s, mac in sw_mac.items():
             writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
@@ -417,21 +425,20 @@ def main(p4info_file_path, bmv2_file_path):
         for i in range(0, len(sw)):
             sw[i].MasterArbitrationUpdate()
 
-        writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
-        writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
-        writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:00:02:02", dst_ip="10.0.2.2", mask=32, port=1)
-        writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
-        writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:00:03:03", dst_ip="10.0.3.3", mask=32, port=1)
-        writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:01:03:00", dst_ip="10.0.1.1", mask=32, port=2)
-        writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:02:03:00", dst_ip="10.0.2.2", mask=32, port=3)
+        # writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
+        # writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
+        # writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:00:02:02", dst_ip="10.0.2.2", mask=32, port=1)
+        # writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
+        # writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:00:03:03", dst_ip="10.0.3.3", mask=32, port=1)
+        # writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:01:03:00", dst_ip="10.0.1.1", mask=32, port=2)
+        # writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:02:03:00", dst_ip="10.0.2.2", mask=32, port=3)
 
-        writeRecordRules(p4info_helper, ingress_sw=sw[0], qr_code=1)
 
         writeHash1Rule(p4info_helper, ingress_sw=sw[0])
 
-        find_path()
+        find_path(p4info_helper, sw, host_ip)
         record_switch_port()
-        print len(topology)
+        # print len(topology)
             
         event = myEvent(topology)
         gui_th = Thread(target=ControllerGui, args=(event, sw_mac, hosts, topology))
@@ -449,54 +456,55 @@ def main(p4info_file_path, bmv2_file_path):
 
         # connect to thrift
         # set s1 to gateway switch
-        runtimeAPI = connectThrift(9090,bmv2_file_path)
+        # runtimeAPI = connectThrift(9090,bmv2_file_path)
 
         # set meter
         # runtimeAPI.do_meter_array_set_rates("meter_array_set_rates ingress_meter_stats 0.00000128:9000 0.00000128:9000")
-        meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
-        new_rates = []
-        new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-        new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-        runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
+        # meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
+        # new_rates = []
+        # new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+        # new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+        # runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 
-
-        m = 0
-        total_res_num = 0
         while event.is_set() is True:
+            None
+        # m = 0
+        # total_res_num = 0
+        # while event.is_set() is True:
 
-            print "------------"
-            print m," minute"
-            now_res_num = read_register(runtimeAPI, "r_reg", 0)
-            res_num = now_res_num - total_res_num
-            total_res_num = now_res_num
+            # print "------------"
+            # print m," minute"
+            # now_res_num = read_register(runtimeAPI, "r_reg", 0)
+            # res_num = now_res_num - total_res_num
+            # total_res_num = now_res_num
 
-            flag = read_register(runtimeAPI, "f_reg", 0)
-            print "res_num: ", res_num
-            print "flag: ", flag
-            if res_num >= 10:
-                if flag >= 5:
-                    write_register(runtimeAPI, "f_reg", 0, flag+1)
-                else:
-                    write_register(runtimeAPI, "f_reg", 0, 5)
-            elif res_num < 10 and flag > 0:
-                write_register(runtimeAPI, "f_reg", 0, flag-1)
+            # flag = read_register(runtimeAPI, "f_reg", 0)
+            # print "res_num: ", res_num
+            # print "flag: ", flag
+            # if res_num >= 10:
+                # if flag >= 5:
+                    # write_register(runtimeAPI, "f_reg", 0, flag+1)
+                # else:
+                    # write_register(runtimeAPI, "f_reg", 0, 5)
+            # elif res_num < 10 and flag > 0:
+                # write_register(runtimeAPI, "f_reg", 0, flag-1)
 
-            if flag > 0:
-                print "Mode on..."
-                for i in range(0, 65536):
-                    t_id = read_register(runtimeAPI, "reg_ingress", i)
-                    if t_id > 0:
-                        write_register(runtimeAPI, "reg_ingress", i, t_id-1)
-                        print "reg[",i,"] = ",t_id-1
+            # if flag > 0:
+                # print "Mode on..."
+                # for i in range(0, 65536):
+                    # t_id = read_register(runtimeAPI, "reg_ingress", i)
+                    # if t_id > 0:
+                        # write_register(runtimeAPI, "reg_ingress", i, t_id-1)
+                        # print "reg[",i,"] = ",t_id-1
 
-            # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
-            # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
-            m += 1
-            for i in range(0, 30):
-                if event.is_set() is False:
-                    break
-                sleep(1)
+            # # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
+            # # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
+            # m += 1
+            # for i in range(0, 30):
+                # if event.is_set() is False:
+                    # break
+                # sleep(1)
 
 
     except KeyboardInterrupt:

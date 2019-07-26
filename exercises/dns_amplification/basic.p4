@@ -232,6 +232,8 @@ control MyIngress(inout headers hdr,
         bit<32> tmp;
         r_reg.read(tmp, (bit<32>)standard_metadata.ingress_port);
         r_reg.write((bit<32>)standard_metadata.ingress_port, tmp+1);
+        r_reg.read(tmp, (bit<32>)standard_metadata.egress_spec);
+        r_reg.write((bit<32>)standard_metadata.egress_spec, tmp+1);
     }
     
     table dns_response_record {
@@ -343,9 +345,6 @@ control MyIngress(inout headers hdr,
 
         if (hdr.ipv4.isValid()) {
             if (hdr.dns.isValid()){ 
-                if(hdr.dns.qr == 1){
-                    dns_response_record.apply();
-                }
 
                 f_reg.read(flag, 0);
                 if (flag > 0){
@@ -376,6 +375,10 @@ control MyIngress(inout headers hdr,
                     }
                 } else {
                     ipv4_lpm.apply();
+                }
+
+                if(hdr.dns.qr == 1){
+                    dns_response_record.apply();
                 }
             } else {
                 /*ipv4_lpm.apply();*/
