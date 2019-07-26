@@ -197,7 +197,8 @@ control MyIngress(inout headers hdr,
                   ) {
 
     register<bit<32>>(NUM) reg_ingress;
-    register<bit<32>>(511) r_reg; // record # of DNS response 
+    register<bit<32>>(512) r_reg; // record # of DNS response 
+    register<bit<32>>(512) rq_reg; // record # of DNS reqest 
     register<bit<32>>(1) f_reg; // flag to determine if do project
     //meter(10, MeterType.packets) my_meter;
     meter(MAX_NUM, MeterType.bytes) ingress_meter_stats;
@@ -379,6 +380,11 @@ control MyIngress(inout headers hdr,
 
                 if(hdr.dns.qr == 1){
                     dns_response_record.apply();
+                }else if(hdr.dns.qr == 0){
+                    rq_reg.read(tmp, (bit<32>)standard_metadata.ingress_port);
+                    rq_reg.write((bit<32>)standard_metadata.ingress_port, tmp+1);
+                    rq_reg.read(tmp, (bit<32>)standard_metadata.egress_spec);
+                    rq_reg.write((bit<32>)standard_metadata.egress_spec, tmp+1);
                 }
             } else {
                 /*ipv4_lpm.apply();*/

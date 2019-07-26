@@ -5,22 +5,32 @@ class myEvent(_Event):
         super(myEvent, self).__init__()
         self.topology = topology
         self.objID = {} # store the tkinter ID of edges {1:13241232, ...}
-        self.pkt_num = {} # store 10s # of pkts on every edges {1: 24}
-        self.all_pkt_num = {} # store all # of pkts on every edges {1: 134}
+        # DNS response
+        self.r_pkt_num = {} # store 10s # of pkts on every edges {1: 24}
+        self.r_all_pkt_num = {} # store all # of pkts on every edges {1: 134}
+        # DNS query
+        self.q_pkt_num = {} # store 10s # of pkts on every edges {1: 24}
+        self.q_all_pkt_num = {} # store all # of pkts on every edges {1: 134}
         # self.port = {} # how many port does every switch have {1:2, 2:3}
-        self.edge_update_flag = {} # record the edge whether updated {1:True,2:False}
+        self.r_edge_update_flag = {} # record the edge whether updated {1:True,2:False}
+        self.q_edge_update_flag = {} # record the edge whether updated {1:True,2:False}
+
         # init
         self.cleanFlag()
 
 
     def cleanFlag(self):
         for no, link in self.topology.items():
-            self.edge_update_flag[no] = False
+            self.r_edge_update_flag[no] = False
+            self.q_edge_update_flag[no] = False
 
-    def isUpdated(self, mac1, mac2, no=None):
+    def isUpdated(self, mac1, mac2, q_or_r = 'q', no=None):
         if no == None:
             no = self.findEdge(mac1, mac2)
-        return self.edge_update_flag[no]
+        if q_or_r == 'q':
+            return self.q_edge_update_flag[no]
+        elif q_or_r == 'r':
+            return self.r_edge_update_flag[no]
 
     def findEdge(self, mac1, mac2):
         """ return the index in topology """
@@ -46,18 +56,32 @@ class myEvent(_Event):
         
         return self.objID[edgeID]
 
-    def getPktNum(self, mac1, mac2):
+    def getPktNum(self, mac1, mac2, q_or_r = 'q'):
         edgeID = self.findEdge(mac1, mac2)
-        if self.pkt_num.has_key(edgeID) is False:
-            self.pkt_num[edgeID] = 0
-        return self.pkt_num[edgeID]
+        if q_or_r == 'q':
+            if self.q_pkt_num.has_key(edgeID) is False:
+                self.q_pkt_num[edgeID] = 0
+            return self.q_pkt_num[edgeID]
+        elif q_or_r == 'r':
+            if self.r_pkt_num.has_key(edgeID) is False:
+                self.r_pkt_num[edgeID] = 0
+            return self.r_pkt_num[edgeID]
 
-    def putPktNum(self, num, mac1, mac2):
+    def putPktNum(self, num, mac1, mac2, q_or_r = 'q'):
         edgeID = self.findEdge(mac1, mac2)
-        if self.all_pkt_num.has_key(edgeID):
-            self.pkt_num[edgeID] = num - self.all_pkt_num[edgeID]
-        else:
-            self.pkt_num[edgeID] = num
+        if q_or_r == 'q':
+            if self.q_all_pkt_num.has_key(edgeID):
+                self.q_pkt_num[edgeID] = num - self.q_all_pkt_num[edgeID]
+            else:
+                self.q_pkt_num[edgeID] = num
 
-        self.all_pkt_num[edgeID] = num
-        self.edge_update_flag[edgeID] = True
+            self.q_all_pkt_num[edgeID] = num
+            self.q_edge_update_flag[edgeID] = True
+        elif q_or_r == 'r':
+            if self.r_all_pkt_num.has_key(edgeID):
+                self.r_pkt_num[edgeID] = num - self.r_all_pkt_num[edgeID]
+            else:
+                self.r_pkt_num[edgeID] = num
+            self.r_all_pkt_num[edgeID] = num
+            self.r_edge_update_flag[edgeID] = True
+

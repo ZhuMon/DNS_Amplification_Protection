@@ -282,13 +282,19 @@ def read_all_reg(event, bmv2_file_path, sw_num):
 
                 mac2 = find_the_other_mac(mac, port)
 
-                num = read_register(API[sw], "r_reg", port)
+                r_num = read_register(API[sw], "r_reg", port)
+                q_num = read_register(API[sw], "rq_reg", port)
                 
-                if event.isUpdated(mac, mac2) is False:
-                    event.putPktNum(num, mac, mac2)
-                    n = event.getPktNum(mac, mac2)
+                if event.isUpdated(mac, mac2, 'q') is False:
+                    event.putPktNum(q_num, mac, mac2, 'q')
+                    n = event.getPktNum(mac, mac2, 'q')
                     if n > 0:
-                        print mac, "<->", mac2, ":", n
+                        print sw, "<->", mac2name(mac2), "query:", n
+                if event.isUpdated(mac, mac2, 'r') is False:
+                    event.putPktNum(r_num, mac, mac2, 'r')
+                    n = event.getPktNum(mac, mac2, 'r')
+                    if n > 0:
+                        print sw, "<->", mac2name(mac2), "response:", n
 
                 # if num > 0:
                     # print mac, "<->", mac2, ":", num
