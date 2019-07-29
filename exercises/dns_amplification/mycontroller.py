@@ -498,15 +498,15 @@ def main(p4info_file_path, bmv2_file_path):
 
         # connect to thrift
         # set s4 to gateway switch
-        # runtimeAPI = connectThrift(9093,bmv2_file_path)
+        runtimeAPI = connectThrift(9093,bmv2_file_path)
 
         # set meter
-        # runtimeAPI.do_meter_array_set_rates("meter_array_set_rates ingress_meter_stats 0.00000128:9000 0.00000128:9000")
-        # meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
-        # new_rates = []
-        # new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-        # new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-        # runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
+        runtimeAPI.do_meter_array_set_rates("meter_array_set_rates MyIngress.ingress_meter_stats 0.00000128:9000 0.00000128:9000")
+        meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
+        new_rates = []
+        new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+        new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+        runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 
             
@@ -530,43 +530,40 @@ def main(p4info_file_path, bmv2_file_path):
             # if content != None and content.WhichOneof('update')=='packet':
                 # packet = content.packet.payload
             #     pkt = Ether(_pkt=packet)
-        # m = 0
-        # total_res_num = 0
+        m = 0
         while event.is_set() is True:
-            None
+            # None
 
-            # print "------------"
-            # print m," minute"
-            # now_res_num = read_register(runtimeAPI, "r_reg", 0)
-            # res_num = now_res_num - total_res_num
-            # total_res_num = now_res_num
+            print "------------"
+            print m," minute"
+            res_num = event.getPktNum(sw_mac["s4"], None, 'r')
 
-            # flag = read_register(runtimeAPI, "f_reg", 0)
-            # print "res_num: ", res_num
-            # print "flag: ", flag
-            # if res_num >= 10:
-                # if flag >= 5:
-                    # write_register(runtimeAPI, "f_reg", 0, flag+1)
-                # else:
-                    # write_register(runtimeAPI, "f_reg", 0, 5)
-            # elif res_num < 10 and flag > 0:
-                # write_register(runtimeAPI, "f_reg", 0, flag-1)
+            flag = read_register(runtimeAPI, "f_reg", 0)
+            print "res_num: ", res_num
+            print "flag: ", flag
+            if res_num >= 10:
+                if flag >= 5:
+                    write_register(runtimeAPI, "f_reg", 0, flag+1)
+                else:
+                    write_register(runtimeAPI, "f_reg", 0, 5)
+            elif res_num < 10 and flag > 0:
+                write_register(runtimeAPI, "f_reg", 0, flag-1)
 
-            # if flag > 0:
-                # print "Mode on..."
-                # for i in range(0, 65536):
-                    # t_id = read_register(runtimeAPI, "reg_ingress", i)
-                    # if t_id > 0:
-                        # write_register(runtimeAPI, "reg_ingress", i, t_id-1)
-                        # print "reg[",i,"] = ",t_id-1
+            if flag > 0:
+                print "Mode on..."
+                for i in range(0, 65536):
+                    t_id = read_register(runtimeAPI, "reg_ingress", i)
+                    if t_id > 0:
+                        write_register(runtimeAPI, "reg_ingress", i, t_id-1)
+                        print "reg[",i,"] = ",t_id-1
 
-            # # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
-            # # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
-            # m += 1
-            # for i in range(0, 10):
-                # if event.is_set() is False:
-                    # break
-            #     sleep(1)
+            # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
+            # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
+            m += 1
+            for i in range(0, 10):
+                if event.is_set() is False:
+                    break
+                sleep(1)
 
 
     except KeyboardInterrupt:

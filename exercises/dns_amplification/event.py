@@ -97,15 +97,35 @@ class myEvent(_Event):
         return self.objID[edgeID]
 
     def getPktNum(self, mac1, mac2, q_or_r = 'q'):
-        edgeID = self.findEdge(mac1, mac2)
-        if q_or_r == 'q':
-            if self.q_pkt_num.has_key(edgeID) is False:
-                self.q_pkt_num[edgeID] = 0
-            return self.q_pkt_num[edgeID]
-        elif q_or_r == 'r':
-            if self.r_pkt_num.has_key(edgeID) is False:
-                self.r_pkt_num[edgeID] = 0
-            return self.r_pkt_num[edgeID]
+        if mac2 == None:
+            edgeID = []
+            for no, link in self.topology.items():
+                if mac1 in link.keys():
+                    edgeID.append(no)
+            
+            num = 0
+            if q_or_r == 'q':
+                for no in edgeID:
+                    if self.q_pkt_num.has_key(no) is False:
+                        self.q_pkt_num[no] = 0
+                    num += self.q_pkt_num[no]
+            elif q_or_r == 'r':
+                for no in edgeID:
+                    if self.r_pkt_num.has_key(no) is False:
+                        self.r_pkt_num[no] = 0
+                    num += self.r_pkt_num[no]
+            return num
+
+        else:
+            edgeID = self.findEdge(mac1, mac2)
+            if q_or_r == 'q':
+                if self.q_pkt_num.has_key(edgeID) is False:
+                    self.q_pkt_num[edgeID] = 0
+                return self.q_pkt_num[edgeID]
+            elif q_or_r == 'r':
+                if self.r_pkt_num.has_key(edgeID) is False:
+                    self.r_pkt_num[edgeID] = 0
+                return self.r_pkt_num[edgeID]
 
     def putPktNum(self, num, mac1, mac2, q_or_r = 'q'):
         edgeID = self.findEdge(mac1, mac2)

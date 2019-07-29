@@ -361,7 +361,7 @@ control MyIngress(inout headers hdr,
                         ipv4_lpm.apply();
                     } else { //dns is response
                         /*dns_request_hash_lpm.apply()*/
-                        ingress_meter_stats.execute_meter<MeterColor>((bit<32>) standard_metadata.ingress_port, ingress_meter_output);
+                        ingress_meter_stats.execute_meter<MeterColor>(0, ingress_meter_output);
                         index = (hdr.ipv4.dstAddr << 24) >> 24;
                         index = index % 64;
                         index = index << 10;
