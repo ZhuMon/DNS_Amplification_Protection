@@ -27,6 +27,10 @@ class myEvent(_Event):
         for no, link in self.topology.items():
             self.r_edge_update_flag[no] = False
             self.q_edge_update_flag[no] = False
+    
+    def cleanObjID(self):
+        self.objID = {}
+
 
     def recordName(self, hosts, switches):
         for h, h_mac in hosts.items():

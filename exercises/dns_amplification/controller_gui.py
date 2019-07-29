@@ -111,6 +111,7 @@ class ControllerGui():
         self.ge_network()
 
         self.cv.delete("all")
+        self.event.cleanObjID()
         self.create_node()
         #for no, link in sorted(self.topology.items()):
         #    mac1 = link.keys()[0]
