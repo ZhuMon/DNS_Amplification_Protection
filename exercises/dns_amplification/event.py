@@ -41,16 +41,17 @@ class myEvent(_Event):
             s_mac = s_mac.encode('utf-8')
             if s == "s4":
                 s = "gateway_switch"
-            
+            elif s == "s5":
+                s = "router"
             self.node_name[s_mac] = s
 
     def mac2name(self, mac):
-        for m, name in node_name.items():
+        for m, name in self.node_name.items():
             if m == mac:
                 return name
 
     def getQR(self, mac1, mac2, order=1):
-        edgeID = findEdge(mac1, mac2)
+        edgeID = self.findEdge(mac1, mac2)
         qr = self.direction[edgeID]
         if order == 1:
             return qr[mac1]
