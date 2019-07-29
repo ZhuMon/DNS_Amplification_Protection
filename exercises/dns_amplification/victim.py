@@ -64,7 +64,7 @@ def main():
                 count = 1,
                 timeout = 5)
 
-        time.sleep(int(a))
+        time.sleep(float(a))
         
         #print "sniffing on %s" % iface
 	

