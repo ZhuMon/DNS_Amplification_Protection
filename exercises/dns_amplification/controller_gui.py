@@ -15,6 +15,7 @@ from event import myEvent
 
 g_height = 1000
 g_width = 700
+qpktThreshold = 10
 rpktThreshold = 0
 
 
@@ -135,7 +136,10 @@ class ControllerGui():
         self.linkID = []
 
         for link in self.links:
-            No = self.cv.create_line(self.nodes[link[0]][0]+self.node_size/2, self.nodes[link[0]][1]+self.node_size/2, self.nodes[link[1]][0]+self.node_size/2, self.nodes[link[1]][1]+self.node_size/2)
+            No = self.cv.create_line(self.nodes[link[0]][0]+self.node_size/2, self.nodes[link[0]][1]+self.node_size/2, (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2, fill="green")
+            self.linkID.append(No)
+            self.event.putObjID(No, link[0], link[1])
+            No = self.cv.create_line((self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2, self.nodes[link[1]][0]+self.node_size/2, self.nodes[link[1]][1]+self.node_size/2, fill="blue")
             self.linkID.append(No)
             self.event.putObjID(No, link[0], link[1])
 
@@ -165,9 +169,14 @@ class ControllerGui():
             for no, link in sorted(topology.items()):
                 mac1 = link.keys()[0]
                 mac2 = link.keys()[1]
-                pktNum = event.getPktNum(mac1, mac2)
-                if pktNum > rpktThreshold:
-                    cv.itemconfig(event.getObjID(mac1, mac2), width=pktNum, fill="red")
+                pktNum_q = event.getPktNum(mac1, mac2, 'q')
+                pktNum_r = event.getPktNum(mac1, mac2, 'r')
+                cv.itemconfig(event.getObjID(mac1, mac2)[0], width=pktNum_q)
+                cv.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
+                if pktNum_q > qpktThreshold:
+                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill="yellow")
+                if pktNum_r > rpktThreshold:
+                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill="red")
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
