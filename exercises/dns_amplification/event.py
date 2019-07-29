@@ -48,7 +48,9 @@ class myEvent(_Event):
         elif mac1 == None or mac2 == None:
             print "putObjID error"
 
-        self.objID[edgeID] = objID
+        if self.objID.has_key(edgeID) == False:
+            self.objID[edgeID] = []
+        self.objID[edgeID].append(objID)
 
     def getObjID(self, mac1, mac2, edgeID=None):
         if edgeID == None:
