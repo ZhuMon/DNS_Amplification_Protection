@@ -75,7 +75,7 @@ class SwitchConnection(object):
             for item in self.stream_msg_resp:
                 return item # just one
 
-    def SendLLDP(self, packet, dry_run=False, **kwargs):
+    def SendPktOut(self, packet, dry_run=False, **kwargs):
         request = p4runtime_pb2.StreamMessageRequest()
         request.packet.CopyFrom(packet)
         # print "send a packet to switch..."
@@ -83,15 +83,21 @@ class SwitchConnection(object):
         if dry_run:
             print "P4 Runtime WritePacketOut: ", request
         else:
+            if self.stream_msg_resp._state.details == "Deadline Exceeded":
+                self.stream_msg_resp.cancel()
+                self.requests_stream = IterableQueue()
+                self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=4)
             self.requests_stream.put(request)
     
 
-    def RecvLLDP(self, dry_run=False, **kwargs):
-        # print "wait for packet in..."
+    def RecvPktIn(self, tp = True, dry_run=False, **kwargs):
+        # request = p4runtime_pb2.StreamMessageRequest()
 
-        # if self.stream_msg_resp.status == grpc.StatusCode.DEADLINE_EXCEED:
-            # self.stream_msg_resp.cancel()
-            # self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=2)
+        # if tp == False:
+            # if self.stream_msg_resp._state.details == "Deadline Exceeded":
+                # self.stream_msg_resp.cancel()
+                # self.requests_stream = IterableQueue()
+         #        self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream), timeout=2)
         for item in self.stream_msg_resp:
             return item
 

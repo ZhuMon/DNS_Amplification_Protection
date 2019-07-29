@@ -3,6 +3,7 @@ import argparse
 import grpc
 import os
 import sys
+import time
 from time import sleep
 import signal
 import json
@@ -39,9 +40,11 @@ SWITCH_TO_SWITCH_PORT = 2
 
 topology = {}
 link_num = 0
-mac_portNum = {}
-sw_mac = {}
-hosts = {}
+mac_portNum = {} # {mac: 2, mac1: 3}
+sw_mac = {}      # {s1: mac, ...} 
+hosts = {}       # {h1: mac, ...}
+sw_links = {}    # {s1: [[1,h1],[2,h5]], s2:...}
+direction = {}   # {1: {mac1: 'q', mac2: 'r'}, 2: ...}
 
         
         
@@ -102,15 +105,15 @@ def recordLink(p):
         topology[str(link_num)] = link
         link_num += 1
         
-def sendPacketOut(p4info_helper, sw, port, mcast):
-    packet = GePacketOut(port, mcast, 0) #padding must be 0
+def sendPacketOut(p4info_helper, sw, port, mcast, padding):
+    packet = GePacketOut(port, mcast, padding) #padding must be 0
     packet_out = p4info_helper.buildPacketOut(payload = str(packet))
     # print packet_out
-    sw.SendLLDP(packet_out)
+    sw.SendPktOut(packet_out)
 
 def recvPacketIn(sw):
     try:
-        content = sw.RecvLLDP()
+        content = sw.RecvPktIn()
         if content != None and content.WhichOneof('update')=='packet':
             packet = content.packet.payload
             # print content
@@ -120,6 +123,7 @@ def recvPacketIn(sw):
             recordLink(p)
     except Exception, e:
         None
+
 
 def writeIPRules(p4info_helper, ingress_sw, dst_eth_addr, dst_ip, mask, port):
     table_entry = p4info_helper.buildTableEntry(
@@ -167,16 +171,29 @@ def writePInRule(p4info_helper, ingress_sw, etherType, sw_addr):
     ingress_sw.WriteTableEntry(table_entry)
     
 def writePOutRule(p4info_helper, ingress_sw, padding, sw_addr):
-    table_entry = p4info_helper.buildTableEntry(
-        table_name = "MyIngress.pkt_out_table",
-        match_fields = {
-            "hdr.packet_out.padding": padding
-        },
-        action_name = "MyIngress.lldp_forward",
-        action_params={
-            "swAddr": sw_addr
-        })
-    ingress_sw.WriteTableEntry(table_entry)
+    if padding == 0:
+        table_entry = p4info_helper.buildTableEntry(
+            table_name = "MyIngress.pkt_out_table",
+            match_fields = {
+                "hdr.packet_out.padding": padding
+            },
+            action_name = "MyIngress.lldp_forward",
+            action_params={
+                "swAddr": sw_addr
+            })
+        ingress_sw.WriteTableEntry(table_entry)
+    elif padding == 1:
+        table_entry = p4info_helper.buildTableEntry(
+            table_name = "MyIngress.pkt_out_table",
+            match_fields = {
+                "hdr.packet_out.padding": padding
+            },
+            action_name = "MyIngress.response_to_cpu",
+            action_params={
+                "swAddr": sw_addr
+            })
+        ingress_sw.WriteTableEntry(table_entry)
+
 
 def printGrpcError(e):
     print "gRPC Error:", e.details(),
@@ -225,7 +242,7 @@ def connectThrift(port, bmv2_file_path):
 
 def record_switch_port():
     """ 
-        record how many port switch/host has
+        record how many port switch/host has used
         mac_portNum = {mac:num(port), ...}
     """
     tmp = {} # {mac1: [2,1,3], ...}
@@ -288,18 +305,18 @@ def read_all_reg(event, bmv2_file_path, sw_num):
                 if event.isUpdated(mac, mac2, 'q') is False:
                     event.putPktNum(q_num, mac, mac2, 'q')
                     n = event.getPktNum(mac, mac2, 'q')
-                    if n > 0:
-                        print sw, "<->", mac2name(mac2), "query:", n
+                    # if n > 0:
+                    #     print sw, "<->", mac2name(mac2), "query:", n
                 if event.isUpdated(mac, mac2, 'r') is False:
                     event.putPktNum(r_num, mac, mac2, 'r')
                     n = event.getPktNum(mac, mac2, 'r')
-                    if n > 0:
-                        print sw, "<->", mac2name(mac2), "response:", n
+                    # if n > 0:
+                    #     print sw, "<->", mac2name(mac2), "response:", n
 
                 # if num > 0:
                     # print mac, "<->", mac2, ":", num
                 
-        print "---------------------"
+        # print "---------------------"
         for i in range(0, 10):
             if event.is_set() is False:
                 break
@@ -309,20 +326,19 @@ def find_path(p4info_helper, sw, host_ip):
     """ find all path of node to the other node 
         and write rule on switches
     """
-    sw_links = {} # { s1: [[1,h1],[2,h5]], s2:...}
     for no, links in topology.items():
         m1 = mac2name(links.keys()[0])
         m2 = mac2name(links.keys()[1])
         p1 = links.values()[0]
         p2 = links.values()[1]
-        if sw_links.has_key(m1) is False and m1[0] == 's':
+        if sw_links.has_key(m1) is False:
             sw_links[m1] = [[p1,m2]]
-        elif m1[0] == 's':
+        else:
             sw_links[m1].append([p1, m2])
 
-        if sw_links.has_key(m2) is False and m2[0] == 's':
+        if sw_links.has_key(m2) is False:
             sw_links[m2] = [[p2,m1]]
-        elif m2[0] == 's':
+        else:
             sw_links[m2].append([p2, m1])
 
     # print sw_links
@@ -335,17 +351,15 @@ def find_path(p4info_helper, sw, host_ip):
             h_mac = h_mac.encode('utf-8')
             path[s][h] = [] # [1, 2, 10, 2, 1]
             stack = [s]      # [s2, s4...]
-            stack, path[s][h] = recursive(sw_links, s, h, stack, path[s][h])
+            stack, path[s][h] = recursive(s, h, stack, path[s][h])
             # print path[s][h] 
             dst_eth_addr = find_the_other_mac(s_mac, path[s][h][0]).encode('utf-8')
             writeIPRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], dst_eth_addr= dst_eth_addr, dst_ip=host_ip[h].encode('utf-8'), mask=32, port=path[s][h][0])
             # print s, "->", h_mac, dst_eth_addr, path[s][h][0]
         writeRecordRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], qr_code=1)
     # print path
-def recursive(sw_links, src, dst, stack, path):
-    if src[0] == 'h':
-        return stack, path
-    
+
+def recursive(src, dst, stack, path):
     if stack != [] and stack[len(stack)-1] == dst:
         return stack, path
 
@@ -354,18 +368,40 @@ def recursive(sw_links, src, dst, stack, path):
             path.append(link[0])
             stack.append(link[1])
             break
-        if link[1] not in stack and link[1][0] != 'h':
+        if link[1] not in stack:
             stack.append(link[1])
             path_tmp = list(path)
             path.append(link[0])
-            stack, path = recursive(sw_links, link[1], dst, stack, path)
+            stack, path = recursive(link[1], dst, stack, path)
             if stack[len(stack)-1] == dst:
                 break
             else:
                 path = path_tmp
     
     return stack, path
-        
+
+def find_qr_path():
+    """ find direction of packet on each link """
+    for no, link in topology.items():
+        mac1 = link.keys()[0]
+        mac2 = link.keys()[1]
+        n1 = mac2name(mac1)
+        n2 = mac2name(mac2)
+        stack1 = [n1] 
+        path1 = []
+        stack1, path1 = recursive(n1, "h3", stack1, path1)
+        stack2 = [n2] 
+        path2 = []
+        stack2, path2 = recursive(n2, "h3", stack2, path2)
+        direction[no] = {}
+        if len(path1) > len(path2):
+            direction[no][mac1] = 'q'
+            direction[no][mac2] = 'r'
+        else:
+            direction[no][mac1] = 'r'
+            direction[no][mac2] = 'q'
+
+
 def main(p4info_file_path, bmv2_file_path):
     """
         main function
@@ -417,52 +453,52 @@ def main(p4info_file_path, bmv2_file_path):
         for s, mac in sw_mac.items():
             writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
             writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
+            writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=1, sw_addr=mac)
+
+
 
         for j in range(0,len(sw)):
             for i in range(1,15):
-                sendPacketOut(p4info_helper, sw[j], i, 0)
+                sendPacketOut(p4info_helper, sw[j], i, 0, 0)
 
         for j in range(0,len(sw)):
             for i in range(0,14):
                 recvPacketIn(sw[j])
         
-        print len(topology)
+        # print len(topology)
 
+        # re-Master
         for i in range(0, len(sw)):
             sw[i].MasterArbitrationUpdate()
 
-        # writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:00:01:01", dst_ip="10.0.1.1", mask=32, port=1)
-        # writeIPRules(p4info_helper, ingress_sw=sw[0], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
-        # writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:00:02:02", dst_ip="10.0.2.2", mask=32, port=1)
-        # writeIPRules(p4info_helper, ingress_sw=sw[1], dst_eth_addr="00:00:00:03:03:00", dst_ip="10.0.3.3", mask=32, port=2)
-        # writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:00:03:03", dst_ip="10.0.3.3", mask=32, port=1)
-        # writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:01:03:00", dst_ip="10.0.1.1", mask=32, port=2)
-        # writeIPRules(p4info_helper, ingress_sw=sw[2], dst_eth_addr="00:00:00:02:03:00", dst_ip="10.0.2.2", mask=32, port=3)
 
-
-        writeHash1Rule(p4info_helper, ingress_sw=sw[0])
+        # s4 is gateway switch
+        writeHash1Rule(p4info_helper, ingress_sw=sw[3])
 
         find_path(p4info_helper, sw, host_ip)
         record_switch_port()
-        # print len(topology)
+        find_qr_path()
+
             
-        event = myEvent(topology)
+        event = myEvent(topology, direction)
+        event.set()
+        event.recordName(hosts,sw_mac)
+
         gui_th = Thread(target=ControllerGui, args=(event, sw_mac, hosts, topology))
         gui_th.setDaemon(True)
-        event.set()
 
         reg_th = Thread(target=read_all_reg, args=(event, bmv2_file_path,len(sw_mac)))
+        reg_th.setDaemon(True)
+
         reg_th.start()
-        # stop_th = Thread(target=stop_controller, args=(event,))
-        # stop_th.start()
         gui_th.start()
 
  
             #############################################################################
 
         # connect to thrift
-        # set s1 to gateway switch
-        # runtimeAPI = connectThrift(9090,bmv2_file_path)
+        # set s4 to gateway switch
+        # runtimeAPI = connectThrift(9093,bmv2_file_path)
 
         # set meter
         # runtimeAPI.do_meter_array_set_rates("meter_array_set_rates ingress_meter_stats 0.00000128:9000 0.00000128:9000")
@@ -473,11 +509,31 @@ def main(p4info_file_path, bmv2_file_path):
         # runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 
-        while event.is_set() is True:
-            None
+            
+        # tmp = ""
+        # mcast = 0
+        # while tmp != 'f':
+            # print "--------------"
+            # begin = time.time()
+            # print "send packet out"
+            
+            # sendPacketOut(p4info_helper, sw[3], 0, mcast, 1)
+            # mcast += 1
+            # print "recieve packet in"
+            # try:
+                # content = sw[3].RecvPktIn(tp=False)
+            # except Exception, e:
+                # print e
+            # end = time.time()
+            # print end-begin
+        #     tmp = raw_input()
+            # if content != None and content.WhichOneof('update')=='packet':
+                # packet = content.packet.payload
+            #     pkt = Ether(_pkt=packet)
         # m = 0
         # total_res_num = 0
-        # while event.is_set() is True:
+        while event.is_set() is True:
+            None
 
             # print "------------"
             # print m," minute"
@@ -507,10 +563,10 @@ def main(p4info_file_path, bmv2_file_path):
             # # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
             # # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
             # m += 1
-            # for i in range(0, 30):
+            # for i in range(0, 10):
                 # if event.is_set() is False:
                     # break
-                # sleep(1)
+            #     sleep(1)
 
 
     except KeyboardInterrupt:

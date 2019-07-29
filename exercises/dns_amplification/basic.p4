@@ -327,12 +327,19 @@ control MyIngress(inout headers hdr,
         hdr.lldp.port = hdr.packet_out.egress_port;
     }
 
+    action response_to_cpu(macAddr_t swAddr){
+        standard_metadata.egress_spec = CPU_PORT;
+        hdr.ethernet.setValid();
+        hdr.ethernet.srcAddr = swAddr;
+    }
+
     table pkt_out_table{
         key = {
             hdr.packet_out.padding: exact;
         }
         actions = {
             lldp_forward;
+            response_to_cpu;
             NoAction;
         }
         size = 1024;

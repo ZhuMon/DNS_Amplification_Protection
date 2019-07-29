@@ -1,9 +1,11 @@
 from threading import _Event
 
 class myEvent(_Event):
-    def __init__(self, topology):
+    def __init__(self, topology, direction):
         super(myEvent, self).__init__()
         self.topology = topology
+        self.direction = direction
+
         self.objID = {} # store the tkinter ID of edges {1:13241232, ...}
         # DNS response
         self.r_pkt_num = {} # store 10s # of pkts on every edges {1: 24}
@@ -15,6 +17,8 @@ class myEvent(_Event):
         self.r_edge_update_flag = {} # record the edge whether updated {1:True,2:False}
         self.q_edge_update_flag = {} # record the edge whether updated {1:True,2:False}
 
+        self.node_name = {} # record host/sw name {mac1:"victim", mac3:"dns"
+        
         # init
         self.cleanFlag()
 
@@ -23,6 +27,35 @@ class myEvent(_Event):
         for no, link in self.topology.items():
             self.r_edge_update_flag[no] = False
             self.q_edge_update_flag[no] = False
+
+    def recordName(self, hosts, switches):
+        for h, h_mac in hosts.items():
+            h_mac = h_mac.encode('utf-8')
+            if h == "h3":
+                h = "DNS Server"
+            elif h == "h1":
+                h = "victim"
+            self.node_name[h_mac] = h
+        
+        for s, s_mac in switches.items():
+            s_mac = s_mac.encode('utf-8')
+            if s == "s4":
+                s = "gateway_switch"
+            
+            self.node_name[s_mac] = s
+
+    def mac2name(self, mac):
+        for m, name in node_name.items():
+            if m == mac:
+                return name
+
+    def getQR(self, mac1, mac2, order=1):
+        edgeID = findEdge(mac1, mac2)
+        qr = self.direction[edgeID]
+        if order == 1:
+            return qr[mac1]
+        elif order == 2:
+            return qr[mac2]
 
     def isUpdated(self, mac1, mac2, q_or_r = 'q', no=None):
         if no == None:
