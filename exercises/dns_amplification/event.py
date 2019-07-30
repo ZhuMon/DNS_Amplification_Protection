@@ -44,7 +44,7 @@ class myEvent(_Event):
         elif name == "h1":
             name = "victim"
         elif name == "s4":
-            name = "gateway_switcname"
+            name = "gateway\n switch"
         elif name == "s5":
             name = "router"
 
@@ -175,5 +175,6 @@ class myEvent(_Event):
                     col4 = self.getPktNum(mac, self.name2mac(col1), 'r')
                     out.append((col1,col2,col3,col4))
                 break
+        out.sort(key = lambda x: x[1])
         return out
 
