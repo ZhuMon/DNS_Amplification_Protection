@@ -35,34 +35,10 @@ class ControllerGui():
         self.L1.place(x=120, y=500)
 
         self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
-        #self.tree.column('col1', width=70, anchor='center')
-        #self.tree.column('col2', width=70, anchor='center')
-        #self.tree.column('col3', width=75, anchor='center')
-        #self.tree.column('col4', width=75, anchor='center')
-        #self.tree.heading('col1', text='name')
-        #self.tree.heading('col2', text='port')
-        #self.tree.heading('col3', text='pkt_q')
-        #self.tree.heading('col4', text='pkt_r')
 
         self.sw_mac = sw_mac
         self.h_mac = h_mac
         self.topology = topology
-
-        #for no, link in sorted(self.topology.items()):
-        #    mac1 = link.keys()[0]
-        #    mac2 = link.keys()[1]
-        #    name = self.event.mac2
-        #    port = 
-        #    pkt_q = self.event.getPktNum(mac1, mac2, "q")
-        #    pkt_r = self.event.getPktNum(mac1, mac2, "r")
-        #    self.tree.insert('', no, values=(mac1, mac2, no, self.event.getPktNum(mac1, mac2)))
-        
-        #self.tree.bind("<Double-1>", self.dbClick)
-
-        #self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
-        #self.tree.configure(yscrollcommand=self.ybar.set)
-        #self.tree.place(x=100, y=650)
-        #self.ybar.place(x=450, y=650, height=218)
 
         self.ge_network()
 
@@ -121,11 +97,6 @@ class ControllerGui():
         self.cv.delete("all")
         self.event.cleanObjID()
         self.create_node()
-        #for no, link in sorted(self.topology.items()):
-        #    mac1 = link.keys()[0]
-        #    mac2 = link.keys()[1]
-        #    pktNum = random.randint(1, 20)
-        #    self.cv.itemconfig(self.event.getObjID(mac1, mac2), width=pktNum, fill="red")
 
     def create_node(self):
         """ create node """
@@ -142,8 +113,6 @@ class ControllerGui():
             pos[0] = (self.extend(pos[0], 'x')+2)*125
             pos[1] = (self.extend(pos[1], 'y')+2)*125
 
-        self.linkID = []
-
         for link in self.links:
             if self.event.getQR(link[0], link[1], 1) == 'q':
                 # link[0] -> half : query
@@ -153,7 +122,6 @@ class ControllerGui():
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, 
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
                         fill="green")
-                self.linkID.append(No)
                 self.event.putObjID(No, link[0], link[1])
                 
                 # link[1] -> half : response
@@ -163,7 +131,6 @@ class ControllerGui():
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
                         fill="orange")
-                self.linkID.append(No)
                 self.event.putObjID(No, link[0], link[1])
             elif self.event.getQR(link[0], link[1], 1) == 'r':
                 # link[1] -> half : query
@@ -173,7 +140,6 @@ class ControllerGui():
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
                         fill="green")
-                self.linkID.append(No)
                 self.event.putObjID(No, link[0], link[1])
                 # link[0] -> half : response
                 No = self.cv.create_line(
@@ -182,20 +148,19 @@ class ControllerGui():
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
                         fill="orange")
-                self.linkID.append(No)
                 self.event.putObjID(No, link[0], link[1])
 
-        self.switches = []
-        self.hosts = []
+        self.switches = {}
+        self.hosts = {}
         for node, pos in self.nodes.items():
             if node[15:] == "00" :
                 # sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
                 sw = self.cv.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill="white")
-                self.switches.append(sw)
+                self.switches[node] = sw
             else:
-                host = self.cv.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1])
+                host = self.cv.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill="black")
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
-                self.hosts.append(host)
+                self.hosts[node] = host
 
     def extend(self, num, axis='x'):
         """ expand network size """
@@ -227,11 +192,27 @@ class ControllerGui():
     def mitigation(self):
             self.showText.config(text=self.v.get())
 
-    #def dbClick(self, event):
-    #    """ double click one row """
-    #    self.item = self.tree.selection()[0]
-    #    print "you clicked on ", self.tree.item(self.item, "values")
-                
+    def dbClick2ShowNode(self, event):
+        """ click one row to show node position """
+        for s_mac, pos in self.switches.items():
+            self.cv.itemconfig(self.switches[s_mac], fill="white")
+        for h_mac, pos in self.hosts.items():
+            self.cv.itemconfig(self.hosts[h_mac], fill="black")
+        name = self.tree.item(self.tree.selection())['values'][0]
+        if name == "DNS Server":
+            name = "h3"
+        elif name == "victim":
+            name = "h1"
+        elif name == "gateway sw":
+            name = "s4"
+        elif name == "router":
+            name = "s5"
+        mac = self.event.name2mac(name)
+        if mac[15:] == "00":
+            self.cv.itemconfig(self.switches[mac], fill="brown")
+        else:
+            self.cv.itemconfig(self.hosts[mac], fill="brown")
+
     def quit(self):
         #TODO clear others 
         self.G.clear()
@@ -280,6 +261,8 @@ class ControllerGui():
                 self.tree.configure(yscrollcommand=self.ybar.set)
                 self.tree.place(x=100, y=650)
                 self.ybar.place(x=390, y=650, height=218)
+
+                self.tree.bind("<Double-1>", self.dbClick2ShowNode)
  
 def main():
 
