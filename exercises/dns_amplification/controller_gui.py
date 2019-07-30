@@ -35,33 +35,34 @@ class ControllerGui():
         self.L1.place(x=120, y=500)
 
         #self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
-        self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3') ,show='headings')
-        self.tree.column('col1', width=150, anchor='center')
-        self.tree.column('col2', width=150, anchor='center')
-        self.tree.column('col3', width=50, anchor='center')
-        #self.tree.column('col4', width=180, anchor='center')
-        self.tree.heading('col1', text='mac_addr1')
-        self.tree.heading('col2', text='mac_addr2')
-        self.tree.heading('col3', text='ID')
-        #self.tree.heading('col4', text='num of packet')
+        #self.tree.column('col1', width=70, anchor='center')
+        #self.tree.column('col2', width=70, anchor='center')
+        #self.tree.column('col3', width=75, anchor='center')
+        #self.tree.column('col4', width=75, anchor='center')
+        #self.tree.heading('col1', text='name')
+        #self.tree.heading('col2', text='port')
+        #self.tree.heading('col3', text='pkt_q')
+        #self.tree.heading('col4', text='pkt_r')
 
         self.sw_mac = sw_mac
         self.h_mac = h_mac
         self.topology = topology
 
-        for no, link in sorted(self.topology.items()):
-            mac1 = link.keys()[0]
-            mac2 = link.keys()[1]
-            self.tree.insert('', no, values=(mac1, mac2, no))
-            #self.tree.insert('', no, values=(mac1, mac2, no, self.event.getPktNum(mac1, mac2)))
+        #for no, link in sorted(self.topology.items()):
+        #    mac1 = link.keys()[0]
+        #    mac2 = link.keys()[1]
+        #    name = self.event.mac2
+        #    port = 
+        #    pkt_q = self.event.getPktNum(mac1, mac2, "q")
+        #    pkt_r = self.event.getPktNum(mac1, mac2, "r")
+        #    self.tree.insert('', no, values=(mac1, mac2, no, self.event.getPktNum(mac1, mac2)))
         
-        self.tree.bind("<Double-1>", self.dbClick)
+        #self.tree.bind("<Double-1>", self.dbClick)
 
-        self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=self.ybar.set)
-        self.tree.place(x=100, y=650)
-        self.ybar.place(x=450, y=650, height=218)
-        #self.ybar.place(x=630, y=650, height=218)
+        #self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
+        #self.tree.configure(yscrollcommand=self.ybar.set)
+        #self.tree.place(x=100, y=650)
+        #self.ybar.place(x=450, y=650, height=218)
 
         self.ge_network()
 
@@ -76,10 +77,17 @@ class ControllerGui():
 
         self.cv.pack()
         self.cv.bind('<Motion>' , self.move_handler)
+        self.cv.bind('<Button-1>', self.click_handler)
 
         self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv))
         self.edgeWarn_th.setDaemon(True)
         self.edgeWarn_th.start()
+        
+        self.v = StringVar()
+        self.showText = Label(self.root, width=10, text="")
+        self.showText.place(x=400, y=900)
+        self.rate_set_1 = Radiobutton(self.root, text="Mitigation On", variable=self.v, value='On', command=self.mitigation).place(x=500, y=900, anchor=W)
+        self.rate_set_2 = Radiobutton(self.root, text="Mitigation Off", variable=self.v, value='Off', command=self.mitigation).place(x=500, y=925, anchor=W)
 
         self.root.mainloop()
 
@@ -216,10 +224,13 @@ class ControllerGui():
                     break
                 sleep(1)
 
-    def dbClick(self, event):
-        """ double click one row """
-        self.item = self.tree.selection()[0]
-        print "you clicked on ", self.tree.item(self.item, "values")
+    def mitigation(self):
+            self.showText.config(text=self.v.get())
+
+    #def dbClick(self, event):
+    #    """ double click one row """
+    #    self.item = self.tree.selection()[0]
+    #    print "you clicked on ", self.tree.item(self.item, "values")
                 
     def quit(self):
         #TODO clear others 
@@ -241,8 +252,31 @@ class ControllerGui():
                 else:
                     self.var.set(name+" : "+node)
                 break
-            #elif 
 
+    def click_handler(self, event):
+        """ click one node to show information """
+        for node, pos in self.nodes.items():
+            if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
+                self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
+                self.tree.column('col1', width=70, anchor='center')
+                self.tree.column('col2', width=70, anchor='center')
+                self.tree.column('col3', width=75, anchor='center')
+                self.tree.column('col4', width=75, anchor='center')
+                self.tree.heading('col1', text='name')
+                self.tree.heading('col2', text='port')
+                self.tree.heading('col3', text='pkt_q')
+                self.tree.heading('col4', text='pkt_r')
+
+                inf = self.event.getNodeInf(node)
+
+                for i in inf:
+                   self.tree.insert('', 'end', values=i)
+
+                self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
+                self.tree.configure(yscrollcommand=self.ybar.set)
+                self.tree.place(x=100, y=650)
+                self.ybar.place(x=390, y=650, height=218)
+ 
 def main():
 
     sw_mac = {'s16': '00:00:00:10:15:00', 's9': '00:00:00:09:15:00', 's8': '00:00:00:08:15:00', 's17': '00:00:00:11:15:00', 's3': '00:00:00:03:15:00', 's2': '00:00:00:02:15:00', 's1': '00:00:00:01:15:00', 's10': '00:00:00:0a:15:00', 's7': '00:00:00:07:15:00', 's6': '00:00:00:06:15:00', 's5': '00:00:00:05:15:00', 's4': '00:00:00:04:15:00', 's13': '00:00:00:0d:15:00', 's20': '00:00:00:14:15:00', 's18': '00:00:00:12:15:00', 's15': '00:00:00:0f:15:00', 's12': '00:00:00:0c:15:00', 's19': '00:00:00:13:15:00', 's21': '00:00:00:15:15:00', 's14': '00:00:00:0e:15:00', 's11': '00:00:00:0b:15:00'}
@@ -250,7 +284,6 @@ def main():
     h_mac = {u'h8': u'00:00:00:00:0c:08', u'h9': u'00:00:00:00:0d:09', u'h7': u'00:00:00:00:0b:07', u'h1': u'00:00:00:00:01:01', u'h6': u'00:00:00:00:0a:06', u'h12': u'00:00:00:00:10:0c', u'h13': u'00:00:00:00:12:0d', u'h14': u'00:00:00:00:13:0e', u'h15': u'00:00:00:00:15:0f', u'h4': u'00:00:00:00:07:04', u'h5': u'00:00:00:00:08:05', u'h10': u'00:00:00:00:0e:0a', u'h2': u'00:00:00:00:02:02', u'h11': u'00:00:00:00:0f:0b', u'h3': u'00:00:00:00:03:03'}
     topology = {'24': {'00:00:00:05:15:00': 3, '00:00:00:04:15:00': 10}, '25': {'00:00:00:0d:15:00': 2, '00:00:00:04:15:00': 3}, '26': {'00:00:00:0e:15:00': 2, '00:00:00:04:15:00': 4}, '27': {'00:00:00:11:15:00': 2, '00:00:00:04:15:00': 7}, '20': {'00:00:00:07:15:00': 2, '00:00:00:04:15:00': 12}, '21': {'00:00:00:06:15:00': 2, '00:00:00:04:15:00': 11}, '22': {'00:00:00:08:15:00': 2, '00:00:00:04:15:00': 13}, '23': {'00:00:00:09:15:00': 2, '00:00:00:04:15:00': 14}, '28': {'00:00:00:0f:15:00': 2, '00:00:00:04:15:00': 5}, '29': {'00:00:00:04:15:00': 9, '00:00:00:14:15:00': 2}, '1': {u'00:00:00:00:12:0d': 1, '00:00:00:12:15:00': 1}, '0': {'00:00:00:13:15:00': 1, u'00:00:00:00:13:0e': 1}, '3': {'00:00:00:0d:15:00': 1, u'00:00:00:00:0d:09': 1}, '2': {'00:00:00:08:15:00': 1, u'00:00:00:00:08:05': 1}, '5': {'00:00:00:01:15:00': 1, u'00:00:00:00:01:01': 1}, '4': {u'00:00:00:00:0c:08': 1, '00:00:00:0c:15:00': 1}, '7': {'00:00:00:07:15:00': 1, u'00:00:00:00:07:04': 1}, '6': {'00:00:00:0a:15:00': 1, u'00:00:00:00:0a:06': 1}, '9': {u'00:00:00:00:0f:0b': 1, '00:00:00:0f:15:00': 1}, '8': {u'00:00:00:00:10:0c': 1, '00:00:00:10:15:00': 1}, '11': {u'00:00:00:00:03:03': 1, '00:00:00:03:15:00': 1}, '10': {'00:00:00:0e:15:00': 1, u'00:00:00:00:0e:0a': 1}, '13': {u'00:00:00:00:02:02': 1, '00:00:00:02:15:00': 1}, '12': {u'00:00:00:00:15:0f': 1, '00:00:00:15:15:00': 1}, '15': {'00:00:00:01:15:00': 2, '00:00:00:06:15:00': 1}, '14': {u'00:00:00:00:0b:07': 1, '00:00:00:0b:15:00': 1}, '17': {'00:00:00:05:15:00': 2, '00:00:00:03:15:00': 2}, '16': {'00:00:00:05:15:00': 1, '00:00:00:02:15:00': 2}, '19': {'00:00:00:04:15:00': 1, '00:00:00:0b:15:00': 2}, '18': {'00:00:00:04:15:00': 2, '00:00:00:0c:15:00': 2}, '31': {'00:00:00:13:15:00': 2, '00:00:00:04:15:00': 8}, '30': {'00:00:00:10:15:00': 2, '00:00:00:04:15:00': 6}, '34': {'00:00:00:14:15:00': 1, '00:00:00:15:15:00': 2}, '33': {'00:00:00:11:15:00': 1, '00:00:00:12:15:00': 2}, '32': {'00:00:00:0a:15:00': 2, '00:00:00:09:15:00': 1}}
     direction = {'24': {'00:00:00:05:15:00': 'r', '00:00:00:04:15:00': 'q'}, '25': {'00:00:00:0d:15:00': 'q', '00:00:00:04:15:00': 'r'}, '26': {'00:00:00:0e:15:00': 'q', '00:00:00:04:15:00': 'r'}, '27': {'00:00:00:11:15:00': 'q', '00:00:00:04:15:00': 'r'}, '20': {'00:00:00:07:15:00': 'q', '00:00:00:04:15:00': 'r'}, '21': {'00:00:00:06:15:00': 'q', '00:00:00:04:15:00': 'r'}, '22': {'00:00:00:08:15:00': 'q', '00:00:00:04:15:00': 'r'}, '23': {'00:00:00:09:15:00': 'q', '00:00:00:04:15:00': 'r'}, '28': {'00:00:00:0f:15:00': 'q', '00:00:00:04:15:00': 'r'}, '29': {'00:00:00:04:15:00': 'r', '00:00:00:14:15:00': 'q'}, '1': {'00:00:00:12:15:00': 'r', u'00:00:00:00:12:0d': 'q'}, '0': {'00:00:00:13:15:00': 'r', u'00:00:00:00:13:0e': 'q'}, '3': {'00:00:00:0d:15:00': 'r', u'00:00:00:00:0d:09': 'q'}, '2': {'00:00:00:08:15:00': 'r', u'00:00:00:00:08:05': 'q'}, '5': {'00:00:00:01:15:00': 'r', u'00:00:00:00:01:01': 'q'}, '4': {u'00:00:00:00:0c:08': 'q', '00:00:00:0c:15:00': 'r'}, '7': {'00:00:00:07:15:00': 'r', u'00:00:00:00:07:04': 'q'}, '6': {'00:00:00:0a:15:00': 'r', u'00:00:00:00:0a:06': 'q'}, '9': {u'00:00:00:00:0f:0b': 'q', '00:00:00:0f:15:00': 'r'}, '8': {u'00:00:00:00:10:0c': 'q', '00:00:00:10:15:00': 'r'}, '11': {u'00:00:00:00:03:03': 'r', '00:00:00:03:15:00': 'q'}, '10': {'00:00:00:0e:15:00': 'r', u'00:00:00:00:0e:0a': 'q'}, '13': {'00:00:00:02:15:00': 'r', u'00:00:00:00:02:02': 'q'}, '12': {'00:00:00:15:15:00': 'r', u'00:00:00:00:15:0f': 'q'}, '15': {'00:00:00:01:15:00': 'q', '00:00:00:06:15:00': 'r'}, '14': {u'00:00:00:00:0b:07': 'q', '00:00:00:0b:15:00': 'r'}, '17': {'00:00:00:05:15:00': 'q', '00:00:00:03:15:00': 'r'}, '16': {'00:00:00:05:15:00': 'r', '00:00:00:02:15:00': 'q'}, '19': {'00:00:00:04:15:00': 'r', '00:00:00:0b:15:00': 'q'}, '18': {'00:00:00:04:15:00': 'r', '00:00:00:0c:15:00': 'q'}, '31': {'00:00:00:13:15:00': 'q', '00:00:00:04:15:00': 'r'}, '30': {'00:00:00:10:15:00': 'q', '00:00:00:04:15:00': 'r'}, '34': {'00:00:00:14:15:00': 'r', '00:00:00:15:15:00': 'q'}, '33': {'00:00:00:11:15:00': 'r', '00:00:00:12:15:00': 'q'}, '32': {'00:00:00:0a:15:00': 'q', '00:00:00:09:15:00': 'r'}}
-
     node_links = {u'h8': [[1, 's12']], u'h9': [[1, 's13']], u'h2': [[1, 's2']], u'h3': [[1, 's3']], u'h1': [[1, 's1']], u'h6': [[1, 's10']], u'h7': [[1, 's11']], u'h4': [[1, 's7']], u'h5': [[1, 's8']], 's9': [[2, 's4'], [1, 's10']], 's8': [[2, 's4'], [1, u'h5']], 's3': [[1, u'h3'], [2, 's5']], 's2': [[1, u'h2'], [2, 's5']], 's1': [[1, u'h1'], [2, 's6']], 's7': [[2, 's4'], [1, u'h4']], 's6': [[1, 's1'], [2, 's4']], 's5': [[2, 's3'], [1, 's2'], [3, 's4']], 's4': [[2, 's12'], [3, 's13'], [5, 's15'], [4, 's14'], [12, 's7'], [13, 's8'], [14, 's9'], [1, 's11'], [6, 's16'], [7, 's17'], [10, 's5'], [11, 's6'], [9, 's20'], [8, 's19']], 's19': [[1, u'h14'], [2, 's4']], 's18': [[1, u'h13'], [2, 's17']], 's13': [[2, 's4'], [1, u'h9']], 's12': [[2, 's4'], [1, u'h8']], 's11': [[2, 's4'], [1, u'h7']], 's10': [[1, u'h6'], [2, 's9']], 's17': [[2, 's4'], [1, 's18']], 's16': [[2, 's4'], [1, u'h12']], 's15': [[2, 's4'], [1, u'h11']], 's14': [[2, 's4'], [1, u'h10']], u'h10': [[1, 's14']], u'h11': [[1, 's15']], u'h12': [[1, 's16']], u'h13': [[1, 's18']], u'h14': [[1, 's19']], u'h15': [[1, 's21']], 's20': [[2, 's4'], [1, 's21']], 's21': [[1, u'h15'], [2, 's20']]}
     event = myEvent(topology, direction, node_links)
     event.recordName(h_mac, sw_mac)
