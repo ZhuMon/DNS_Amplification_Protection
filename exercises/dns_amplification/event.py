@@ -171,8 +171,8 @@ class myEvent(_Event):
                 for l in links:
                     col1 = self.changeName(l[1])
                     col2 = l[0]
-                    col3 = getPktNum(mac, name2mac(col1), 'q')
-                    col4 = getPktNum(mac, name2mac(col1), 'r')
+                    col3 = self.getPktNum(mac, self.name2mac(col1), 'q')
+                    col4 = self.getPktNum(mac, self.name2mac(col1), 'r')
                     out.append((col1,col2,col3,col4))
                 break
         return out
