@@ -341,7 +341,7 @@ def find_path(p4info_helper, sw, host_ip):
         else:
             sw_links[m2].append([p2, m1])
 
-    print sw_links
+    # print sw_links
     path = {} # {s1: { h1: [1,2,4,2,1], h2: [...]}, s2:...}
     for s, s_mac in sw_mac.items():
         s = s.encode('utf-8')

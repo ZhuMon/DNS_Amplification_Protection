@@ -44,7 +44,7 @@ class myEvent(_Event):
         elif name == "h1":
             name = "victim"
         elif name == "s4":
-            name = "gateway\n switch"
+            name = "gateway sw"
         elif name == "s5":
             name = "router"
 
@@ -68,8 +68,8 @@ class myEvent(_Event):
                 return name
 
     def name2mac(self, name):
-        for mac, name in self.node_name.items():
-            if self.changeName(name) == name:
+        for mac, n in self.node_name.items():
+            if self.changeName(name) == n:
                 return mac
 
     def getQR(self, mac1, mac2, order=1):
@@ -168,9 +168,11 @@ class myEvent(_Event):
         out = []
         for n, links in self.node_links.items():
             if self.changeName(n) == name:
+                # print links
                 for l in links:
                     col1 = self.changeName(l[1])
                     col2 = l[0]
+                    print self.name2mac(col1)
                     col3 = self.getPktNum(mac, self.name2mac(col1), 'q')
                     col4 = self.getPktNum(mac, self.name2mac(col1), 'r')
                     out.append((col1,col2,col3,col4))
