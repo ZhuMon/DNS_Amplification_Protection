@@ -4,6 +4,7 @@ import socket
 import random
 import time
 import struct
+import threading
 
 from scapy.all import *
 #from scapy.all import sniff, sendp, send, get_if_list, get_if_hwaddr
@@ -25,13 +26,19 @@ def get_if():
     return iface
 
 def handle_pkt(pkt):
-    global num
-    num = num + 1
-    print num," got a response"
+    # print num," got a response"
     # print pkt.show()
     if UDP in pkt and pkt[UDP].sport == 53:
+        global num
+        num = num + 1
 	print num," ",pkt.getlayer(DNS).id
         sys.stdout.flush()
+
+def recv_pkt(iface):
+    try:
+        sniff(iface = iface, prn = lambda x: handle_pkt(x))
+    except KeyboardInterrupt:
+        print "Shutting down. "
 
 def main():
     
@@ -51,6 +58,11 @@ def main():
         if pkt.qr == 0: # the packet is query
             q_pkt.append(pkt)
 
+    recv_th = threading.Thread(target=recv_pkt, args=(iface,))
+    recv_th.setDaemon(True)
+    recv_th.start()
+
+
     N = raw_input()
     for i in range(0,int(N)):
         a = raw_input()
@@ -58,17 +70,18 @@ def main():
         pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
         pkt = pkt /IP(dst=addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[int(b)].getlayer(DNS)
         sendp(pkt, iface = iface, verbose=False)
-        print "send a packet"
-        sniff(iface = iface, 
-                prn = lambda x: handle_pkt(x),
-                count = 1,
-                timeout = 5)
+        print i, "send a packet"
+        # sniff(iface = iface, 
+                # prn = lambda x: handle_pkt(x),
+                # count = 1,
+        #         timeout = 5)
 
         time.sleep(float(a))
         
         #print "sniffing on %s" % iface
-	
-    sniff(iface = iface, prn = lambda x: handle_pkt(x))
+    while True:
+        None
+    # sniff(iface = iface, prn = lambda x: handle_pkt(x))
 
 
 if __name__ == '__main__':
