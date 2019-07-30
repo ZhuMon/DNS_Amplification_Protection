@@ -1,12 +1,20 @@
 from threading import _Event
 
 class myEvent(_Event):
-    def __init__(self, topology, direction):
+    def __init__(self, topology, direction, node_links):
+        """
+        topology = {1:{mac1:port1, mac2:port2}, 2:...}
+        dircection = {1:{mac1:'q', mac2:'r'}, 2:...}
+        node_links = {s1:[[1:h1],[2:s6]], h1:...}
+
+        """
         super(myEvent, self).__init__()
         self.topology = topology
         self.direction = direction
+        self.node_links = node_links 
 
         self.objID = {} # store the tkinter ID of edges {1:13241232, ...}
+
         # DNS response
         self.r_pkt_num = {} # store 10s # of pkts on every edges {1: 24}
         self.r_all_pkt_num = {} # store all # of pkts on every edges {1: 134}
@@ -30,29 +38,39 @@ class myEvent(_Event):
     
     def cleanObjID(self):
         self.objID = {}
+    def changeName(self, name):
+        if name == "h3":
+            name = "DNS Server"
+        elif name == "h1":
+            name = "victim"
+        elif name == "s4":
+            name = "gateway_switcname"
+        elif name == "s5":
+            name = "router"
+
+        return name
 
 
     def recordName(self, hosts, switches):
         for h, h_mac in hosts.items():
             h_mac = h_mac.encode('utf-8')
-            if h == "h3":
-                h = "DNS Server"
-            elif h == "h1":
-                h = "victim"
+            h = self.changeName(h)
             self.node_name[h_mac] = h
         
         for s, s_mac in switches.items():
             s_mac = s_mac.encode('utf-8')
-            if s == "s4":
-                s = "gateway_switch"
-            elif s == "s5":
-                s = "router"
+            s = self.changeName(s)
             self.node_name[s_mac] = s
 
     def mac2name(self, mac):
         for m, name in self.node_name.items():
             if m == mac:
                 return name
+
+    def name2mac(self, name):
+        for mac, name in self.node_name.items():
+            if self.changeName(name) == name:
+                return mac
 
     def getQR(self, mac1, mac2, order=1):
         edgeID = self.findEdge(mac1, mac2)
@@ -144,4 +162,18 @@ class myEvent(_Event):
                 self.r_pkt_num[edgeID] = num
             self.r_all_pkt_num[edgeID] = num
             self.r_edge_update_flag[edgeID] = True
+
+    def getNodeInf(self, mac):
+        name = self.mac2name(mac)
+        out = []
+        for n, links in self.node_links.items():
+            if self.changeName(n) == name:
+                for l in links:
+                    col1 = self.changeName(l[1])
+                    col2 = l[0]
+                    col3 = getPktNum(mac, name2mac(col1), 'q')
+                    col4 = getPktNum(mac, name2mac(col1), 'r')
+                    out.append((col1,col2,col3,col4))
+                break
+        return out
 

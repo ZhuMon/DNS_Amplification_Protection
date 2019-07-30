@@ -341,7 +341,7 @@ def find_path(p4info_helper, sw, host_ip):
         else:
             sw_links[m2].append([p2, m1])
 
-    # print sw_links
+    print sw_links
     path = {} # {s1: { h1: [1,2,4,2,1], h2: [...]}, s2:...}
     for s, s_mac in sw_mac.items():
         s = s.encode('utf-8')
@@ -480,7 +480,7 @@ def main(p4info_file_path, bmv2_file_path):
         find_qr_path()
 
             
-        event = myEvent(topology, direction)
+        event = myEvent(topology, direction, sw_links)
         event.set()
         event.recordName(hosts,sw_mac)
 
@@ -531,31 +531,37 @@ def main(p4info_file_path, bmv2_file_path):
                 # packet = content.packet.payload
             #     pkt = Ether(_pkt=packet)
         m = 0
+        quick_cool_down = 0
         while event.is_set() is True:
             # None
 
             print "------------"
-            print m," minute"
+            print m*10,"second"
             res_num = event.getPktNum(sw_mac["s4"], None, 'r')
 
             flag = read_register(runtimeAPI, "f_reg", 0)
             print "res_num: ", res_num
             print "flag: ", flag
             if res_num >= 10:
+                quick_cool_down = 0
                 if flag >= 5:
                     write_register(runtimeAPI, "f_reg", 0, flag+1)
                 else:
                     write_register(runtimeAPI, "f_reg", 0, 5)
+            elif res_num < 10 and flag > 0 and quick_cool_down >= 5:
+                write_register(runtimeAPI, "f_reg", 0, int(flag/2))
             elif res_num < 10 and flag > 0:
                 write_register(runtimeAPI, "f_reg", 0, flag-1)
+                quick_cool_down += 1
+                
 
             if flag > 0:
                 print "Mode on..."
-                for i in range(0, 65536):
-                    t_id = read_register(runtimeAPI, "reg_ingress", i)
-                    if t_id > 0:
-                        write_register(runtimeAPI, "reg_ingress", i, t_id-1)
-                        print "reg[",i,"] = ",t_id-1
+                # for i in range(0, 65536):
+                    # t_id = read_register(runtimeAPI, "reg_ingress", i)
+                    # if t_id > 0:
+                        # write_register(runtimeAPI, "reg_ingress", i, t_id-1)
+                #         print "reg[",i,"] = ",t_id-1
 
             # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
             # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
