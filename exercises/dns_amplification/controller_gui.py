@@ -242,6 +242,10 @@ class ControllerGui():
                 self.tree.delete(item)
         for node, pos in self.nodes.items():
             if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
+                for s_mac, pos in self.switches.items():
+                    self.cv.itemconfig(self.switches[s_mac], fill="white")
+                for h_mac, pos in self.hosts.items():
+                    self.cv.itemconfig(self.hosts[h_mac], fill="black")
                 self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
                 self.tree.column('col1', width=70, anchor='center')
                 self.tree.column('col2', width=70, anchor='center')
