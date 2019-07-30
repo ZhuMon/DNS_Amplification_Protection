@@ -34,7 +34,7 @@ class ControllerGui():
         self.L1 = Label(self.root, textvariable=self.var, width=55, height=2)
         self.L1.place(x=120, y=500)
 
-        #self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
+        self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
         #self.tree.column('col1', width=70, anchor='center')
         #self.tree.column('col2', width=70, anchor='center')
         #self.tree.column('col3', width=75, anchor='center')
@@ -255,6 +255,10 @@ class ControllerGui():
 
     def click_handler(self, event):
         """ click one node to show information """
+        if self.tree != None:
+            x = self.tree.get_children()
+            for item in x:
+                self.tree.delete(item)
         for node, pos in self.nodes.items():
             if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
                 self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
