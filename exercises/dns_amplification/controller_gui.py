@@ -125,7 +125,6 @@ class ControllerGui():
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
                         fill="green")
                 self.event.putObjID(No, link[0], link[1])
-                
                 # link[1] -> half : response
                 No = self.cv.create_line(
                         self.nodes[link[1]][0]+self.node_size/2,
@@ -184,8 +183,12 @@ class ControllerGui():
                 cv.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
                 if pktNum_q > qpktThreshold:
                     cv.itemconfig(event.getObjID(mac1, mac2)[0], fill="yellow")
+                else:
+                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill="green")
                 if pktNum_r > rpktThreshold:
                     cv.itemconfig(event.getObjID(mac1, mac2)[1], fill="red")
+                else:
+                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill="orange")
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
