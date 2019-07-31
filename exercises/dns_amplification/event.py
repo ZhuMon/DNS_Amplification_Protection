@@ -27,6 +27,7 @@ class myEvent(_Event):
 
         self.node_name = {} # record host/sw name {mac1:"victim", mac3:"dns"
         
+        self.meter_flag = 0
         # init
         self.cleanFlag()
 
@@ -180,3 +181,11 @@ class myEvent(_Event):
         out.sort(key = lambda x: x[1])
         return out
 
+    def getMeterFlag(self, flag):
+        if flag == 1:
+            self.meter_flag = flag
+        else:
+            self.meter_flag = flag
+        
+    def setMeterFlag(self):
+        return self.meter_flag

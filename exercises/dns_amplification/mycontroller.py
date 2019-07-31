@@ -45,7 +45,7 @@ sw_mac = {}      # {s1: mac, ...}
 hosts = {}       # {h1: mac, ...}
 sw_links = {}    # {s1: [[1,h1],[2,h5]], s2:...}
 direction = {}   # {1: {mac1: 'q', mac2: 'r'}, 2: ...}
-
+meterControl = "Off"
         
         
 def GePacketOut(egress_port, mcast, padding):
@@ -500,13 +500,15 @@ def main(p4info_file_path, bmv2_file_path):
         # set s4 to gateway switch
         runtimeAPI = connectThrift(9093,bmv2_file_path)
 
-        # set meter
-        runtimeAPI.do_meter_array_set_rates("meter_array_set_rates MyIngress.ingress_meter_stats 0.00000128:9000 0.00000128:9000")
-        meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
-        new_rates = []
-        new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-        new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-        runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
+        meterControl = event.setMeterFlag
+        if meterControl == "On":
+            # set meter
+            runtimeAPI.do_meter_array_set_rates("meter_array_set_rates MyIngress.ingress_meter_stats 0.00000128:9000 0.00000128:9000")
+            meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
+            new_rates = []
+            new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+            new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+            runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 
             
