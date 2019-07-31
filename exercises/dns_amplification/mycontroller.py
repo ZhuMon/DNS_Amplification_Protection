@@ -47,7 +47,6 @@ host_ip = {}     # {h1: ip, ...}
 sw_links = {}    # {s1: [[1,h1],[2,h5]], s2:...}
 direction = {}   # {1: {mac1: 'q', mac2: 'r'}, 2: ...}
 API = {}         # runtimeAPI {s1: connectThrift.. , s2...}
-meterControl = "Off"
 
         
         
@@ -574,7 +573,6 @@ def main(p4info_file_path, bmv2_file_path):
         rule_has_set = {}
         rule_has_set['s4'] = True
         active_API = [[runtimeAPI, 's4']]
-        meterControl = event.setMeterFlag
         while event.is_set() is True:
             # None
 
@@ -586,7 +584,7 @@ def main(p4info_file_path, bmv2_file_path):
             event.controller_lock = False
 
 
-            if meterControl == "On":
+            if event.getMeterFlag() == 1:
                 for a in active_API:
                     
                     api = a[0]
@@ -621,6 +619,7 @@ def main(p4info_file_path, bmv2_file_path):
                                     print "reg[",i,"] = ",t_id-1
                     else:
                         #TODO clean API...
+                        None
 
                     # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
                     # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
@@ -645,6 +644,12 @@ def main(p4info_file_path, bmv2_file_path):
                             quick_cool_down[s] = 0
                             
                     write_register(runtimeAPI, "fr_reg", i, 0) # clean
+            else:
+                for a in active_API:
+                    api = a[0]
+                    write_register(api, "f_reg", 0, 0)
+
+
 
             event.controller_lock = True
 

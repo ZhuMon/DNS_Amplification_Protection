@@ -184,11 +184,8 @@ class myEvent(_Event):
         out.sort(key = lambda x: x[1])
         return out
 
-    def getMeterFlag(self, flag):
-        if flag == 1:
-            self.meter_flag = flag
-        else:
-            self.meter_flag = flag
+    def setMeterFlag(self, flag):
+        self.meter_flag = flag
         
-    def setMeterFlag(self):
+    def getMeterFlag(self):
         return self.meter_flag

@@ -17,7 +17,7 @@ g_height = 600
 g_width = 1100
 qpktThreshold = 0
 rpktThreshold = 0
-modes = [("Migation On", "On"),("Mitigation Off", "Off")]
+modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
 
 class ControllerGui():
     def __init__(self, event, sw_mac, h_mac, topology):
@@ -196,10 +196,10 @@ class ControllerGui():
 
     def mitigation(self):
         if self.v.get() == "On":
-            self.event.getMeterFlag(1)
+            self.event.setMeterFlag(1)
             print "Mitigation is opened"
         elif self.v.get() == "Off":
-            self.event.getMeterFlag(0)
+            self.event.setMeterFlag(0)
             print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
