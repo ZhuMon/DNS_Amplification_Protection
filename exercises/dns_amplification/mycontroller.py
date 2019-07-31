@@ -547,8 +547,6 @@ def main(p4info_file_path, bmv2_file_path):
         runtimeAPI = API['s4']
         setMeter(runtimeAPI)
 
-
-
             
         # tmp = ""
         # mcast = 0
