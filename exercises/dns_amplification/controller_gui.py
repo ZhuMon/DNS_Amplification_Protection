@@ -194,8 +194,10 @@ class ControllerGui():
     def mitigation(self):
         if self.v.get() == "On":
             self.event.getMeterFlag(1)
+            print "Mitigation is opened"
         elif self.v.get() == "Off":
             self.event.getMeterFlag(0)
+            print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
         """ click one row to show node position """
@@ -252,7 +254,7 @@ class ControllerGui():
                 for h_mac, pos in self.hosts.items():
                     self.cv.itemconfig(self.hosts[h_mac], fill="black")
                 self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
-                self.tree.column('col1', width=70, anchor='center')
+                self.tree.column('col1', width=100, anchor='center')
                 self.tree.column('col2', width=70, anchor='center')
                 self.tree.column('col3', width=75, anchor='center')
                 self.tree.column('col4', width=75, anchor='center')
@@ -268,8 +270,8 @@ class ControllerGui():
 
                 self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
                 self.tree.configure(yscrollcommand=self.ybar.set)
-                self.tree.place(x=650, y=200)
-                self.ybar.place(x=940, y=200, height=218)
+                self.tree.place(x=630, y=200)
+                self.ybar.place(x=950, y=200, height=218)
 
                 self.tree.bind("<Double-1>", self.dbClick2ShowNode)
  
