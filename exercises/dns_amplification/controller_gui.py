@@ -13,11 +13,11 @@ import matplotlib.pyplot as plt
 
 from event import myEvent
 
-g_height = 1000
-g_width = 700
+g_height = 600
+g_width = 1100
 qpktThreshold = 0
 rpktThreshold = 0
-
+modes = [("Migation On", "On"),("Mitigation Off", "Off")]
 
 class ControllerGui():
     def __init__(self, event, sw_mac, h_mac, topology):
@@ -32,7 +32,7 @@ class ControllerGui():
 
         self.var = StringVar()
         self.L1 = Label(self.root, textvariable=self.var, width=55, height=2)
-        self.L1.place(x=120, y=500)
+        self.L1.place(x=580, y=120)
 
         self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
 
@@ -46,10 +46,10 @@ class ControllerGui():
         self.create_node()
 
         self.button_quit = Button(self.root, text="Quit", fg='white', bg='red', font=self.fonts, command=self.quit)
-        self.button_quit.place(x=500, y=830)
+        self.button_quit.place(x=800, y=500)
 
         self.button_refresh = Button(self.root, text="Refresh", fg='white', bg='green', font=self.fonts, command=self.refresh_network)
-        self.button_refresh.place(x=500, y=800)
+        self.button_refresh.place(x=800, y=470)
 
         self.cv.pack()
         self.cv.bind('<Motion>' , self.move_handler)
@@ -60,10 +60,12 @@ class ControllerGui():
         self.edgeWarn_th.start()
         
         self.v = StringVar()
-        self.showText = Label(self.root, width=10, text="")
-        self.showText.place(x=400, y=900)
-        self.rate_set_1 = Radiobutton(self.root, text="Mitigation On", variable=self.v, value='On', command=self.mitigation).place(x=500, y=900, anchor=W)
-        self.rate_set_2 = Radiobutton(self.root, text="Mitigation Off", variable=self.v, value='Off', command=self.mitigation).place(x=500, y=925, anchor=W)
+        self.on_off_xpos = 220
+        self.on_off_ypos = 480
+
+        for text, mode in modes:
+            self.rate_set = Radiobutton(self.root, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
+            self.on_off_ypos = self.on_off_ypos + 25
 
         self.root.mainloop()
 
@@ -123,7 +125,6 @@ class ControllerGui():
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
                         fill="green")
                 self.event.putObjID(No, link[0], link[1])
-                
                 # link[1] -> half : response
                 No = self.cv.create_line(
                         self.nodes[link[1]][0]+self.node_size/2,
@@ -182,15 +183,24 @@ class ControllerGui():
                 cv.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
                 if pktNum_q > qpktThreshold:
                     cv.itemconfig(event.getObjID(mac1, mac2)[0], fill="yellow")
+                else:
+                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill="green")
                 if pktNum_r > rpktThreshold:
                     cv.itemconfig(event.getObjID(mac1, mac2)[1], fill="red")
+                else:
+                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill="orange")
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
                 sleep(1)
 
     def mitigation(self):
-            self.showText.config(text=self.v.get())
+        if self.v.get() == "On":
+            self.event.getMeterFlag(1)
+            print "Mitigation is opened"
+        elif self.v.get() == "Off":
+            self.event.getMeterFlag(0)
+            print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
         """ click one row to show node position """
@@ -247,7 +257,7 @@ class ControllerGui():
                 for h_mac, pos in self.hosts.items():
                     self.cv.itemconfig(self.hosts[h_mac], fill="black")
                 self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
-                self.tree.column('col1', width=70, anchor='center')
+                self.tree.column('col1', width=100, anchor='center')
                 self.tree.column('col2', width=70, anchor='center')
                 self.tree.column('col3', width=75, anchor='center')
                 self.tree.column('col4', width=75, anchor='center')
@@ -263,8 +273,8 @@ class ControllerGui():
 
                 self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
                 self.tree.configure(yscrollcommand=self.ybar.set)
-                self.tree.place(x=100, y=650)
-                self.ybar.place(x=390, y=650, height=218)
+                self.tree.place(x=630, y=200)
+                self.ybar.place(x=950, y=200, height=218)
 
                 self.tree.bind("<Double-1>", self.dbClick2ShowNode)
  
