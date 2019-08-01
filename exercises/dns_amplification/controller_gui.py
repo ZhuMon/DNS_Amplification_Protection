@@ -4,7 +4,7 @@ from time import sleep
 from math import sqrt
 
 from Tkinter import *
-import ttk
+from ttk import *
 from PIL import Image, ImageTk
 
 import numpy as np
@@ -17,7 +17,7 @@ g_height = 600
 g_width = 1100
 qpktThreshold = 0
 rpktThreshold = 0
-modes = [("Migation On", "On"),("Mitigation Off", "Off")]
+modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
 
 class ControllerGui():
     def __init__(self, event, sw_mac, h_mac, topology):
@@ -28,13 +28,13 @@ class ControllerGui():
 
         self.root = Tk()
         self.cv = Canvas(self.root,bg = 'white', height = g_height, width = g_width)
-        self.fonts = ("arial", 12, "bold")
+        self.fonts = ("arial", 12)
 
         self.var = StringVar()
-        self.L1 = Label(self.root, textvariable=self.var, width=55, height=2)
+        self.L1 = Label(self.root, textvariable=self.var, width=55)
         self.L1.place(x=580, y=120)
 
-        self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
+        self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
 
         self.sw_mac = sw_mac
         self.h_mac = h_mac
@@ -45,10 +45,40 @@ class ControllerGui():
         self.node_size = 10
         self.create_node()
 
-        self.button_quit = Button(self.root, text="Quit", fg='white', bg='red', font=self.fonts, command=self.quit)
+        self.style = Style()
+        buttonImage = Image.open('Img/white_power.png').resize((80,20), Image.ANTIALIAS)
+        refreshImage = Image.open('Img/white_refresh.png').resize((80,20), Image.ANTIALIAS)
+
+        # use self.buttonPhoto
+        self.buttonPhoto = ImageTk.PhotoImage(buttonImage) 
+        self.refreshPhoto = ImageTk.PhotoImage(refreshImage) 
+
+        self.style.configure("Q.TButton",
+                background="red", foreground="white",
+                font=self.fonts, relief="flat", image = self.buttonPhoto, padding=0)
+        self.style.map("Q.TButton",
+                background=[("active","gray")],
+                foreground=[("","white"), ("active","white")],
+                text=[("active","Quit")],
+                image=[("active","None")],
+                )
+
+        self.style.configure("R.TButton",
+                background="green", foreground="white",
+                font=self.fonts, relief="flat", image = self.refreshPhoto, padding=0)
+        self.style.map("R.TButton",
+                background=[("active","gray")],
+                foreground=[("","white"), ("active","white")],
+                text=[("active","Refresh")],
+                image=[("active","None")],
+                )
+
+
+
+        self.button_quit = Button(self.root, text="Quit", style="Q.TButton",command=self.quit)
         self.button_quit.place(x=800, y=500)
 
-        self.button_refresh = Button(self.root, text="Refresh", fg='white', bg='green', font=self.fonts, command=self.refresh_network)
+        self.button_refresh = Button(self.root, text="Refresh", style="R.TButton", command=self.refresh_network)
         self.button_refresh.place(x=800, y=470)
 
         self.cv.pack()
@@ -196,10 +226,10 @@ class ControllerGui():
 
     def mitigation(self):
         if self.v.get() == "On":
-            self.event.getMeterFlag(1)
+            self.event.setMeterFlag(1)
             print "Mitigation is opened"
         elif self.v.get() == "Off":
-            self.event.getMeterFlag(0)
+            self.event.setMeterFlag(0)
             print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
@@ -256,7 +286,7 @@ class ControllerGui():
                     self.cv.itemconfig(self.switches[s_mac], fill="white")
                 for h_mac, pos in self.hosts.items():
                     self.cv.itemconfig(self.hosts[h_mac], fill="black")
-                self.tree = ttk.Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
+                self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
                 self.tree.column('col1', width=100, anchor='center')
                 self.tree.column('col2', width=70, anchor='center')
                 self.tree.column('col3', width=75, anchor='center')
@@ -271,7 +301,7 @@ class ControllerGui():
                 for i in inf:
                    self.tree.insert('', 'end', values=i)
 
-                self.ybar = ttk.Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
+                self.ybar = Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
                 self.tree.configure(yscrollcommand=self.ybar.set)
                 self.tree.place(x=630, y=200)
                 self.ybar.place(x=950, y=200, height=218)

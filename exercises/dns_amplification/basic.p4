@@ -196,10 +196,15 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata
                   ) {
 
+    bit<32> index;
+    bit<32> ip_f;
+    bit<32> ip_last;
     register<bit<32>>(NUM) reg_ingress;
-    register<bit<32>>(512) r_reg; // record # of DNS response 
+    register<bit<32>>(512) r_reg;  // record # of DNS response 
     register<bit<32>>(512) rq_reg; // record # of DNS reqest 
-    register<bit<32>>(1) f_reg; // flag to determine if do project
+    register<bit<32>>(1)   f_reg;  // flag to determine if do project
+    register<bit<32>>(256) fr_reg; // record frequecy of each ip response
+    register<bit<32>>(256) s_reg;  // record the host ip address
     //meter(10, MeterType.packets) my_meter;
     meter(MAX_NUM, MeterType.bytes) ingress_meter_stats;
     MeterColor ingress_meter_output = MeterColor_GREEN;
@@ -250,14 +255,9 @@ control MyIngress(inout headers hdr,
     }
 
     action dns_request_hash_1(){
-        bit<32> index;
-        bit<32> tmp;
-        index = (hdr.ipv4.srcAddr << 24) >> 24;
-        index = index % 64;
+        index = ip_last % 64;
         index = index << 10;
         index = index + ((bit<32>)hdr.dns.id % 1024);
-        reg_ingress.read(tmp, index);
-        reg_ingress.write(index, tmp+10);
     }
 
     table dns_request_hash_lpm{
@@ -346,29 +346,68 @@ control MyIngress(inout headers hdr,
         default_action = NoAction;
     }
 
+
+    action record_ip_f(){
+        bit<32> tmp;
+        tmp = (hdr.ipv4.dstAddr << 24) >> 24;
+        fr_reg.read(ip_f, tmp);
+        fr_reg.write(tmp, ip_f+1);
+    }
+
+    table ip_frequency_table{
+        key = {
+            hdr.dns.qr:exact;
+        }
+        actions = {
+            record_ip_f;
+            NoAction;    
+        }
+        size = 1024;
+        default_action = NoAction;
+    }
     apply {
-        bit<32> index;
 	bit<32> tmp;
         bit<32> flag;
+        bit<32> s;
 
         if (hdr.ipv4.isValid()) {
             if (hdr.dns.isValid()){ 
 
                 f_reg.read(flag, 0);
                 if (flag > 0){
+                    // receive a DNS response to this ip
+                    ip_f = 0;
+                    ip_frequency_table.apply();
                     if (hdr.dns.qr == 0){ //dns is request
-                        dns_request_hash_lpm.apply();
+                        ip_last = (hdr.ipv4.srcAddr << 24) >> 24;
+                        /*index = 0;*/
+                        index = ip_last % 64;
+                        index = index << 10;
+                        index = index + ((bit<32>)hdr.dns.id % 1024);
+                        /*dns_request_hash_lpm.apply();*/
+                        s_reg.read(tmp, ip_last);
+                        if(tmp == 0){ 
+                            reg_ingress.read(tmp, index);
+                            reg_ingress.write(index, tmp+10);
+                        }
                         ipv4_lpm.apply();
                     } else { //dns is response
                         /*dns_request_hash_lpm.apply()*/
                         ingress_meter_stats.execute_meter<MeterColor>(0, ingress_meter_output);
-                        index = (hdr.ipv4.dstAddr << 24) >> 24;
-                        index = index % 64;
+                        ip_last = (hdr.ipv4.dstAddr << 24) >> 24;
+                        /*index = 0;*/
+                        /*dns_request_hash_lpm.apply();*/
+                        index = ip_last % 64;
                         index = index << 10;
                         index = index + ((bit<32>)hdr.dns.id % 1024);
                         
+
                         reg_ingress.read(tmp, index);
-                        if (tmp > 10){
+                        s_reg.read(s, ip_last);
+                        if (ip_f > 20 || s != 0){
+                            s_reg.write(ip_last, hdr.ipv4.dstAddr);
+                            ipv4_lpm.apply();
+                        } else if (tmp > 10){
                             reg_ingress.write(index, tmp - 10);
                             ipv4_lpm.apply();
                         } else if (tmp > 0){

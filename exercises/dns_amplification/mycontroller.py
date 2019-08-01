@@ -43,9 +43,11 @@ link_num = 0
 mac_portNum = {} # {mac: 2, mac1: 3}
 sw_mac = {}      # {s1: mac, ...} 
 hosts = {}       # {h1: mac, ...}
+host_ip = {}     # {h1: ip, ...}
 sw_links = {}    # {s1: [[1,h1],[2,h5]], s2:...}
 direction = {}   # {1: {mac1: 'q', mac2: 'r'}, 2: ...}
-meterControl = "Off"
+API = {}         # runtimeAPI {s1: connectThrift.. , s2...}
+
         
         
 def GePacketOut(egress_port, mcast, padding):
@@ -158,6 +160,16 @@ def writeHash1Rule(p4info_helper, ingress_sw):
         )
     ingress_sw.WriteTableEntry(table_entry)
 
+def writeIPFrRule(p4info_helper, ingress_sw, macAddr):
+    table_entry = p4info_helper.buildTableEntry(
+        table_name = "MyIngress.ip_frequency_table",
+        match_fields = {
+            "hdr.dns.qr": 1
+        },
+        action_name = "MyIngress.record_ip_f",
+        )
+    ingress_sw.WriteTableEntry(table_entry)
+    
 def writePInRule(p4info_helper, ingress_sw, etherType, sw_addr):
     table_entry = p4info_helper.buildTableEntry(
         table_name = "MyIngress.pkt_in_table",
@@ -194,6 +206,14 @@ def writePOutRule(p4info_helper, ingress_sw, padding, sw_addr):
             })
         ingress_sw.WriteTableEntry(table_entry)
 
+def setMeter(runtimeAPI):
+    """  set meter """
+    # runtimeAPI.do_meter_array_set_rates("meter_array_set_rates MyIngress.ingress_meter_stats 0.00000128:9000 0.00000128:9000")
+    meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
+    new_rates = []
+    new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+    new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
+    runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 def printGrpcError(e):
     print "gRPC Error:", e.details(),
@@ -283,14 +303,14 @@ def mac2name(mac):
             return h
 
 def read_all_reg(event, bmv2_file_path, sw_num):
-    API = {}
-    for sw, mac in sw_mac.items():
-        runtimeAPI = connectThrift(9089+int(sw[1:]),bmv2_file_path)
-        API[sw] = runtimeAPI
 
     # print mac_portNum
     while event.is_set():
         event.cleanFlag()
+        while event.controller_lock == False:
+            None
+        event.controller_lock = False
+
         for mac, portNum in mac_portNum.items():
             if mac2name(mac)[0] == 'h':
                 continue
@@ -315,7 +335,9 @@ def read_all_reg(event, bmv2_file_path, sw_num):
 
                 # if num > 0:
                     # print mac, "<->", mac2, ":", num
-                
+
+        event.controller_lock = True
+
         # print "---------------------"
         for i in range(0, 10):
             if event.is_set() is False:
@@ -401,6 +423,23 @@ def find_qr_path():
             direction[no][mac1] = 'r'
             direction[no][mac2] = 'q'
 
+def num2ip(num):
+    num_x = "{0:08x}".format(num)
+    num_str = str(num_x)
+    ip = ""
+    for i in [0,2,4,6]:
+        a = int(num_str[i:i+2],16)
+        ip += str(a)
+        if i != 6:
+            ip += '.'
+
+    return ip
+
+def ip2name(ip_in):
+    for h, ip in host_ip.items():
+        if ip_in == ip:
+            return h
+    print "can't find ip:",ip_in,"in ip2name"
 
 def main(p4info_file_path, bmv2_file_path):
     """
@@ -415,6 +454,7 @@ def main(p4info_file_path, bmv2_file_path):
         with open("switch.txt", "r") as f:
             for line in f:
                 sw_mac[line.split()[0]] = line.split()[1]
+
         # Create a switch connection object for s1 s2 s3;
         # this is backed by a P4Runtime gRPC connection.
         # Also, dump all P4Runtime messages sent to switch to given txt files.
@@ -440,7 +480,6 @@ def main(p4info_file_path, bmv2_file_path):
         
         
         
-        host_ip = {}
         with open("host.json", "r") as host_file:
             host_inf = json.load(host_file)
             for s, sw_inf in host_inf.items():
@@ -473,11 +512,17 @@ def main(p4info_file_path, bmv2_file_path):
 
 
         # s4 is gateway switch
-        writeHash1Rule(p4info_helper, ingress_sw=sw[3])
+        # writeHash1Rule(p4info_helper, ingress_sw=sw[3])
+        writeIPFrRule(p4info_helper, ingress_sw = sw[3], macAddr = sw_mac['s4'])
 
         find_path(p4info_helper, sw, host_ip)
         record_switch_port()
         find_qr_path()
+
+        # build runtimeCLI
+        for s, mac in sw_mac.items():
+            runtimeAPI = connectThrift(9089+int(s[1:]),bmv2_file_path)
+            API[s] = runtimeAPI
 
             
         event = myEvent(topology, direction, sw_links)
@@ -498,18 +543,8 @@ def main(p4info_file_path, bmv2_file_path):
 
         # connect to thrift
         # set s4 to gateway switch
-        runtimeAPI = connectThrift(9093,bmv2_file_path)
-
-        meterControl = event.setMeterFlag
-        if meterControl == "On":
-            # set meter
-            runtimeAPI.do_meter_array_set_rates("meter_array_set_rates MyIngress.ingress_meter_stats 0.00000128:9000 0.00000128:9000")
-            meter = runtimeAPI.get_res("meter", "ingress_meter_stats", runtime_CLI.ResType.meter_array)
-            new_rates = []
-            new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-            new_rates.append(runtime_CLI.BmMeterRateConfig(0.00000128, 9000))
-            runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
-
+        runtimeAPI = API['s4']
+        setMeter(runtimeAPI)
 
             
         # tmp = ""
@@ -533,40 +568,91 @@ def main(p4info_file_path, bmv2_file_path):
                 # packet = content.packet.payload
             #     pkt = Ether(_pkt=packet)
         m = 0
-        quick_cool_down = 0
+        quick_cool_down = {}
+        quick_cool_down['s4'] = 0
+        rule_has_set = {}
+        rule_has_set['s4'] = True
+        active_API = [[runtimeAPI, 's4']]
         while event.is_set() is True:
             # None
 
-            print "------------"
+            print "=================="
             print m*10,"second"
-            res_num = event.getPktNum(sw_mac["s4"], None, 'r')
 
-            flag = read_register(runtimeAPI, "f_reg", 0)
-            print "res_num: ", res_num
-            print "flag: ", flag
-            if res_num >= 10:
-                quick_cool_down = 0
-                if flag >= 5:
-                    write_register(runtimeAPI, "f_reg", 0, flag+1)
-                else:
-                    write_register(runtimeAPI, "f_reg", 0, 5)
-            elif res_num < 10 and flag > 0 and quick_cool_down >= 5:
-                write_register(runtimeAPI, "f_reg", 0, int(flag/2))
-            elif res_num < 10 and flag > 0:
-                write_register(runtimeAPI, "f_reg", 0, flag-1)
-                quick_cool_down += 1
+            while event.controller_lock is False:
+                None
+            event.controller_lock = False
+
+
+            if event.getMeterFlag() == 1:
+                for a in active_API:
+                    
+                    api = a[0]
+                    sw_name = a[1]
+                    res_num = event.getPktNum(sw_mac[sw_name], None, 'r')
+                    flag = read_register(api, "f_reg", 0)
+                    print "------------"
+                    print sw_name,"res_num: ", res_num
+                    print "flag: ", flag
+
+                    if res_num >= 10:
+                        quick_cool_down[sw_name] = 0
+                        if flag >= 5:
+                            write_register(api, "f_reg", 0, flag+1)
+                        else:
+                            write_register(api, "f_reg", 0, 5)
+                    elif res_num < 10 and flag > 0 and quick_cool_down[sw_name] >= 3:
+                        # print "less response num... quick cool down"
+                        write_register(api, "f_reg", 0, int(flag/2))
+                    elif res_num < 10 and flag > 0:
+                        write_register(api, "f_reg", 0, flag-1)
+                        quick_cool_down[sw_name] += 1
+                    
                 
+                    if flag > 0:
+                        print sw_name,"mode on..."
+                        if sw_name == "s1":
+                            for i in range(0, 65536):
+                                t_id = read_register(api, "reg_ingress", i)
+                                if t_id > 0:
+                                    write_register(api, "reg_ingress", i, t_id-1)
+                                    print "reg[",i,"] = ",t_id-1
+                    else:
+                        #TODO clean API...
+                        None
 
-            if flag > 0:
-                print "Mode on..."
-                # for i in range(0, 65536):
-                    # t_id = read_register(runtimeAPI, "reg_ingress", i)
-                    # if t_id > 0:
-                        # write_register(runtimeAPI, "reg_ingress", i, t_id-1)
-                #         print "reg[",i,"] = ",t_id-1
+                    # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
+                    # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
+                for i in range(0, 255):
+                    f = read_register(runtimeAPI, "fr_reg", i)
+                    if f > 20:
+                        num = read_register(runtimeAPI, "s_reg", i) # get a host
+                        if num == 0:
+                            sleep(1)
+                            num = read_register(runtimeAPI, "s_reg", i)
+                        ip = num2ip(num) # find the ip of the host from num
+                        name = ip2name(ip)# find the host name
+                        s = sw_links[name][0][1] # find switch the host connect
+                        if rule_has_set.has_key(s) is False:
+                            print "Add new switch to help :",s
+                            setMeter(API[s])
+                            sw[int(s[1:])-1].MasterArbitrationUpdate()
+                            # writeHash1Rule(p4info_helper, 
+                                    # ingress_sw=sw[int(s[1:])-1])
+                            active_API.append([API[s], s])
+                            rule_has_set[s] = True
+                            quick_cool_down[s] = 0
+                            
+                    write_register(runtimeAPI, "fr_reg", i, 0) # clean
+            else:
+                for a in active_API:
+                    api = a[0]
+                    write_register(api, "f_reg", 0, 0)
 
-            # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
-            # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
+
+
+            event.controller_lock = True
+
             m += 1
             for i in range(0, 10):
                 if event.is_set() is False:

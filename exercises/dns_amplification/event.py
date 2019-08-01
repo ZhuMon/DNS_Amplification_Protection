@@ -28,6 +28,9 @@ class myEvent(_Event):
         self.node_name = {} # record host/sw name {mac1:"victim", mac3:"dns"
         
         self.meter_flag = 0
+        self.controller_lock = True # for controller to lock
+
+
         # init
         self.cleanFlag()
 
@@ -173,7 +176,7 @@ class myEvent(_Event):
                 for l in links:
                     col1 = self.changeName(l[1])
                     col2 = l[0]
-                    print self.name2mac(col1)
+                    # print self.name2mac(col1)
                     col3 = self.getPktNum(mac, self.name2mac(col1), 'q')
                     col4 = self.getPktNum(mac, self.name2mac(col1), 'r')
                     out.append((col1,col2,col3,col4))
@@ -181,11 +184,8 @@ class myEvent(_Event):
         out.sort(key = lambda x: x[1])
         return out
 
-    def getMeterFlag(self, flag):
-        if flag == 1:
-            self.meter_flag = flag
-        else:
-            self.meter_flag = flag
+    def setMeterFlag(self, flag):
+        self.meter_flag = flag
         
-    def setMeterFlag(self):
+    def getMeterFlag(self):
         return self.meter_flag
