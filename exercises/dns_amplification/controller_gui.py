@@ -161,7 +161,7 @@ class ControllerGui():
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, 
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="green")
+                        fill="green", arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[1] -> half : response
                 No = self.cv.create_line(
@@ -169,7 +169,7 @@ class ControllerGui():
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="orange")
+                        fill="orange", arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
             elif self.event.getQR(link[0], link[1], 1) == 'r':
                 # link[1] -> half : query
@@ -178,7 +178,7 @@ class ControllerGui():
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="green")
+                        fill="green", arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[0] -> half : response
                 No = self.cv.create_line(
@@ -186,7 +186,7 @@ class ControllerGui():
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="orange")
+                        fill="orange", arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
 
         self.switches = {}
