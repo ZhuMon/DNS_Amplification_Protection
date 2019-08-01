@@ -46,40 +46,48 @@ class ControllerGui():
         self.create_node()
 
         self.style = Style()
-        buttonImage = Image.open('Img/white_power.png').resize((80,20), Image.ANTIALIAS)
-        refreshImage = Image.open('Img/white_refresh.png').resize((80,20), Image.ANTIALIAS)
+        quitImage = Image.open('Img/quit.png').resize((180,42), Image.ANTIALIAS)
+        refreshImage = Image.open('Img/black_refresh.png').resize((180,42), Image.ANTIALIAS)
 
-        # use self.buttonPhoto
-        self.buttonPhoto = ImageTk.PhotoImage(buttonImage) 
+        b_quitImage = Image.open('Img/gray_quit.png').resize((180,42), Image.ANTIALIAS)
+        b_refreshImage = Image.open('Img/gray_refresh.png').resize((180,42), Image.ANTIALIAS)
+
+        # use self.quitPhoto
+        self.quitPhoto = ImageTk.PhotoImage(quitImage) 
         self.refreshPhoto = ImageTk.PhotoImage(refreshImage) 
+        self.b_quitPhoto = ImageTk.PhotoImage(b_quitImage) 
+        self.b_refreshPhoto = ImageTk.PhotoImage(b_refreshImage) 
 
         self.style.configure("Q.TButton",
-                background="red", foreground="white",
-                font=self.fonts, relief="flat", image = self.buttonPhoto, padding=0)
+                # background="red", foreground="white", compound="left",
+                background="white",
+                font=self.fonts, relief="flat", 
+                image = self.quitPhoto, padding=0,
+                )
         self.style.map("Q.TButton",
-                background=[("active","gray")],
-                foreground=[("","white"), ("active","white")],
-                text=[("active","Quit")],
-                image=[("active","None")],
+                background=[("active","white")],
+                image=[("active",self.b_quitPhoto)],
                 )
 
         self.style.configure("R.TButton",
-                background="green", foreground="white",
-                font=self.fonts, relief="flat", image = self.refreshPhoto, padding=0)
+                # background="green", 
+                background="white",
+                font=self.fonts, relief="flat", 
+                image = self.refreshPhoto, padding=0)
         self.style.map("R.TButton",
-                background=[("active","gray")],
-                foreground=[("","white"), ("active","white")],
-                text=[("active","Refresh")],
-                image=[("active","None")],
+                background=[("active","white")],
+                image=[("active",self.b_refreshPhoto)],
                 )
 
 
 
-        self.button_quit = Button(self.root, text="Quit", style="Q.TButton",command=self.quit)
+        self.button_quit = Button(self.root, style="Q.TButton",command=self.quit
+                # , compound="left"
+                )
         self.button_quit.place(x=800, y=500)
 
-        self.button_refresh = Button(self.root, text="Refresh", style="R.TButton", command=self.refresh_network)
-        self.button_refresh.place(x=800, y=470)
+        self.button_refresh = Button(self.root, style="R.TButton", command=self.refresh_network)
+        self.button_refresh.place(x=800, y=450)
 
         self.cv.pack()
         self.cv.bind('<Motion>' , self.move_handler)
