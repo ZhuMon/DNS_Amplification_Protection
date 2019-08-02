@@ -31,8 +31,8 @@ class ControllerGui():
         self.fonts = ("arial", 12)
 
         self.var = StringVar()
-        self.L1 = Label(self.root, textvariable=self.var, width=55)
-        self.L1.place(x=580, y=120)
+        self.L1 = Label(self.root, textvariable=self.var, width=30, anchor="center")
+        self.L1.place(x=155, y=445)
 
         self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
 
