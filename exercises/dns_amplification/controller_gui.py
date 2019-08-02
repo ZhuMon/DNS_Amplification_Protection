@@ -25,9 +25,20 @@ class ControllerGui():
 
         """
         self.event = event
+        
+        self.bg = "#0057b6"
+        # self.bg = "#737373"
+        self.host_color = "#e6eeff"
+        self.sw_color = "#cc99ff"
+        self.r_color  = "#cc6600"
+        self.q_color  = "green"
+        self.ov_r_color = "red"
+        self.ov_q_color = "yellow"
+        self.notice_color = "red"
 
         self.root = Tk()
-        self.cv = Canvas(self.root,bg = 'white', height = g_height, width = g_width)
+        self.root.title("Controller GUI")
+        self.cv = Canvas(self.root,bg = self.bg, height = g_height, width = g_width)
         self.fonts = ("arial", 12)
 
         self.var = StringVar()
@@ -60,22 +71,22 @@ class ControllerGui():
 
         self.style.configure("Q.TButton",
                 # background="red", foreground="white", compound="left",
-                background="white",
+                background=self.bg,
                 font=self.fonts, relief="flat", 
                 image = self.quitPhoto, padding=0,
                 )
         self.style.map("Q.TButton",
-                background=[("active","white")],
+                background=[("active",self.bg)],
                 image=[("active",self.b_quitPhoto)],
                 )
 
         self.style.configure("R.TButton",
                 # background="green", 
-                background="white",
+                background=self.bg,
                 font=self.fonts, relief="flat", 
                 image = self.refreshPhoto, padding=0)
         self.style.map("R.TButton",
-                background=[("active","white")],
+                background=[("active",self.bg)],
                 image=[("active",self.b_refreshPhoto)],
                 )
 
@@ -161,7 +172,7 @@ class ControllerGui():
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, 
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="green", arrow=LAST)
+                        fill=self.q_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[1] -> half : response
                 No = self.cv.create_line(
@@ -169,7 +180,7 @@ class ControllerGui():
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="orange", arrow=LAST)
+                        fill=self.r_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
             elif self.event.getQR(link[0], link[1], 1) == 'r':
                 # link[1] -> half : query
@@ -178,7 +189,7 @@ class ControllerGui():
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="green", arrow=LAST)
+                        fill=self.q_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[0] -> half : response
                 No = self.cv.create_line(
@@ -186,7 +197,7 @@ class ControllerGui():
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill="orange", arrow=LAST)
+                        fill=self.r_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
 
         self.switches = {}
@@ -194,10 +205,10 @@ class ControllerGui():
         for node, pos in self.nodes.items():
             if node[15:] == "00" :
                 # sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
-                sw = self.cv.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill="white")
+                sw = self.cv.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.sw_color)
                 self.switches[node] = sw
             else:
-                host = self.cv.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill="black")
+                host = self.cv.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color)
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
 
@@ -220,13 +231,13 @@ class ControllerGui():
                 cv.itemconfig(event.getObjID(mac1, mac2)[0], width=pktNum_q)
                 cv.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
                 if pktNum_q > qpktThreshold:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill="yellow")
+                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color)
                 else:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill="green")
+                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color)
                 if pktNum_r > rpktThreshold:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill="red")
+                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color)
                 else:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill="orange")
+                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color)
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
@@ -243,9 +254,9 @@ class ControllerGui():
     def dbClick2ShowNode(self, event):
         """ click one row to show node position """
         for s_mac, pos in self.switches.items():
-            self.cv.itemconfig(self.switches[s_mac], fill="white")
+            self.cv.itemconfig(self.switches[s_mac], fill=self.sw_color)
         for h_mac, pos in self.hosts.items():
-            self.cv.itemconfig(self.hosts[h_mac], fill="black")
+            self.cv.itemconfig(self.hosts[h_mac], fill=self.host_color)
         name = self.tree.item(self.tree.selection())['values'][0]
         if name == "DNS Server":
             name = "h3"
@@ -257,9 +268,9 @@ class ControllerGui():
             name = "s5"
         mac = self.event.name2mac(name)
         if mac[15:] == "00":
-            self.cv.itemconfig(self.switches[mac], fill="brown")
+            self.cv.itemconfig(self.switches[mac], fill=self.notice_color)
         else:
-            self.cv.itemconfig(self.hosts[mac], fill="brown")
+            self.cv.itemconfig(self.hosts[mac], fill=self.notice_color)
 
     def quit(self):
         #TODO clear others 
@@ -291,9 +302,9 @@ class ControllerGui():
         for node, pos in self.nodes.items():
             if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
                 for s_mac, pos in self.switches.items():
-                    self.cv.itemconfig(self.switches[s_mac], fill="white")
+                    self.cv.itemconfig(self.switches[s_mac], fill=self.sw_color)
                 for h_mac, pos in self.hosts.items():
-                    self.cv.itemconfig(self.hosts[h_mac], fill="black")
+                    self.cv.itemconfig(self.hosts[h_mac], fill=self.host_color)
                 self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
                 self.tree.column('col1', width=100, anchor='center')
                 self.tree.column('col2', width=70, anchor='center')
