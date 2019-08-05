@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 from event import myEvent
 
+win_size = '1100x600'
 g_height = 600
 g_width = 1100
 qpktThreshold = 0
@@ -26,8 +27,9 @@ class ControllerGui():
         """
         self.event = event
         
-        self.bg = "#0057b6"
-        # self.bg = "#737373"
+        self.bg_tp = "#0057b6"
+        #self.bg = "#737373"
+        self.bg = "#b7b6ba"
         self.host_color = "#e6eeff"
         self.sw_color = "#cc99ff"
         self.r_color  = "#cc6600"
@@ -38,12 +40,20 @@ class ControllerGui():
 
         self.root = Tk()
         self.root.title("Controller GUI")
-        self.cv = Canvas(self.root,bg = self.bg, height = g_height, width = g_width)
+        self.root.geometry(win_size)
+        self.fr_tp = Frame(self.root, height = g_height, width = g_width/2)
+        #self.fr_tb = Frame(self.root, height = g_height, width = g_width/2)
+        self.cv_tp = Canvas(self.fr_tp,bg = self.bg_tp, height = 600, width = g_width/2)
+        #self.cv = Canvas(self.fr_tp,bg = self.bg_tp, height = g_height, width = g_width/2)
+        
+        self.fr_tp.pack(side=LEFT)
+        #self.fr_tb.pack(side=RIGHT)
         self.fonts = ("arial", 12)
 
         self.var = StringVar()
-        self.L1 = Label(self.root, textvariable=self.var, width=30, anchor="center")
+        self.L1 = Label(self.fr_tp, textvariable=self.var, width=30, anchor="center")
         self.L1.place(x=155, y=445)
+        #self.L1.pack()
 
         self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
 
@@ -100,11 +110,12 @@ class ControllerGui():
         self.button_refresh = Button(self.root, style="R.TButton", command=self.refresh_network)
         self.button_refresh.place(x=800, y=450)
 
-        self.cv.pack()
-        self.cv.bind('<Motion>' , self.move_handler)
-        self.cv.bind('<Button-1>', self.click_handler)
+        self.cv_tp.pack()
+        #self.cv.pack()
+        self.cv_tp.bind('<Motion>' , self.move_handler)
+        self.cv_tp.bind('<Button-1>', self.click_handler)
 
-        self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv))
+        self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_tp))
         self.edgeWarn_th.setDaemon(True)
         self.edgeWarn_th.start()
         
@@ -113,7 +124,7 @@ class ControllerGui():
         self.on_off_ypos = 480
 
         for text, mode in modes:
-            self.rate_set = Radiobutton(self.root, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
+            self.rate_set = Radiobutton(self.fr_tp, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
             self.on_off_ypos = self.on_off_ypos + 25
 
         self.root.mainloop()
@@ -145,7 +156,8 @@ class ControllerGui():
         self.G.clear()
         self.ge_network()
 
-        self.cv.delete("all")
+        self.cv_tp.delete("all")
+        #self.cv.delete("all")
         self.event.cleanObjID()
         self.create_node()
 
@@ -167,7 +179,7 @@ class ControllerGui():
         for link in self.links:
             if self.event.getQR(link[0], link[1], 1) == 'q':
                 # link[0] -> half : query
-                No = self.cv.create_line(
+                No = self.cv_tp.create_line(
                         self.nodes[link[0]][0]+self.node_size/2, 
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, 
@@ -175,7 +187,7 @@ class ControllerGui():
                         fill=self.q_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[1] -> half : response
-                No = self.cv.create_line(
+                No = self.cv_tp.create_line(
                         self.nodes[link[1]][0]+self.node_size/2,
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
@@ -184,7 +196,7 @@ class ControllerGui():
                 self.event.putObjID(No, link[0], link[1])
             elif self.event.getQR(link[0], link[1], 1) == 'r':
                 # link[1] -> half : query
-                No = self.cv.create_line(
+                No = self.cv_tp.create_line(
                         self.nodes[link[1]][0]+self.node_size/2,
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
@@ -192,7 +204,7 @@ class ControllerGui():
                         fill=self.q_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[0] -> half : response
-                No = self.cv.create_line(
+                No = self.cv_tp.create_line(
                         self.nodes[link[0]][0]+self.node_size/2,
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
@@ -205,10 +217,10 @@ class ControllerGui():
         for node, pos in self.nodes.items():
             if node[15:] == "00" :
                 # sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
-                sw = self.cv.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.sw_color)
+                sw = self.cv_tp.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.sw_color)
                 self.switches[node] = sw
             else:
-                host = self.cv.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color)
+                host = self.cv_tp.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color)
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
 
@@ -220,7 +232,7 @@ class ControllerGui():
         else:
             return sqrt(num) * sqrt(2)
 
-    def edge_traffic_warn(self, event, topology, cv):
+    def edge_traffic_warn(self, event, topology, cv_tp):
         """ detect which edge is busy, warn user via color changing """
         while event.is_set() is True:
             for no, link in sorted(topology.items()):
@@ -228,16 +240,16 @@ class ControllerGui():
                 mac2 = link.keys()[1]
                 pktNum_q = event.getPktNum(mac1, mac2, 'q')
                 pktNum_r = event.getPktNum(mac1, mac2, 'r')
-                cv.itemconfig(event.getObjID(mac1, mac2)[0], width=pktNum_q)
-                cv.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
+                cv_tp.itemconfig(event.getObjID(mac1, mac2)[0], width=pktNum_q)
+                cv_tp.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
                 if pktNum_q > qpktThreshold:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color)
+                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color)
                 else:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color)
+                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color)
                 if pktNum_r > rpktThreshold:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color)
+                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color)
                 else:
-                    cv.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color)
+                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color)
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
@@ -254,9 +266,9 @@ class ControllerGui():
     def dbClick2ShowNode(self, event):
         """ click one row to show node position """
         for s_mac, pos in self.switches.items():
-            self.cv.itemconfig(self.switches[s_mac], fill=self.sw_color)
+            self.cv_tp.itemconfig(self.switches[s_mac], fill=self.sw_color)
         for h_mac, pos in self.hosts.items():
-            self.cv.itemconfig(self.hosts[h_mac], fill=self.host_color)
+            self.cv_tp.itemconfig(self.hosts[h_mac], fill=self.host_color)
         name = self.tree.item(self.tree.selection())['values'][0]
         if name == "DNS Server":
             name = "h3"
@@ -268,14 +280,15 @@ class ControllerGui():
             name = "s5"
         mac = self.event.name2mac(name)
         if mac[15:] == "00":
-            self.cv.itemconfig(self.switches[mac], fill=self.notice_color)
+            self.cv_tp.itemconfig(self.switches[mac], fill=self.notice_color)
         else:
-            self.cv.itemconfig(self.hosts[mac], fill=self.notice_color)
+            self.cv_tp.itemconfig(self.hosts[mac], fill=self.notice_color)
 
     def quit(self):
         #TODO clear others 
         self.G.clear()
-        self.cv.delete("all")
+        self.cv_tp.delete("all")
+        #self.cv.delete("all")
         self.root.destroy()
         self.event.clear()
         # exit()
@@ -302,9 +315,9 @@ class ControllerGui():
         for node, pos in self.nodes.items():
             if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
                 for s_mac, pos in self.switches.items():
-                    self.cv.itemconfig(self.switches[s_mac], fill=self.sw_color)
+                    self.cv_tp.itemconfig(self.switches[s_mac], fill=self.sw_color)
                 for h_mac, pos in self.hosts.items():
-                    self.cv.itemconfig(self.hosts[h_mac], fill=self.host_color)
+                    self.cv_tp.itemconfig(self.hosts[h_mac], fill=self.host_color)
                 self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
                 self.tree.column('col1', width=100, anchor='center')
                 self.tree.column('col2', width=70, anchor='center')
