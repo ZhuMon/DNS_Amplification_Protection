@@ -76,7 +76,7 @@ class ControllerGui():
 
         self.var = StringVar()
         self.L1 = Label(self.fr_bg, textvariable=self.var, width=30, anchor="center")
-        self.L1.place(x=155, y=445)
+        self.L1.place(x=85, y=470)
         #self.L1.pack()
 
         self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
@@ -147,8 +147,8 @@ class ControllerGui():
         self.edgeWarn_th.start()
         
         self.v = StringVar()
-        self.on_off_xpos = 220
-        self.on_off_ypos = 480
+        self.on_off_xpos = 150
+        self.on_off_ypos = 500
 
         for text, mode in modes:
             self.rate_set = Radiobutton(self.fr_bg, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
@@ -212,7 +212,7 @@ class ControllerGui():
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, 
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill=self.q_color, arrow=LAST)
+                        fill=self.q_color, arrow=LAST, width=2)
                 self.event.putObjID(No, link[0], link[1])
                 # link[1] -> half : response
                 No = self.cv_topo.create_line(
@@ -220,7 +220,7 @@ class ControllerGui():
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill=self.r_color, arrow=LAST)
+                        fill=self.r_color, arrow=LAST, width=2)
                 self.event.putObjID(No, link[0], link[1])
             elif self.event.getQR(link[0], link[1], 1) == 'r':
                 # link[1] -> half : query
@@ -229,7 +229,7 @@ class ControllerGui():
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill=self.q_color, arrow=LAST)
+                        fill=self.q_color, arrow=LAST, width=2)
                 self.event.putObjID(No, link[0], link[1])
                 # link[0] -> half : response
                 No = self.cv_topo.create_line(
@@ -237,7 +237,7 @@ class ControllerGui():
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
                         (self.nodes[link[0]][1]+self.nodes[link[1]][1]+self.node_size)/2,
-                        fill=self.r_color, arrow=LAST)
+                        fill=self.r_color, arrow=LAST, width=2)
                 self.event.putObjID(No, link[0], link[1])
 
         self.switches = {}
@@ -263,13 +263,21 @@ class ControllerGui():
     def edge_traffic_warn(self, event, topology, cv_topo):
         """ detect which edge is busy, warn user via color changing """
         while event.is_set() is True:
+            pktMax = 0
+            edgeWidth = 1
             for no, link in sorted(topology.items()):
                 mac1 = link.keys()[0]
                 mac2 = link.keys()[1]
                 pktNum_q = event.getPktNum(mac1, mac2, 'q')
                 pktNum_r = event.getPktNum(mac1, mac2, 'r')
-                cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], width=pktNum_q)
-                cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
+                pktMax = pktNum_q if pktNum_q > pktMax else pktMax
+                pktMax = pktNum_r if pktNum_r > pktMax else pktMax
+                edgeWidth_q = int(pktNum_q*20/pktMax)
+                edgeWidth_r = int(pktNum_r*20/pktMax)
+                edgeWidth_q = 2 if edgeWidth_q < 2 else edgeWidth
+                edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth
+                cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], width=edgeWidth_q)
+                cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], width=edgeWidth_r)
                 if pktNum_q > qpktThreshold:
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color)
                 else:
