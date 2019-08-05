@@ -30,6 +30,7 @@ class myEvent(_Event):
         self.meter_flag = 0
         self.controller_lock = True # for controller to lock
 
+        self.thr_res_num = 10 # packets threshold to turn on mitigation
 
         # init
         self.cleanFlag()

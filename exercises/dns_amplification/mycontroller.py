@@ -572,9 +572,9 @@ def main(p4info_file_path, bmv2_file_path):
         quick_cool_down['s4'] = 0
         rule_has_set = {}
         rule_has_set['s4'] = True
-        active_API = [[runtimeAPI, 's4']]
+        active_API = {}
+        active_API['s4'] = runtimeAPI
         while event.is_set() is True:
-            # None
 
             print "=================="
             print m*10,"second"
@@ -583,47 +583,45 @@ def main(p4info_file_path, bmv2_file_path):
                 None
             event.controller_lock = False
 
-
+            thr_res_num = event.thr_res_num
             if event.getMeterFlag() == 1:
-                for a in active_API:
+                for sw_name, api in active_API.items():
                     
-                    api = a[0]
-                    sw_name = a[1]
                     res_num = event.getPktNum(sw_mac[sw_name], None, 'r')
                     flag = read_register(api, "f_reg", 0)
                     print "------------"
                     print sw_name,"res_num: ", res_num
                     print "flag: ", flag
 
-                    if res_num >= 10:
+                    if res_num >= thr_res_num:
                         quick_cool_down[sw_name] = 0
                         if flag >= 5:
                             write_register(api, "f_reg", 0, flag+1)
                         else:
                             write_register(api, "f_reg", 0, 5)
-                    elif res_num < 10 and flag > 0 and quick_cool_down[sw_name] >= 3:
+                    elif res_num < thr_res_num and flag > 0 and quick_cool_down[sw_name] >= 3:
                         # print "less response num... quick cool down"
                         write_register(api, "f_reg", 0, int(flag/2))
-                    elif res_num < 10 and flag > 0:
+                    elif res_num < thr_res_num and flag > 0:
                         write_register(api, "f_reg", 0, flag-1)
                         quick_cool_down[sw_name] += 1
                     
                 
                     if flag > 0:
                         print sw_name,"mode on..."
-                        if sw_name == "s1":
-                            for i in range(0, 65536):
-                                t_id = read_register(api, "reg_ingress", i)
-                                if t_id > 0:
-                                    write_register(api, "reg_ingress", i, t_id-1)
-                                    print "reg[",i,"] = ",t_id-1
+                        for i in range(0, 65536):
+                            t_id = read_register(api, "reg_ingress", i)
+                            if t_id > 0:
+                                write_register(api, "reg_ingress", i, t_id-1)
+                                    # print "reg[",i,"] = ",t_id-1
                     else:
-                        #TODO clean API...
-                        None
+                        # clean API...
+                        if sw_name != "s4":
+                            rule_has_set[sw_name] = False
+                            quick_cool_down[sw_name] = 0
+                            active_API.pop(sw_name)
 
-                    # print "2nd res: ",read_register(runtimeAPI, "r_reg", 0)
-                    # write_register(runtimeAPI, "r_reg", 0, 0) # clean r_reg every minute
-                for i in range(0, 255):
+                for i in range(0, 256):
                     f = read_register(runtimeAPI, "fr_reg", i)
                     if f > 20:
                         num = read_register(runtimeAPI, "s_reg", i) # get a host
@@ -633,20 +631,19 @@ def main(p4info_file_path, bmv2_file_path):
                         ip = num2ip(num) # find the ip of the host from num
                         name = ip2name(ip)# find the host name
                         s = sw_links[name][0][1] # find switch the host connect
-                        if rule_has_set.has_key(s) is False:
+                        if rule_has_set.has_key(s) is False or rule_has_set[s] == False:
                             print "Add new switch to help :",s
                             setMeter(API[s])
                             sw[int(s[1:])-1].MasterArbitrationUpdate()
                             # writeHash1Rule(p4info_helper, 
                                     # ingress_sw=sw[int(s[1:])-1])
-                            active_API.append([API[s], s])
+                            active_API[s] = API[s]
                             rule_has_set[s] = True
                             quick_cool_down[s] = 0
                             
                     write_register(runtimeAPI, "fr_reg", i, 0) # clean
-            else:
-                for a in active_API:
-                    api = a[0]
+            else: # clean flag
+                for s,api in active_API.items():
                     write_register(api, "f_reg", 0, 0)
 
 
