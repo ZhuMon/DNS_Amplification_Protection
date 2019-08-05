@@ -30,7 +30,8 @@ class ControllerGui():
         # self.bg_tp = "#0057b6"
         self.bg_tp = "black" 
         #self.bg = "#737373"
-        self.bg = "#b7b6ba"
+        # self.bg = "#b7b6ba"
+        self.bg = "white"
         self.host_color = "#e6eeff"
         self.sw_color = "#cc99ff"
         self.r_color  = "#cc6600"
@@ -91,11 +92,11 @@ class ControllerGui():
         self.create_node()
 
         self.style = Style()
-        quitImage = Image.open('Img/quit.png').resize((180,42), Image.ANTIALIAS)
-        refreshImage = Image.open('Img/black_refresh.png').resize((180,42), Image.ANTIALIAS)
+        quitImage = Image.open('Img/up_quit.png').resize((180,42), Image.ANTIALIAS)
+        refreshImage = Image.open('Img/up_refresh.png').resize((180,42), Image.ANTIALIAS)
 
-        b_quitImage = Image.open('Img/gray_quit.png').resize((180,42), Image.ANTIALIAS)
-        b_refreshImage = Image.open('Img/gray_refresh.png').resize((180,42), Image.ANTIALIAS)
+        b_quitImage = Image.open('Img/down_quit.png').resize((180,42), Image.ANTIALIAS)
+        b_refreshImage = Image.open('Img/down_refresh.png').resize((180,42), Image.ANTIALIAS)
 
         # use self.quitPhoto
         self.quitPhoto = ImageTk.PhotoImage(quitImage) 
@@ -129,10 +130,10 @@ class ControllerGui():
         self.button_quit = Button(self.root, style="Q.TButton",command=self.quit
                 # , compound="left"
                 )
-        self.button_quit.place(x=800, y=500)
+        self.button_quit.place(x=850, y=450)
 
         self.button_refresh = Button(self.root, style="R.TButton", command=self.refresh_network)
-        self.button_refresh.place(x=800, y=450)
+        self.button_refresh.place(x=850, y=400)
 
         self.cv_tp.pack(expand="Yes", side="top", fill="both",ipadx=0,ipady=0,padx=0,pady=0)
         self.cv_topo.pack(expand="Yes", anchor="center",side="left", fill="both")
@@ -371,8 +372,8 @@ class ControllerGui():
 
                 self.ybar = Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
                 self.tree.configure(yscrollcommand=self.ybar.set)
-                self.tree.place(x=630, y=200)
-                self.ybar.place(x=950, y=200, height=218)
+                self.tree.place(x=480, y=170)
+                self.ybar.place(x=800, y=170, height=218)
 
                 self.tree.bind("<Double-1>", self.dbClick2ShowNode)
  
