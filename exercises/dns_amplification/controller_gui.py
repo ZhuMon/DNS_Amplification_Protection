@@ -276,8 +276,8 @@ class ControllerGui():
                 pktMax = 20 if pktMax < 20 else pktMax
                 edgeWidth_q = int(pktNum_q*20/pktMax)
                 edgeWidth_r = int(pktNum_r*20/pktMax)
-                edgeWidth_q = 2 if edgeWidth_q < 2 else edgeWidth
-                edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth
+                edgeWidth_q = 2 if edgeWidth_q < 2 else edgeWidth_q
+                edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
                 cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], width=edgeWidth_q)
                 cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], width=edgeWidth_r)
                 if pktNum_q > qpktThreshold:
