@@ -27,7 +27,8 @@ class ControllerGui():
         """
         self.event = event
         
-        self.bg_tp = "#0057b6"
+        # self.bg_tp = "#0057b6"
+        self.bg_tp = "black" 
         #self.bg = "#737373"
         self.bg = "#b7b6ba"
         self.host_color = "#e6eeff"
@@ -41,17 +42,40 @@ class ControllerGui():
         self.root = Tk()
         self.root.title("Controller GUI")
         self.root.geometry(win_size)
-        self.fr_tp = Frame(self.root, height = g_height, width = g_width/2)
-        #self.fr_tb = Frame(self.root, height = g_height, width = g_width/2)
-        self.cv_tp = Canvas(self.fr_tp,bg = self.bg_tp, height = 600, width = g_width/2)
-        #self.cv = Canvas(self.fr_tp,bg = self.bg_tp, height = g_height, width = g_width/2)
+
+        TBgImage = Image.open('Img/top_bg.png').resize((1100,100), Image.ANTIALIAS)
+        BBgImage = Image.open('Img/bottom_bg.png').resize((1100,100), Image.ANTIALIAS)
+        TopoBgImage = Image.open('Img/gray_bg.png').resize((400,400), Image.ANTIALIAS)
+
+        self.t_bgPhoto = ImageTk.PhotoImage(TBgImage)
+        self.b_bgPhoto = ImageTk.PhotoImage(BBgImage)
+        self.topo_bgPhoto = ImageTk.PhotoImage(TopoBgImage)
+
+
+        self.fr_bg = Frame(self.root, height = g_height-100, width = g_width)
+        self.fr_tp = Frame(self.fr_bg, height = 100, width = g_width)
+        # self.fr_tb = Frame(self.fr_bg, height = g_height-100, width = g_width/2)
         
-        self.fr_tp.pack(side=LEFT)
-        #self.fr_tb.pack(side=RIGHT)
+        self.cv_tp = Canvas(self.fr_bg, height = 100, width = g_width,highlightthickness=0)
+        
+        self.cv_tp.create_image(0,0, image=self.t_bgPhoto, anchor = "nw")
+        
+        self.cv_topo = Canvas(self.fr_bg,bg = "white", height = 400, width = 400,highlightthickness=0)
+        self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
+
+        self.cv_table = Canvas(self.fr_bg,bg = "white", height = 400, width = 700,highlightthickness=0)
+
+        self.cv_btm= Canvas(self.fr_tp, height = 100, width = g_width,highlightthickness=0)
+        self.cv_btm.create_image(0,0, image=self.b_bgPhoto, anchor = "nw")
+        
+
+        self.fr_bg.pack()
+        self.fr_tp.pack(side="bottom")
+        # self.fr_tb.pack(side="right")
         self.fonts = ("arial", 12)
 
         self.var = StringVar()
-        self.L1 = Label(self.fr_tp, textvariable=self.var, width=30, anchor="center")
+        self.L1 = Label(self.fr_bg, textvariable=self.var, width=30, anchor="center")
         self.L1.place(x=155, y=445)
         #self.L1.pack()
 
@@ -110,12 +134,15 @@ class ControllerGui():
         self.button_refresh = Button(self.root, style="R.TButton", command=self.refresh_network)
         self.button_refresh.place(x=800, y=450)
 
-        self.cv_tp.pack()
+        self.cv_tp.pack(expand="Yes", side="top", fill="both",ipadx=0,ipady=0,padx=0,pady=0)
+        self.cv_topo.pack(expand="Yes", anchor="center",side="left", fill="both")
+        self.cv_table.pack(expand="Yes", anchor="center",side="right", fill="both")
+        self.cv_btm.pack(expand="Yes", side="bottom", fill="both")
         #self.cv.pack()
-        self.cv_tp.bind('<Motion>' , self.move_handler)
-        self.cv_tp.bind('<Button-1>', self.click_handler)
+        self.cv_topo.bind('<Motion>' , self.move_handler)
+        self.cv_topo.bind('<Button-1>', self.click_handler)
 
-        self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_tp))
+        self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_topo))
         self.edgeWarn_th.setDaemon(True)
         self.edgeWarn_th.start()
         
@@ -124,7 +151,7 @@ class ControllerGui():
         self.on_off_ypos = 480
 
         for text, mode in modes:
-            self.rate_set = Radiobutton(self.fr_tp, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
+            self.rate_set = Radiobutton(self.fr_bg, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
             self.on_off_ypos = self.on_off_ypos + 25
 
         self.root.mainloop()
@@ -156,9 +183,10 @@ class ControllerGui():
         self.G.clear()
         self.ge_network()
 
-        self.cv_tp.delete("all")
+        self.cv_topo.delete("all")
         #self.cv.delete("all")
         self.event.cleanObjID()
+        self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
         self.create_node()
 
     def create_node(self):
@@ -173,13 +201,13 @@ class ControllerGui():
         # self.photo_pkt = ImageTk.PhotoImage(img_pkt)
 
         for node, pos in self.nodes.items():
-            pos[0] = (self.extend(pos[0], 'x')+2)*125
-            pos[1] = (self.extend(pos[1], 'y')+2)*125
+            pos[0] = (self.extend(pos[0], 'x')+2)*100
+            pos[1] = (self.extend(pos[1], 'y')+2)*100
 
         for link in self.links:
             if self.event.getQR(link[0], link[1], 1) == 'q':
                 # link[0] -> half : query
-                No = self.cv_tp.create_line(
+                No = self.cv_topo.create_line(
                         self.nodes[link[0]][0]+self.node_size/2, 
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2, 
@@ -187,7 +215,7 @@ class ControllerGui():
                         fill=self.q_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[1] -> half : response
-                No = self.cv_tp.create_line(
+                No = self.cv_topo.create_line(
                         self.nodes[link[1]][0]+self.node_size/2,
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
@@ -196,7 +224,7 @@ class ControllerGui():
                 self.event.putObjID(No, link[0], link[1])
             elif self.event.getQR(link[0], link[1], 1) == 'r':
                 # link[1] -> half : query
-                No = self.cv_tp.create_line(
+                No = self.cv_topo.create_line(
                         self.nodes[link[1]][0]+self.node_size/2,
                         self.nodes[link[1]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
@@ -204,7 +232,7 @@ class ControllerGui():
                         fill=self.q_color, arrow=LAST)
                 self.event.putObjID(No, link[0], link[1])
                 # link[0] -> half : response
-                No = self.cv_tp.create_line(
+                No = self.cv_topo.create_line(
                         self.nodes[link[0]][0]+self.node_size/2,
                         self.nodes[link[0]][1]+self.node_size/2,
                         (self.nodes[link[0]][0]+self.nodes[link[1]][0]+self.node_size)/2,
@@ -217,10 +245,10 @@ class ControllerGui():
         for node, pos in self.nodes.items():
             if node[15:] == "00" :
                 # sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
-                sw = self.cv_tp.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.sw_color)
+                sw = self.cv_topo.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.sw_color)
                 self.switches[node] = sw
             else:
-                host = self.cv_tp.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color)
+                host = self.cv_topo.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color)
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
 
@@ -232,7 +260,7 @@ class ControllerGui():
         else:
             return sqrt(num) * sqrt(2)
 
-    def edge_traffic_warn(self, event, topology, cv_tp):
+    def edge_traffic_warn(self, event, topology, cv_topo):
         """ detect which edge is busy, warn user via color changing """
         while event.is_set() is True:
             for no, link in sorted(topology.items()):
@@ -240,16 +268,16 @@ class ControllerGui():
                 mac2 = link.keys()[1]
                 pktNum_q = event.getPktNum(mac1, mac2, 'q')
                 pktNum_r = event.getPktNum(mac1, mac2, 'r')
-                cv_tp.itemconfig(event.getObjID(mac1, mac2)[0], width=pktNum_q)
-                cv_tp.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
+                cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], width=pktNum_q)
+                cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], width=pktNum_r)
                 if pktNum_q > qpktThreshold:
-                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color)
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color)
                 else:
-                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color)
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color)
                 if pktNum_r > rpktThreshold:
-                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color)
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color)
                 else:
-                    cv_tp.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color)
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color)
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
@@ -266,9 +294,9 @@ class ControllerGui():
     def dbClick2ShowNode(self, event):
         """ click one row to show node position """
         for s_mac, pos in self.switches.items():
-            self.cv_tp.itemconfig(self.switches[s_mac], fill=self.sw_color)
+            self.cv_topo.itemconfig(self.switches[s_mac], fill=self.sw_color)
         for h_mac, pos in self.hosts.items():
-            self.cv_tp.itemconfig(self.hosts[h_mac], fill=self.host_color)
+            self.cv_topo.itemconfig(self.hosts[h_mac], fill=self.host_color)
         name = self.tree.item(self.tree.selection())['values'][0]
         if name == "DNS Server":
             name = "h3"
@@ -280,14 +308,14 @@ class ControllerGui():
             name = "s5"
         mac = self.event.name2mac(name)
         if mac[15:] == "00":
-            self.cv_tp.itemconfig(self.switches[mac], fill=self.notice_color)
+            self.cv_topo.itemconfig(self.switches[mac], fill=self.notice_color)
         else:
-            self.cv_tp.itemconfig(self.hosts[mac], fill=self.notice_color)
+            self.cv_topo.itemconfig(self.hosts[mac], fill=self.notice_color)
 
     def quit(self):
         #TODO clear others 
         self.G.clear()
-        self.cv_tp.delete("all")
+        self.cv_topo.delete("all")
         #self.cv.delete("all")
         self.root.destroy()
         self.event.clear()
@@ -315,9 +343,9 @@ class ControllerGui():
         for node, pos in self.nodes.items():
             if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
                 for s_mac, pos in self.switches.items():
-                    self.cv_tp.itemconfig(self.switches[s_mac], fill=self.sw_color)
+                    self.cv_topo.itemconfig(self.switches[s_mac], fill=self.sw_color)
                 for h_mac, pos in self.hosts.items():
-                    self.cv_tp.itemconfig(self.hosts[h_mac], fill=self.host_color)
+                    self.cv_topo.itemconfig(self.hosts[h_mac], fill=self.host_color)
                 self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
                 self.tree.column('col1', width=100, anchor='center')
                 self.tree.column('col2', width=70, anchor='center')
