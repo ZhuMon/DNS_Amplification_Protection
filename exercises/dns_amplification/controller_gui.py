@@ -280,17 +280,19 @@ class ControllerGui():
 
                 if pktNum_q <= qpktThreshold:
                     edgeWidth_q = (pktNum_q%5)+2
+                    edgeWidth_q = 2 if edgeWidth_q < 2 else edgeWidth_q
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color, width=edgeWidth_q)
                 elif pktNum_q > qpktThreshold:
                     edgeWidth_q = int(pktNum_q*20/pktMax)
-                    edgeWidth_q = 2 if edgeWidth_q < 2 else edgeWidth_q
+                    edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color, width=edgeWidth_q)
                 if pktNum_r <= rpktThreshold:
                     edgeWidth_r = (pktNum_q%5)+2
+                    edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color, width=edgeWidth_r)
                 elif pktNum_r > rpktThreshold:
                     edgeWidth_r = int(pktNum_r*20/pktMax)
-                    edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
+                    edgeWidth_r = 7 if edgeWidth_r < 7 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color, width=edgeWidth_r)
 
             for i in range(0, 10):
