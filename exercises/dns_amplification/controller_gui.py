@@ -33,8 +33,8 @@ class ControllerGui():
         self.sw_color = "white"
         self.r_color  = "#ffcc66"
         self.q_color  = "#B585BE"
-        self.ov_r_color = "red"
-        self.ov_q_color = "yellow"
+        #self.ov_r_color = "red"
+        #self.ov_q_color = "yellow"
         self.notice_color = "#5D5D5D"
 
         self.root = Tk()
@@ -150,7 +150,7 @@ class ControllerGui():
 
         for text, mode in modes:
             self.rate_set = Radiobutton(self.fr_bg, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
-            self.on_off_ypos = self.on_off_ypos + 25
+            self.on_off_ypos += 25
 
         self.root.mainloop()
 
@@ -280,7 +280,7 @@ class ControllerGui():
                 elif pktNum_q > qpktThreshold:
                     edgeWidth_q = int(pktNum_q*20/pktMax)
                     edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color, width=edgeWidth_q)
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=edgeColorCtr(self.q_color, edgeWidth_q, "q"), width=edgeWidth_q)
                 if pktNum_r <= rpktThreshold:
                     edgeWidth_r = (pktNum_q%5)+2
                     edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
@@ -288,14 +288,27 @@ class ControllerGui():
                 elif pktNum_r > rpktThreshold:
                     edgeWidth_r = int(pktNum_r*20/pktMax)
                     edgeWidth_r = 7 if edgeWidth_r < 7 else edgeWidth_r
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color, width=edgeWidth_r)
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=edgeColorCtr(self.r_color, edgeWidth_r, "r"), width=edgeWidth_r)
 
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
                 sleep(1)
 
-    def edgeColorCtr(self):
+    def edgeColorCtr(self, color, width, pkttype="q"):
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+        if pkttype == "q":
+            while width > 6:
+                g -= 15
+                width -= 2
+        elif pkttype == "r:"
+            while width > 6:
+                g -= 10
+                b -= 10
+                width -= 2
+        return "#{0:02x}{1:02x}{2:02x}".format(r,g,b)
 
     def mitigation(self):
         if self.v.get() == "On":
