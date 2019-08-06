@@ -300,6 +300,8 @@ class ControllerGui():
                     break
                 sleep(1)
 
+    def edgeColorCtr(self):
+
     def mitigation(self):
         if self.v.get() == "On":
             self.event.setMeterFlag(1)
