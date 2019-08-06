@@ -27,20 +27,15 @@ class ControllerGui():
         """
         self.event = event
         
-        # self.bg_tp = "#0057b6"
         self.bg_tp = "black" 
-        #self.bg = "#737373"
-        # self.bg = "#b7b6ba"
         self.bg = "white"
-        self.host_color = "#e6eeff"
-        self.sw_color = "#cc99ff"
-        # self.r_color  = "#cc6600"
-        self.r_color  = "#ff9999"
-        # self.q_color  = "green"
-        self.q_color  = "#008000"
+        self.host_color = "white"
+        self.sw_color = "white"
+        self.r_color  = "#ffcc66"
+        self.q_color  = "#B585BE"
         self.ov_r_color = "red"
         self.ov_q_color = "yellow"
-        self.notice_color = "red"
+        self.notice_color = "#5D5D5D"
 
         self.root = Tk()
         self.root.title("Controller GUI")
@@ -63,10 +58,10 @@ class ControllerGui():
         
         self.cv_tp.create_image(0,0, image=self.t_bgPhoto, anchor = "nw")
         
-        self.cv_topo = Canvas(self.fr_bg,bg = "white", height = 400, width = 400,highlightthickness=0)
+        self.cv_topo = Canvas(self.fr_bg,bg = self.bg, height = 400, width = 400,highlightthickness=0)
         self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
 
-        self.cv_table = Canvas(self.fr_bg,bg = "white", height = 400, width = 700,highlightthickness=0)
+        self.cv_table = Canvas(self.fr_bg,bg = self.bg, height = 400, width = 700,highlightthickness=0)
 
         self.cv_btm= Canvas(self.fr_tp, height = 100, width = g_width,highlightthickness=0)
         self.cv_btm.create_image(0,0, image=self.b_bgPhoto, anchor = "nw")
@@ -251,7 +246,7 @@ class ControllerGui():
                 sw = self.cv_topo.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.sw_color)
                 self.switches[node] = sw
             else:
-                host = self.cv_topo.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color)
+                host = self.cv_topo.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color, outline="black")
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
 
