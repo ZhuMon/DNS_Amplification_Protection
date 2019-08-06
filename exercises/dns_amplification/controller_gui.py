@@ -262,7 +262,8 @@ class ControllerGui():
         """ detect which edge is busy, warn user via color changing """
         while event.is_set() is True:
             pktMax = 0
-            edgeWidth = 1
+            edgeWidth_q = 2
+            edgeWidth_r = 2
             for no, link in sorted(topology.items()):
                 mac1 = link.keys()[0]
                 mac2 = link.keys()[1]
@@ -271,20 +272,24 @@ class ControllerGui():
                 pktMax = pktNum_q if pktNum_q > pktMax else pktMax
                 pktMax = pktNum_r if pktNum_r > pktMax else pktMax
                 pktMax = 20 if pktMax < 20 else pktMax
-                edgeWidth_q = int(pktNum_q*20/pktMax)
-                edgeWidth_r = int(pktNum_r*20/pktMax)
-                edgeWidth_q = 2 if edgeWidth_q < 2 else edgeWidth_q
-                edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
-                cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], width=edgeWidth_q)
-                cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], width=edgeWidth_r)
-                if pktNum_q > qpktThreshold:
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color)
-                else:
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color)
-                if pktNum_r > rpktThreshold:
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color)
-                else:
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color)
+
+                if pktNum_q <= qpktThreshold:
+                    edgeWidth_q = (pktNum_q%5)+2
+                    edgeWidth_q = 2 if edgeWidth_q < 2 else edgeWidth_q
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.q_color, width=edgeWidth_q)
+                elif pktNum_q > qpktThreshold:
+                    edgeWidth_q = int(pktNum_q*20/pktMax)
+                    edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.ov_q_color, width=edgeWidth_q)
+                if pktNum_r <= rpktThreshold:
+                    edgeWidth_r = (pktNum_q%5)+2
+                    edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color, width=edgeWidth_r)
+                elif pktNum_r > rpktThreshold:
+                    edgeWidth_r = int(pktNum_r*20/pktMax)
+                    edgeWidth_r = 7 if edgeWidth_r < 7 else edgeWidth_r
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.ov_r_color, width=edgeWidth_r)
+
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
