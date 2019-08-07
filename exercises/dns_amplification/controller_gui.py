@@ -4,6 +4,7 @@ from time import sleep
 from math import sqrt
 
 from Tkinter import *
+import tkMessageBox as messagebox
 from ttk import *
 from PIL import Image, ImageTk
 
@@ -17,7 +18,6 @@ win_size = '1100x600'
 g_height = 600
 g_width = 1100
 qpktThreshold = 0
-rpktThreshold = 0
 modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
 
 class ControllerGui():
@@ -70,12 +70,21 @@ class ControllerGui():
         self.fr_bg.pack()
         self.fr_tp.pack(side="bottom")
         # self.fr_tb.pack(side="right")
+
         self.fonts = ("arial", 12)
 
         self.var = StringVar()
         self.L1 = Label(self.fr_bg, textvariable=self.var, width=30, anchor="center")
         self.L1.place(x=85, y=470)
-        #self.L1.pack()
+
+        self.thres = Label(self.fr_bg, text="Packet Threshold:", anchor="center", background=self.bg)
+        self.thres.place(x=480, y=420)
+        self.usrIn = StringVar()
+        self.usrIn.set("")
+        self.thresIn = Entry(self.fr_bg, textvariable=self.usrIn, width=5, font=self.fonts)
+        self.thresIn.place(x=600, y=420)
+        self.enter = Button(self.fr_bg, text="Enter", command=self.getThreshold)
+        self.enter.place(x=655, y=420)
 
         self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
 
@@ -281,11 +290,11 @@ class ControllerGui():
                     edgeWidth_q = int(pktNum_q*20/pktMax)
                     edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=edgeColorCtr(self.q_color, edgeWidth_q, "q"), width=edgeWidth_q)
-                if pktNum_r <= rpktThreshold:
+                if pktNum_r <= self.event.thr_res_num:
                     edgeWidth_r = (pktNum_q%5)+2
                     edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color, width=edgeWidth_r)
-                elif pktNum_r > rpktThreshold:
+                elif pktNum_r > self.event.thr_res_num:
                     edgeWidth_r = int(pktNum_r*20/pktMax)
                     edgeWidth_r = 7 if edgeWidth_r < 7 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=edgeColorCtr(self.r_color, edgeWidth_r, "r"), width=edgeWidth_r)
@@ -303,7 +312,7 @@ class ControllerGui():
             while width > 6:
                 g -= 15
                 width -= 2
-        elif pkttype == "r:"
+        elif pkttype == "r":
             while width > 6:
                 g -= 10
                 b -= 10
@@ -394,7 +403,21 @@ class ControllerGui():
                 self.ybar.place(x=800, y=170, height=218)
 
                 self.tree.bind("<Double-1>", self.dbClick2ShowNode)
- 
+
+    def getThreshold(self):
+        try:
+            int(self.usrIn.get())
+        except ValueError:
+            self.usrIn.set("")
+            messagebox.showerror("Error", "You enter the wrong type !!\nPlease enter a number with type \"int\"")
+        else:
+            if 0 <= int(self.usrIn.get()) <= 1000:
+                self.event.thr_res_num = self.usrIn.get()
+                print "You change the threshold to " + str(self.event.thr_res_num)
+            else:
+                self.usrIn.set("")
+                messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!")
+
 def main():
 
     sw_mac = {'s16': '00:00:00:10:15:00', 's9': '00:00:00:09:15:00', 's8': '00:00:00:08:15:00', 's17': '00:00:00:11:15:00', 's3': '00:00:00:03:15:00', 's2': '00:00:00:02:15:00', 's1': '00:00:00:01:15:00', 's10': '00:00:00:0a:15:00', 's7': '00:00:00:07:15:00', 's6': '00:00:00:06:15:00', 's5': '00:00:00:05:15:00', 's4': '00:00:00:04:15:00', 's13': '00:00:00:0d:15:00', 's20': '00:00:00:14:15:00', 's18': '00:00:00:12:15:00', 's15': '00:00:00:0f:15:00', 's12': '00:00:00:0c:15:00', 's19': '00:00:00:13:15:00', 's21': '00:00:00:15:15:00', 's14': '00:00:00:0e:15:00', 's11': '00:00:00:0b:15:00'}
