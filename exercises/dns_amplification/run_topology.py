@@ -33,7 +33,7 @@ if __name__ == '__main__':
     
     app = ConsoleApp(exercise.net, width=4 )
     
-    gui_th = Thread(target=app.mainloop)
+    gui_th = threading.Thread(target=app.mainloop)
     gui_th.setDaemon(True)
     gui_th.start()
 

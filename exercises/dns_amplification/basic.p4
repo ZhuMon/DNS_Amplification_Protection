@@ -385,18 +385,19 @@ control MyIngress(inout headers hdr,
                         index = index << 10;
                         index = index + ((bit<32>)hdr.dns.id % 1024);
                         /*dns_request_hash_lpm.apply();*/
+                        
+                        // check the ip whether this switch afford
                         s_reg.read(tmp, ip_last);
                         if(tmp == 0){ 
                             reg_ingress.read(tmp, index);
                             reg_ingress.write(index, tmp+10);
                         }
+
+
                         ipv4_lpm.apply();
                     } else { //dns is response
-                        /*dns_request_hash_lpm.apply()*/
                         ingress_meter_stats.execute_meter<MeterColor>(0, ingress_meter_output);
                         ip_last = (hdr.ipv4.dstAddr << 24) >> 24;
-                        /*index = 0;*/
-                        /*dns_request_hash_lpm.apply();*/
                         index = ip_last % 64;
                         index = index << 10;
                         index = index + ((bit<32>)hdr.dns.id % 1024);
@@ -404,6 +405,7 @@ control MyIngress(inout headers hdr,
 
                         reg_ingress.read(tmp, index);
                         s_reg.read(s, ip_last);
+                        // if change threshold of ip_f, remember to change controller's 
                         if (ip_f > 680 || s != 0){
                             s_reg.write(ip_last, hdr.ipv4.dstAddr);
                             ipv4_lpm.apply();

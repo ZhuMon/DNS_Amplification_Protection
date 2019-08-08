@@ -623,7 +623,7 @@ def main(p4info_file_path, bmv2_file_path):
 
                 for i in range(0, 256):
                     f = read_register(runtimeAPI, "fr_reg", i)
-                    if f > 20:
+                    if f > 680:
                         num = read_register(runtimeAPI, "s_reg", i) # get a host
                         if num == 0:
                             sleep(1)
