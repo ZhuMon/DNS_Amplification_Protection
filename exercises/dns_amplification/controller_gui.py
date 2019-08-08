@@ -260,30 +260,30 @@ class ControllerGui():
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
 
-        #self.overlaplist = []
-        #self.comparelist = []
-        #for no, link in sorted(self.topology.items()):
-        #    mac1 = link.keys()[0]
-        #    mac2 = link.keys()[1]
-        #    self.overlaplist.append(self.event.getObjID(mac1, mac2)[0])
-        #    self.overlaplist.append(self.event.getObjID(mac1, mac2)[1])
+        self.overlaplist = []
+        self.comparelist = []
+        for no, link in sorted(self.topology.items()):
+            mac1 = link.keys()[0]
+            mac2 = link.keys()[1]
+            self.overlaplist.append(self.event.getObjID(mac1, mac2)[0])
+            self.overlaplist.append(self.event.getObjID(mac1, mac2)[1])
 
-        #self.comparelist = self.overlaplist
-        #for Id in self.overlaplist:
-        #    flag = 0
-        #    if self.comparelist == None:
-        #        break
-        #    del self.comparelist[self.comparelist.index(Id)]
-        #    pos = self.cv_topo.coords(Id)
-        #    result = self.cv_topo.find_overlapping(pos)
-        #    for x in self.comparelist:
-        #        x_pos = self.cv_topo.coords(x)
-        #        if x_pos in result:
-        #            self.refresh_network()
-        #            flag = 1
-        #            break
-        #    if flag == 1:
-        #        break
+        self.comparelist = self.overlaplist
+        for Id in self.overlaplist:
+            flag = 0
+            if self.comparelist == None:
+                break
+            del self.comparelist[self.comparelist.index(Id)]
+            x1, y1, x2, y2 = self.cv_topo.coords(Id)
+            result = self.cv_topo.find_overlapping(x1, y1, x2, y2)
+            for x in self.comparelist:
+                x_pos = self.cv_topo.coords(x)
+                if x_pos in result:
+                    self.refresh_network()
+                    flag = 1
+                    break
+            if flag == 1:
+                break
 
     def extend(self, num, axis='x'):
         """ expand network size """
@@ -316,7 +316,7 @@ class ControllerGui():
                     edgeWidth_q = int(pktNum_q*20/pktMax)
                     edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.edgeColorCtr(self.q_color, edgeWidth_q, "q"), width=edgeWidth_q)
-                if pktNum_r <= ppktThreshold:
+                if pktNum_r <= rpktThreshold:
                     edgeWidth_r = (pktNum_q%5)+2
                     edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color, width=edgeWidth_r)
