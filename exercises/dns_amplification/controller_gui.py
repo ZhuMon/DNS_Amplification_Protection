@@ -180,8 +180,22 @@ class ControllerGui():
         for s, mac in sorted(self.sw_mac.items()):
             self.G.add_node(mac.encode('utf-8'))
             if s in connected_gw:
-                pos[mac] = myCos(90+15.0*connected_gw.index(s)), mySin(90+15.0*connected_gw.index(s))
+                pos[mac] = (1.2*myCos(90+15.0*connected_gw.index(s)), -1.2+connected_gw.index(s)*0.225)
+                # pos[mac] = (-1, -1.2+connected_gw.index(s)*0.225)
+                for port, node in self.event.node_links[s]:
+                    if node[0] == 's':
+                        pos[self.sw_mac[node]] = (-1.5,pos[mac][1])
+                        fixed.append(self.sw_mac[node])
+                        for p,n in self.event.node_links[node]:
+                            if n[0] == 'h':
+                                pos[self.h_mac[n]] = (-1.7, pos[mac][1])
+                                fixed.append(self.h_mac[n])
+
+                    elif node[0] == 'h':
+                        pos[self.h_mac[node]] = (-1.7, pos[mac][1])
+                        fixed.append(self.h_mac[node])
                 fixed.append(mac)
+           
 
         for h, mac in sorted(self.h_mac.items()):
             self.G.add_node(mac.encode('utf-8'))
