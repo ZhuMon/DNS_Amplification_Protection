@@ -18,6 +18,7 @@ win_size = '1100x600'
 g_height = 600
 g_width = 1100
 qpktThreshold = 0
+rpktThreshold = 0 
 modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
 
 class ControllerGui():
@@ -259,6 +260,31 @@ class ControllerGui():
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
 
+        #self.overlaplist = []
+        #self.comparelist = []
+        #for no, link in sorted(self.topology.items()):
+        #    mac1 = link.keys()[0]
+        #    mac2 = link.keys()[1]
+        #    self.overlaplist.append(self.event.getObjID(mac1, mac2)[0])
+        #    self.overlaplist.append(self.event.getObjID(mac1, mac2)[1])
+
+        #self.comparelist = self.overlaplist
+        #for Id in self.overlaplist:
+        #    flag = 0
+        #    if self.comparelist == None:
+        #        break
+        #    del self.comparelist[self.comparelist.index(Id)]
+        #    pos = self.cv_topo.coords(Id)
+        #    result = self.cv_topo.find_overlapping(pos)
+        #    for x in self.comparelist:
+        #        x_pos = self.cv_topo.coords(x)
+        #        if x_pos in result:
+        #            self.refresh_network()
+        #            flag = 1
+        #            break
+        #    if flag == 1:
+        #        break
+
     def extend(self, num, axis='x'):
         """ expand network size """
         if num < 0:
@@ -289,15 +315,15 @@ class ControllerGui():
                 elif pktNum_q > qpktThreshold:
                     edgeWidth_q = int(pktNum_q*20/pktMax)
                     edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=edgeColorCtr(self.q_color, edgeWidth_q, "q"), width=edgeWidth_q)
-                if pktNum_r <= self.event.thr_res_num:
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.edgeColorCtr(self.q_color, edgeWidth_q, "q"), width=edgeWidth_q)
+                if pktNum_r <= ppktThreshold:
                     edgeWidth_r = (pktNum_q%5)+2
                     edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color, width=edgeWidth_r)
-                elif pktNum_r > self.event.thr_res_num:
+                elif pktNum_r > rpktThreshold:
                     edgeWidth_r = int(pktNum_r*20/pktMax)
                     edgeWidth_r = 7 if edgeWidth_r < 7 else edgeWidth_r
-                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=edgeColorCtr(self.r_color, edgeWidth_r, "r"), width=edgeWidth_r)
+                    cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.edgeColorCtr(self.r_color, edgeWidth_r, "r"), width=edgeWidth_r)
 
             for i in range(0, 10):
                 if event.is_set() is False:
@@ -413,6 +439,8 @@ class ControllerGui():
         else:
             if 0 <= int(self.usrIn.get()) <= 1000:
                 self.event.thr_res_num = self.usrIn.get()
+                qpktThreshold = self.usrIn.get()
+                rpktThreshold = self.usrIn.get()
                 print "You change the threshold to " + str(self.event.thr_res_num)
             else:
                 self.usrIn.set("")
