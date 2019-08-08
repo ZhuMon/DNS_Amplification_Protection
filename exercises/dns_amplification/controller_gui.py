@@ -1,7 +1,7 @@
 import threading
 import random
 from time import sleep
-from math import sqrt
+from math import sqrt,cos,sin,pi
 
 from Tkinter import *
 import tkMessageBox as messagebox
@@ -23,7 +23,7 @@ modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
 
 class ControllerGui():
     def __init__(self, event, sw_mac, h_mac, topology):
-        """ init
+        """ init 
 
         """
         self.event = event
@@ -168,11 +168,25 @@ class ControllerGui():
         """ generate network """
 
         self.G = nx.Graph()
+        pos = {}
+        fixed = []
+        connected_gw = []
+        for port, node in self.event.node_links["s4"]:
+            if node != "s5":
+                connected_gw.append(node)
+
+        myCos = lambda x: np.cos(np.deg2rad(x))
+        mySin = lambda x: np.sin(np.deg2rad(x))
         for s, mac in sorted(self.sw_mac.items()):
             self.G.add_node(mac.encode('utf-8'))
+            if s in connected_gw:
+                pos[mac] = myCos(90+15.0*connected_gw.index(s)), mySin(90+15.0*connected_gw.index(s))
+                fixed.append(mac)
 
         for h, mac in sorted(self.h_mac.items()):
             self.G.add_node(mac.encode('utf-8'))
+            # pos[mac] = (0,int(h[1:])/15)
+            # fixed.append(mac)
 
         edge = []
         for no, link in sorted(self.topology.items()):
@@ -181,9 +195,19 @@ class ControllerGui():
 
         self.G.add_edges_from(edge)
 
+        pos["00:00:00:04:15:00"] = (0.0,0)
+        pos["00:00:00:05:15:00"] = (0.7,0)
+
+        fixed.append("00:00:00:04:15:00")
+        fixed.append("00:00:00:05:15:00")
+
         self.links = self.G.edges
-        self.nodes = nx.spring_layout(self.G)
-        
+        self.nodes = nx.spring_layout(self.G, pos=pos, fixed=fixed)
+        # for node, pos in self.nodes.items():
+            # if node not in ["00:00:00:05:15:00","00:00:00:02:15:00","00:00:00:03:15:00","00:00:00:00:02:02","00:00:00:00:03:03"] and pos[0] > 0.3:
+            #     pos[0] = 0.6-pos[0]
+
+        # print self.nodes["00:00:00:07:15:00"]
 
     def refresh_network(self):
         """ refresh network """
@@ -287,11 +311,12 @@ class ControllerGui():
 
     def extend(self, num, axis='x'):
         """ expand network size """
-        if num < 0:
-            num = abs(num)
-            return sqrt(num) * sqrt(2) * (-1)
-        else:
-            return sqrt(num) * sqrt(2)
+        return num
+        # if num < 0:
+            # num = abs(num)
+            # return sqrt(num) * sqrt(2) * (-1)
+        # else:
+        #     return sqrt(num) * sqrt(2)
 
     def edge_traffic_warn(self, event, topology, cv_topo):
         """ detect which edge is busy, warn user via color changing """
@@ -316,7 +341,7 @@ class ControllerGui():
                     edgeWidth_q = int(pktNum_q*20/pktMax)
                     edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.edgeColorCtr(self.q_color, edgeWidth_q, "q"), width=edgeWidth_q)
-                if pktNum_r <= ppktThreshold:
+                if pktNum_r <= rpktThreshold:
                     edgeWidth_r = (pktNum_q%5)+2
                     edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color, width=edgeWidth_r)
