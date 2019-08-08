@@ -1,9 +1,10 @@
 import sys
 import os
 from time import sleep
+import threading
 
 from Tkinter import *
-# from ttk import *
+from ttk import *
 
 from mininet.examples.consoles import *
 
@@ -12,6 +13,7 @@ sys.path.append(
             '../../utils/'))
 
 from run_exercise import *
+
 
 
 if __name__ == '__main__':
@@ -28,7 +30,13 @@ if __name__ == '__main__':
     exercise.program_switches()
 
     sleep(1)
+    
     app = ConsoleApp(exercise.net, width=4 )
-    app.mainloop()
+    
+    gui_th = Thread(target=app.mainloop)
+    gui_th.setDaemon(True)
+    gui_th.start()
+
+
     exercise.do_net_cli()
     exercise.net.stop()
