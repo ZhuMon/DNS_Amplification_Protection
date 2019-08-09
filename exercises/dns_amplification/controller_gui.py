@@ -75,8 +75,8 @@ class ControllerGui():
         self.fonts = ("arial", 12)
 
         self.var = StringVar()
-        self.L1 = Label(self.fr_bg, textvariable=self.var, width=30, anchor="center")
-        self.L1.place(x=85, y=470)
+        self.L1 = Label(self.fr_bg, textvariable=self.var, width=30, anchor="center", background=self.bg)
+        self.L1.place(x=85, y=100)
 
         self.thres = Label(self.fr_bg, text="Packet Threshold:", anchor="center", background=self.bg)
         self.thres.place(x=480, y=420)
@@ -133,7 +133,6 @@ class ControllerGui():
                 )
 
 
-
         self.button_quit = Button(self.root, style="Q.TButton",command=self.quit
                 # , compound="left"
                 )
@@ -149,6 +148,11 @@ class ControllerGui():
         #self.cv.pack()
         self.cv_topo.bind('<Motion>' , self.move_handler)
         self.cv_topo.bind('<Button-1>', self.click_handler)
+
+        self.button_showInf = Button(self.cv_topo, text="Show", command=self.showLabel)
+        self.button_showInf.place(x=10, y=380)
+        self.button_hideInf = Button(self.cv_topo, text="Hide", command=self.hideLabel)
+        self.button_hideInf.place(x=90, y=380)
 
         self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_topo))
         self.edgeWarn_th.setDaemon(True)
@@ -293,10 +297,23 @@ class ControllerGui():
                 # sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
                 sw = self.cv_topo.create_oval(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.sw_color)
                 self.switches[node] = sw
+                if node[0:] == "00:00:00:04:15:00":
+                    self.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelGw.place(x=pos[0]-25, y=pos[1]+15)
+                if node[0:] == "00:00:00:05:15:00":
+                    self.labelRt = Label(self.cv_topo, text="Router", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelRt.place(x=pos[0]-25, y=pos[1]+15)
+
             else:
                 host = self.cv_topo.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color, outline="black")
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
+                if node[0:] == "00:00:00:00:03:03":
+                    self.labelSv = Label(self.cv_topo, text=" DNS\nServer", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelSv.place(x=pos[0]-25, y=pos[1]+15)
+                if node[0:] == "00:00:00:00:01:01":
+                    self.labelVt = Label(self.cv_topo, text="Victim", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelVt.place(x=pos[0]-25, y=pos[1]+15)
 
         self.overlaplist = []
         self.comparelist = []
@@ -484,6 +501,31 @@ class ControllerGui():
             else:
                 self.usrIn.set("")
                 messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!")
+
+    def showLabel(self):
+        self.hideLabel()
+        for node, pos in self.nodes.items():
+            if node[15:] == "00" :
+                if node[0:] == "00:00:00:04:15:00":
+                    self.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelGw.place(x=pos[0]-25, y=pos[1]+15)
+                if node[0:] == "00:00:00:05:15:00":
+                    self.labelRt = Label(self.cv_topo, text="Router", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelRt.place(x=pos[0]-25, y=pos[1]+15)
+
+            else:
+                if node[0:] == "00:00:00:00:03:03":
+                    self.labelSv = Label(self.cv_topo, text=" DNS\nServer", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelSv.place(x=pos[0]-25, y=pos[1]+15)
+                if node[0:] == "00:00:00:00:01:01":
+                    self.labelVt = Label(self.cv_topo, text="Victim", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelVt.place(x=pos[0]-25, y=pos[1]+15)
+
+    def hideLabel(self):
+        self.labelGw.place_forget()
+        self.labelRt.place_forget()
+        self.labelSv.place_forget()
+        self.labelVt.place_forget()
 
 def main():
 
