@@ -22,12 +22,12 @@ class Console( Frame ):
     
     def __init__( self, parent, net, node, height=300, width=300, title='Node'):
         """ init """
-        Frame.__init__( self, parent, height=height, width=width)
+        Frame.__init__( self, parent, height=height, width=width-10)
         
         self.net = net
         self.node = node
         self.prompt = node.name + '# '
-        self.height, self.width, self.title = height, width, title
+        self.height, self.width, self.title = height, width-10, title
 
         self.textStyle = {
             'font' : 'Monaco 12',
@@ -102,7 +102,7 @@ class MainConsole( Frame ):
         self.top = self.winfo_toplevel()
         self.top.title( 'Mininet' )
         self.height = 400
-        self.width = 600
+        self.width = 800
         self.top.geometry(str(self.width)+'x'+str(self.height))
 
         self.net = net
@@ -110,17 +110,7 @@ class MainConsole( Frame ):
         self.level2bar = self.createMenuBar(None)
         self.level3bar = self.createMenuBar(None)
 
-
-        cframe = self.cframe = Frame(self)
-        self.consoles = {}
-        titles = {
-            'hosts': 'Host',
-            'switches': 'Switch'
-        }
-        for name in titles:
-            nodes = getattr(net, name)
-            self.createConsoles( cframe, nodes, titles[name] )
-        self.selected = [None, None]
+        self.createCframe()
         
         # self.cframe.pack(expand=True, fill='both')
 
@@ -139,13 +129,37 @@ class MainConsole( Frame ):
         for node in nodes:
             self.consoles[node.name] = Console(parent, self.net, node, width=self.width/2, title = title)
         
+
+    def createCframe(self):
+        "Create a child frame."
+        self.cframe = Frame(self)
+        
+        """ Hosts - View - consoles """
+        self.consoles = {}
+        titles = {
+            'hosts': 'Host',
+            'switches': 'Switch'
+        }
+        for name in titles:
+            nodes = getattr(self.net, name)
+            self.createConsoles( self.cframe, nodes, titles[name] )
+        self.selected = [None, None]
+
+        """ Hosts - Function - Attack """
+        self.attack_frame = Frame(self.cframe)
+        host_list = [h.name for h in self.net.hosts]
+        host_list.remove('h3')
+        a = Combobox(self.attack_frame, values=host_list)
+        b = Combobox(self.attack_frame, values=host_list)
+        num = Combobox(self.attack_frame, values=range(1, len(host_list)+1))
+        a.pack(side="left")
+        b.pack()
+        num.pack()
+
+        
     
     def hostPage(self):
-        self.level2bar.frame.pack_forget()
-        self.level2bar.frame.destroy()
-        self.level3bar.frame.pack_forget()
-        self.level3bar.frame.destroy()
-        self.cframe.pack_forget()
+        self.clearWidget(2)
         self.level2bar = self.createMenuBar("hosts")
 
     def select(self, nodeName, index):
@@ -162,24 +176,67 @@ class MainConsole( Frame ):
         
 
     def hostFunc(self):
-        self.level3bar.frame.pack_forget()
-        self.level3bar.frame.destroy()
-        self.cframe.pack_forget()
+        self.clearWidget(3)
         self.level3bar = self.createMenuBar("hostFunc")
 
     def attack(self):
-        None
+        self.clearWidget(4)
+        self.attack_frame.pack(expand = True, fill = "both")
+        self.cframe.pack(expand = True, fill = "both")
 
     def ping(self):
+        self.clearWidget(4)
         None
 
     def iperf(self):
+        self.clearWidget(4)
         None
 
     def hostView(self):
-        self.level3bar.frame.pack_forget()
-        self.level3bar.frame.destroy()
+        self.clearWidget(3)
         self.level3bar = self.createMenuBar("hostView")
+
+    def moveViewBtn(self, group, side):
+        """ 
+        group: int : 0 or 1
+        side:  str : "left" or "right"
+        """
+
+        if side == "right":
+            self.level3bar.buttons[group][0].state(["!disabled"])
+            for i in range(self.hostViewBarLeft[group], self.hostViewBarRight[group]+1):
+                self.level3bar.buttons[group][i].pack_forget()
+            self.hostViewBarLeft[group] += 1
+            self.hostViewBarRight[group] += 1
+            self.level3bar.buttons[group][-1].pack_forget()
+            for i in range(self.hostViewBarLeft[group], self.hostViewBarRight[group]+1):
+                self.level3bar.buttons[group][i].pack(side="left")
+
+            self.level3bar.buttons[group][-1].pack(side="left")
+
+            if self.hostViewBarRight[group] == self.hostCount:
+                self.level3bar.buttons[group][-1].state(["disabled"])
+            else:
+                self.level3bar.buttons[group][-1].state(["!disabled"])
+            
+            
+        elif side == "left":
+            self.level3bar.buttons[group][-1].state(["!disabled"])
+            for i in range(self.hostViewBarLeft[group], self.hostViewBarRight[group]+1):
+                self.level3bar.buttons[group][i].pack_forget()
+            self.level3bar.buttons[group][-1].pack_forget()
+            self.hostViewBarLeft[group] -= 1
+            self.hostViewBarRight[group] -= 1
+            for i in range(self.hostViewBarLeft[group], self.hostViewBarRight[group]+1):
+                self.level3bar.buttons[group][i].pack(side="left")
+            # self.level3bar.buttons[group][self.hostViewBarLeft[group]].pack(side="left", anchor="w")
+            self.level3bar.buttons[group][-1].pack(side="left")
+
+            if self.hostViewBarLeft[group] == 1:
+                self.level3bar.buttons[group][0].state(["disabled"])
+            else:
+                self.level3bar.buttons[group][0].state(["!disabled"])
+        
 
     def callController(self):
         None
@@ -210,13 +267,30 @@ class MainConsole( Frame ):
             f1 = Frame(f, width=self.width/2)
             f2 = Frame(f, width=self.width/2)
             btn_obj = [[],[]]
+            l1 = Button(f1, text="<", command=partial(self.moveViewBtn, 0, "left"), width=1)
+            r1 = Button(f1, text=">", command=partial(self.moveViewBtn, 0, "right"), width=1)
+            l2 = Button(f2, text="<", command=partial(self.moveViewBtn, 1, "left"), width=1)
+            r2 = Button(f2, text=">", command=partial(self.moveViewBtn, 1, "right"), width=1)
+
+            l1.state(["disabled"])
+            l2.state(["disabled"])
+            l1.pack(side='left')
+            l2.pack(side='left')
+
+
+            btn_obj[0].append(l1)
+            btn_obj[1].append(l2)
+            
+            self.hostViewBarLeft = [1,1]
+            self.hostViewBarRight= [8,8]
+
             for i in range(0, self.hostCount):
                 name = 'h'+str(i+1)
                 cmd1 = partial(self.select, name, 0)
                 cmd2 = partial(self.select, name, 1)
                 b1 = Button(f1, text=name, command=cmd1, width=4)
                 b2 = Button(f2, text=name, command=cmd2, width=4)
-                if i < 6:
+                if i < 8:
                     b1.pack(side='left')
                     b2.pack(side='left')
                 else:
@@ -225,6 +299,12 @@ class MainConsole( Frame ):
                 btn_obj[0].append(b1) 
                 btn_obj[1].append(b2) 
     
+            btn_obj[0].append(r1)
+            btn_obj[1].append(r2)
+
+            r1.pack(side='right')
+            r2.pack(side='right')
+
             f1.pack(side="left")
             f2.pack(side="right")
             f.pack(padx = 4, pady = 4, fill = 'x')
@@ -244,6 +324,19 @@ class MainConsole( Frame ):
         f.pack(padx = 4, pady = 4, fill = 'x')
         return Object(frame = f, buttons = btn_obj)
 
+    def clearWidget(self, level):
+        if level == 2:
+            self.level2bar.frame.pack_forget()
+            self.level2bar.frame.destroy()
+        if level <= 3:
+            self.level3bar.frame.pack_forget()
+            self.level3bar.frame.destroy()
+            self.cframe.pack_forget()
+        if level <= 4:
+            self.attack_frame.pack_forget()
+            for term in self.selected:
+                if term is not None:
+                    term.pack_forget()
 
 
 
