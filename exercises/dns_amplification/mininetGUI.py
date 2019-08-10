@@ -110,6 +110,7 @@ class MainConsole( Frame ):
         self.level2bar = self.createMenuBar(None)
         self.level3bar = self.createMenuBar(None)
 
+        self.initStyle()
         self.createCframe()
         
         # self.cframe.pack(expand=True, fill='both')
@@ -123,6 +124,15 @@ class MainConsole( Frame ):
         self.bw = 0
 
         self.pack(expand=True, fill='both')
+
+    def initStyle(self):
+        self.style = Style()
+        self.style.configure("Attack.TFrame",
+                background="white"
+                )
+        self.style.configure("TLabel",
+                background="white"
+                )
 
     def createConsoles(self, parent, nodes, title):
         "Create a grid of consoles in a frame."
@@ -145,16 +155,45 @@ class MainConsole( Frame ):
             self.createConsoles( self.cframe, nodes, titles[name] )
         self.selected = [None, None]
 
+        ###################################################
         """ Hosts - Function - Attack """
-        self.attack_frame = Frame(self.cframe)
+        self.attack_frame = Frame(self.cframe, style="Attack.TFrame")
         host_list = [h.name for h in self.net.hosts]
         host_list.remove('h3')
-        a = Combobox(self.attack_frame, values=host_list)
-        b = Combobox(self.attack_frame, values=host_list)
-        num = Combobox(self.attack_frame, values=range(1, len(host_list)+1))
-        a.pack(side="left")
-        b.pack()
-        num.pack()
+        choose_victim = Label(self.attack_frame, text="Choose a victim: ", width=15)
+        v = Combobox(self.attack_frame, values=host_list, width=6)
+        
+        choose_attacker = Label(self.attack_frame, text="Choose attacker:", width=15)
+        attacker_num = Label(self.attack_frame, text="attacker number:", width=15)
+        num = Combobox(self.attack_frame, values=range(1, 6), width=5)
+        
+        attacker = Label(self.attack_frame, text="attacker", width=10)
+        a = Combobox(self.attack_frame, values=host_list, width=6)
+        
+        accept = Button(self.attack_frame, text="Accept", command=None, width=10)
+        
+        block = [Label(self.attack_frame, text="",width=4 ) for i in range(0,15)]
+
+        block[0].grid(row=0, column=0)
+        block[1].grid(row=3, column=3)
+        block[2].grid(row=4, column=4)
+        block[3].grid(row=5, column=5)
+        block[4].grid(row=6, column=6)
+        block[5].grid(row=7, column=7)
+        block[6].grid(row=8, column=8)
+        block[7].grid(row=9, column=9)
+        block[8].grid(row=10, column=10)
+        block[9].grid(row=11, column=11)
+        block[10].grid(row=12, column=12)
+
+        choose_victim.grid(row=1, column=1)
+        v.grid(row=1, column=2)
+        choose_attacker.grid(row=2, column=1)
+        attacker_num.grid(row=2, column=2)
+        num.grid(row=2, column=3)
+        attacker.grid(row=2, column=4)
+        a.grid(row=2, column=5)
+        accept.grid(row=14, column=14)
 
         
     
