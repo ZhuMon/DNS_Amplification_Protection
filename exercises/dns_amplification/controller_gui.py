@@ -27,36 +27,22 @@ class ControllerGui():
 
         """
         self.event = event
-        
-        self.bg_tp = "black" 
-        self.bg = "white"
-        self.host_color = "white"
-        self.sw_color = "white"
-        self.r_color  = "#ffcc66"
-        self.q_color  = "#B585BE"
-        #self.ov_r_color = "red"
-        #self.ov_q_color = "yellow"
-        self.notice_color = "#5D5D5D"
-
         self.root = Tk()
         self.root.title("Controller GUI")
         self.root.geometry(win_size)
 
-        TBgImage = Image.open('Img/top_bg.png').resize((1100,100), Image.ANTIALIAS)
-        BBgImage = Image.open('Img/bottom_bg.png').resize((1100,100), Image.ANTIALIAS)
-        TopoBgImage = Image.open('Img/gray_bg.png').resize((400,400), Image.ANTIALIAS)
+        self.sw_mac = sw_mac
+        self.h_mac = h_mac
+        self.topology = topology
 
-        self.t_bgPhoto = ImageTk.PhotoImage(TBgImage)
-        self.b_bgPhoto = ImageTk.PhotoImage(BBgImage)
-        self.topo_bgPhoto = ImageTk.PhotoImage(TopoBgImage)
 
+        self.initStyle()
 
         self.fr_bg = Frame(self.root, height = g_height-100, width = g_width)
         self.fr_tp = Frame(self.fr_bg, height = 100, width = g_width)
         # self.fr_tb = Frame(self.fr_bg, height = g_height-100, width = g_width/2)
         
         self.cv_tp = Canvas(self.fr_bg, height = 100, width = g_width,highlightthickness=0)
-        
         self.cv_tp.create_image(0,0, image=self.t_bgPhoto, anchor = "nw")
         
         self.cv_topo = Canvas(self.fr_bg,bg = self.bg, height = 400, width = 400,highlightthickness=0)
@@ -68,91 +54,35 @@ class ControllerGui():
         self.cv_btm.create_image(0,0, image=self.b_bgPhoto, anchor = "nw")
         
 
-        self.fr_bg.pack()
-        self.fr_tp.pack(side="bottom")
-        # self.fr_tb.pack(side="right")
 
-        self.fonts = ("arial", 12)
 
         self.var = StringVar()
         self.L1 = Label(self.fr_bg, textvariable=self.var, width=30, anchor="center", background=self.bg)
-        self.L1.place(x=85, y=100)
 
         self.thres = Label(self.fr_bg, text="Packet Threshold:", anchor="center", background=self.bg)
-        self.thres.place(x=480, y=420)
+        
         self.usrIn = StringVar()
         self.usrIn.set("")
         self.thresIn = Entry(self.fr_bg, textvariable=self.usrIn, width=5, font=self.fonts)
-        self.thresIn.place(x=600, y=420)
         self.enter = Button(self.fr_bg, text="Enter", command=self.getThreshold)
-        self.enter.place(x=655, y=420)
 
         self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
 
-        self.sw_mac = sw_mac
-        self.h_mac = h_mac
-        self.topology = topology
 
         self.ge_network()
-
-        self.node_size = 10
         self.create_node()
 
-        self.style = Style()
-        quitImage = Image.open('Img/up_quit.png').resize((180,42), Image.ANTIALIAS)
-        refreshImage = Image.open('Img/up_refresh.png').resize((180,42), Image.ANTIALIAS)
-
-        b_quitImage = Image.open('Img/down_quit.png').resize((180,42), Image.ANTIALIAS)
-        b_refreshImage = Image.open('Img/down_refresh.png').resize((180,42), Image.ANTIALIAS)
-
-        # use self.quitPhoto
-        self.quitPhoto = ImageTk.PhotoImage(quitImage) 
-        self.refreshPhoto = ImageTk.PhotoImage(refreshImage) 
-        self.b_quitPhoto = ImageTk.PhotoImage(b_quitImage) 
-        self.b_refreshPhoto = ImageTk.PhotoImage(b_refreshImage) 
-
-        self.style.configure("Q.TButton",
-                # background="red", foreground="white", compound="left",
-                background=self.bg,
-                font=self.fonts, relief="flat", 
-                image = self.quitPhoto, padding=0,
-                )
-        self.style.map("Q.TButton",
-                background=[("active",self.bg)],
-                image=[("active",self.b_quitPhoto)],
-                )
-
-        self.style.configure("R.TButton",
-                # background="green", 
-                background=self.bg,
-                font=self.fonts, relief="flat", 
-                image = self.refreshPhoto, padding=0)
-        self.style.map("R.TButton",
-                background=[("active",self.bg)],
-                image=[("active",self.b_refreshPhoto)],
-                )
 
 
-        self.button_quit = Button(self.root, style="Q.TButton",command=self.quit
-                # , compound="left"
-                )
-        self.button_quit.place(x=850, y=450)
+        self.button_quit = Button(self.root, style="Q.TButton",command=self.quit)
 
         self.button_refresh = Button(self.root, style="R.TButton", command=self.refresh_network)
-        self.button_refresh.place(x=850, y=400)
-
-        self.cv_tp.pack(expand="Yes", side="top", fill="both",ipadx=0,ipady=0,padx=0,pady=0)
-        self.cv_topo.pack(expand="Yes", anchor="center",side="left", fill="both")
-        self.cv_table.pack(expand="Yes", anchor="center",side="right", fill="both")
-        self.cv_btm.pack(expand="Yes", side="bottom", fill="both")
         #self.cv.pack()
         self.cv_topo.bind('<Motion>' , self.move_handler)
         self.cv_topo.bind('<Button-1>', self.click_handler)
 
         self.button_showInf = Button(self.cv_topo, text="Show", command=self.showLabel)
-        self.button_showInf.place(x=10, y=380)
         self.button_hideInf = Button(self.cv_topo, text="Hide", command=self.hideLabel)
-        self.button_hideInf.place(x=90, y=380)
 
         self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_topo))
         self.edgeWarn_th.setDaemon(True)
@@ -166,7 +96,86 @@ class ControllerGui():
             self.rate_set = Radiobutton(self.fr_bg, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
             self.on_off_ypos += 25
 
+        self.typeSetting()
         self.root.mainloop()
+
+    def typeSetting(self):
+        self.fr_bg.pack()
+        self.fr_tp.pack(side="bottom")
+        # self.fr_tb.pack(side="right")
+
+        self.L1.place(x=85, y=100)
+        self.thres.place(x=480, y=420)
+        self.thresIn.place(x=600, y=420)
+
+        self.button_quit.place(x=850, y=450)
+        self.button_refresh.place(x=850, y=400)
+
+        self.cv_tp.pack(expand="Yes", side="top", fill="both",ipadx=0,ipady=0,padx=0,pady=0)
+        self.cv_topo.pack(expand="Yes", anchor="center",side="left", fill="both")
+        self.cv_table.pack(expand="Yes", anchor="center",side="right", fill="both")
+        self.cv_btm.pack(expand="Yes", side="bottom", fill="both")
+
+        self.button_showInf.place(x=10, y=380)
+        self.button_hideInf.place(x=90, y=380)
+        self.enter.place(x=655, y=420)
+
+    def initStyle(self):
+
+        self.node_size = 10
+        self.fonts = ("arial", 12)
+
+        ####################  Color  ####################
+        self.bg_tp = "black" 
+        self.bg = "white"
+        self.host_color = "white"
+        self.sw_color = "white"
+        self.r_color  = "#ffcc66"
+        self.q_color  = "#B585BE"
+        #self.ov_r_color = "red"
+        #self.ov_q_color = "yellow"
+        self.notice_color = "#5D5D5D"
+
+
+        ####################   Img   ####################
+        quitImage = Image.open('Img/up_quit.png').resize((180,42), Image.ANTIALIAS)
+        refreshImage = Image.open('Img/up_refresh.png').resize((180,42), Image.ANTIALIAS)
+
+        b_quitImage = Image.open('Img/down_quit.png').resize((180,42), Image.ANTIALIAS)
+        b_refreshImage = Image.open('Img/down_refresh.png').resize((180,42), Image.ANTIALIAS)
+
+        self.quitPhoto = ImageTk.PhotoImage(quitImage) 
+        self.refreshPhoto = ImageTk.PhotoImage(refreshImage) 
+        self.b_quitPhoto = ImageTk.PhotoImage(b_quitImage) 
+        self.b_refreshPhoto = ImageTk.PhotoImage(b_refreshImage) 
+        TBgImage = Image.open('Img/top_bg.png').resize((1100,100), Image.ANTIALIAS)
+        BBgImage = Image.open('Img/bottom_bg.png').resize((1100,100), Image.ANTIALIAS)
+        TopoBgImage = Image.open('Img/gray_bg.png').resize((400,400), Image.ANTIALIAS)
+
+        self.t_bgPhoto = ImageTk.PhotoImage(TBgImage)
+        self.b_bgPhoto = ImageTk.PhotoImage(BBgImage)
+        self.topo_bgPhoto = ImageTk.PhotoImage(TopoBgImage)
+
+        ####################  Style  ####################        
+        self.style = Style()
+        self.style.configure("Q.TButton",
+                background=self.bg, 
+                font=self.fonts, relief="flat", 
+                image = self.quitPhoto, padding=0,
+                )
+        self.style.map("Q.TButton",
+                background=[("active",self.bg)],
+                image=[("active",self.b_quitPhoto)],
+                )
+
+        self.style.configure("R.TButton",
+                background=self.bg,
+                font=self.fonts, relief="flat", 
+                image = self.refreshPhoto, padding=0)
+        self.style.map("R.TButton",
+                background=[("active",self.bg)],
+                image=[("active",self.b_refreshPhoto)],
+                )
 
     def ge_network(self):
         """ generate network """
@@ -221,11 +230,6 @@ class ControllerGui():
 
         self.links = self.G.edges
         self.nodes = nx.spring_layout(self.G, pos=pos, fixed=fixed)
-        # for node, pos in self.nodes.items():
-            # if node not in ["00:00:00:05:15:00","00:00:00:02:15:00","00:00:00:03:15:00","00:00:00:00:02:02","00:00:00:00:03:03"] and pos[0] > 0.3:
-            #     pos[0] = 0.6-pos[0]
-
-        # print self.nodes["00:00:00:07:15:00"]
 
     def refresh_network(self):
         """ refresh network """
@@ -241,14 +245,6 @@ class ControllerGui():
 
     def create_node(self):
         """ create node """
-        #img_sw = Image.open("Img/switch.png").resize((40, 40), Image.ANTIALIAS)
-        # img_ctr = Image.open("Img/controller.png").resize((40, 40), Image.ANTIALIAS)
-        #img_host = Image.open("Img/host.png").resize((40, 40), Image.ANTIALIAS)
-        # img_pkt = Image.open("Img/packet.png").resize((40, 40), Image.ANTIALIAS)
-        #self.photo_sw = ImageTk.PhotoImage(img_sw)
-        # self.photo_ctr = ImageTk.PhotoImage(img_ctr)
-        #self.photo_host = ImageTk.PhotoImage(img_host)
-        # self.photo_pkt = ImageTk.PhotoImage(img_pkt)
 
         for node, pos in self.nodes.items():
             pos[0] = (self.extend(pos[0], 'x')+2)*100
