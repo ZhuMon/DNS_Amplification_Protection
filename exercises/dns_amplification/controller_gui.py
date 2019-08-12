@@ -81,8 +81,10 @@ class ControllerGui():
         self.cv_topo.bind('<Motion>' , self.move_handler)
         self.cv_topo.bind('<Button-1>', self.click_handler)
 
-        self.button_showInf = Button(self.cv_topo, text="Show", command=self.showLabel)
-        self.button_hideInf = Button(self.cv_topo, text="Hide", command=self.hideLabel)
+        self.shohid = StringVar()
+        self.shohid.set("hide")
+
+        self.button_InfShowHide = Button(self.cv_topo, textvariable=self.shohid, command=self.labelShowHide)
 
         self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_topo))
         self.edgeWarn_th.setDaemon(True)
@@ -116,8 +118,7 @@ class ControllerGui():
         self.cv_table.pack(expand="Yes", anchor="center",side="right", fill="both")
         self.cv_btm.pack(expand="Yes", side="bottom", fill="both")
 
-        self.button_showInf.place(x=10, y=380)
-        self.button_hideInf.place(x=90, y=380)
+        self.button_InfShowHide.place(x=10, y=370)
         self.enter.place(x=655, y=420)
 
     def initStyle(self):
@@ -235,13 +236,17 @@ class ControllerGui():
         """ refresh network """
 
         self.G.clear()
-        self.ge_network()
-
         self.cv_topo.delete("all")
-        #self.cv.delete("all")
+        self.labelGw.destroy()
+        self.labelRt.destroy()
+        self.labelSv.destroy()
+        self.labelVt.destroy()
         self.event.cleanObjID()
+
+        self.ge_network()
         self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
         self.create_node()
+        self.shohid.set("hide")
 
     def create_node(self):
         """ create node """
@@ -297,7 +302,7 @@ class ControllerGui():
                     self.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.labelGw.place(x=pos[0]-25, y=pos[1]+15)
                 if node[0:] == "00:00:00:05:15:00":
-                    self.labelRt = Label(self.cv_topo, text="Router", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelRt = Label(self.cv_topo, text="Router", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.labelRt.place(x=pos[0]-25, y=pos[1]+15)
 
             else:
@@ -305,10 +310,10 @@ class ControllerGui():
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
                 if node[0:] == "00:00:00:00:03:03":
-                    self.labelSv = Label(self.cv_topo, text=" DNS\nServer", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelSv = Label(self.cv_topo, text=" DNS\nServer", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.labelSv.place(x=pos[0]-25, y=pos[1]+15)
                 if node[0:] == "00:00:00:00:01:01":
-                    self.labelVt = Label(self.cv_topo, text="Victim", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.labelVt = Label(self.cv_topo, text="Victim", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.labelVt.place(x=pos[0]-25, y=pos[1]+15)
 
         self.overlaplist = []
@@ -498,30 +503,26 @@ class ControllerGui():
                 self.usrIn.set("")
                 messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!")
 
-    def showLabel(self):
-        self.hideLabel()
-        for node, pos in self.nodes.items():
-            if node[15:] == "00" :
-                if node[0:] == "00:00:00:04:15:00":
-                    self.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelGw.place(x=pos[0]-25, y=pos[1]+15)
-                if node[0:] == "00:00:00:05:15:00":
-                    self.labelRt = Label(self.cv_topo, text="Router", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelRt.place(x=pos[0]-25, y=pos[1]+15)
-
-            else:
-                if node[0:] == "00:00:00:00:03:03":
-                    self.labelSv = Label(self.cv_topo, text=" DNS\nServer", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelSv.place(x=pos[0]-25, y=pos[1]+15)
-                if node[0:] == "00:00:00:00:01:01":
-                    self.labelVt = Label(self.cv_topo, text="Victim", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelVt.place(x=pos[0]-25, y=pos[1]+15)
-
-    def hideLabel(self):
-        self.labelGw.place_forget()
-        self.labelRt.place_forget()
-        self.labelSv.place_forget()
-        self.labelVt.place_forget()
+    def labelShowHide(self):
+        if self.shohid.get() == "show":
+            for node, pos in self.nodes.items():
+                if node[15:] == "00" :
+                    if node[0:] == "00:00:00:04:15:00":
+                        self.labelGw.place(x=pos[0]-25, y=pos[1]+15)
+                    if node[0:] == "00:00:00:05:15:00":
+                        self.labelRt.place(x=pos[0]-25, y=pos[1]+15)
+                else:
+                    if node[0:] == "00:00:00:00:03:03":
+                        self.labelSv.place(x=pos[0]-25, y=pos[1]+15)
+                    if node[0:] == "00:00:00:00:01:01":
+                        self.labelVt.place(x=pos[0]-25, y=pos[1]+15)
+            self.shohid.set("hide")
+        elif self.shohid.get() == "hide":
+            self.labelGw.place_forget()
+            self.labelRt.place_forget()
+            self.labelSv.place_forget()
+            self.labelVt.place_forget()
+            self.shohid.set("show")
 
 def main():
 
