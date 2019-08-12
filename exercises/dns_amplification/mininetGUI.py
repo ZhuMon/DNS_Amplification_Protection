@@ -1,3 +1,6 @@
+import re
+from time import sleep
+
 from Tkinter import *
 from ttk import *
 from functools import partial
@@ -57,10 +60,18 @@ class Console( Frame ):
         return display
 
     def bindEvents(self):
+        self.text.bind( '<Return>', self.handleReturn)
+        self.text.bind( '<Control-c>', self.handleInt)
+        self.text.bind( '<KeyPress>', self.handleKey)
         self.tk.createfilehandler(self.node.stdout, READABLE,
                                   self.handleReadable)
 
+
+    # ignoreChars = re.compile(r'[\x00-\x07\x09\x0b\x0c\x0e-\1f]+')
+    # ignoreChars = re.compile(r'[\x00-\1f]+')
+
     def append(self, text):
+        # text = self.ignoreChars.sub('',text)
         self.text.insert('end', text)
         self.text.mark_set('insert', 'end')
         self.text.see('insert')
@@ -69,16 +80,38 @@ class Console( Frame ):
             outputHook = self.ouptuHook
         outputHook(self, text)
         
+    def handleKey(self, event):
+        char = event.char
+        if self.node.waiting:
+            self.node.write(char)
+
+    def handleReturn(self, event):
+        cmd = self.text.get('insert linestart', 'insert lineend')
+
+        if self.node.waiting:
+            self.node.write(event.char)
+            return
+        pos = cmd.find(self.prompt)
+        if pos >= 0:
+            cmd = cmd[ pos + len(self.prompt): ]
+        self.sendCmd(cmd)
+
     def sendCmd(self, cmd):
+        sleep(0.1)
         if not self.node.waiting:
             self.node.sendCmd(cmd)
+
+    def handleInt(self, _event=None):
+        "Handle control-c."
+        self.node.sendInt()
 
     def handleReadable(self, _fds, timeoutms=None):
         "Handle file readable event."
         data = self.node.monitor(timeoutms)
         self.append(data)
         if not self.node.waiting:
-            self.append(self.prompt)
+            # self.append(self.prompt)
+            None
 
     def waiting(self):
         return self.node.waiting
@@ -133,6 +166,18 @@ class MainConsole( Frame ):
         self.style.configure("TLabel",
                 background="white"
                 )
+        self.style.configure("Selected.TButton",
+                background="red",
+                foreground="white"
+                )
+        self.style.map("Selected.TButton",
+                background=[("active", "pink")],
+                foreground=[("active", "white")]
+                )
+        self.style.map("UnSelected.TButton",
+                background=[("active", "pink")],
+                foreground=[("active", "white")]
+                )
 
     def createConsoles(self, parent, nodes, title):
         "Create a grid of consoles in a frame."
@@ -144,7 +189,7 @@ class MainConsole( Frame ):
         "Create a child frame."
         self.cframe = Frame(self)
         
-        """ Hosts - View - consoles """
+        ############ Hosts -  View  - consoles ############
         self.consoles = {}
         titles = {
             'hosts': 'Host',
@@ -155,22 +200,39 @@ class MainConsole( Frame ):
             self.createConsoles( self.cframe, nodes, titles[name] )
         self.selected = [None, None]
 
-        ###################################################
-        """ Hosts - Function - Attack """
+        ############ Hosts - Function - Attack ############
         self.attack_frame = Frame(self.cframe, style="Attack.TFrame")
         host_list = [h.name for h in self.net.hosts]
         host_list.remove('h3')
         choose_victim = Label(self.attack_frame, text="Choose a victim: ", width=15)
         v = Combobox(self.attack_frame, values=host_list, width=6)
+        v.current(0)
         
         choose_attacker = Label(self.attack_frame, text="Choose attacker:", width=15)
         attacker_num = Label(self.attack_frame, text="attacker number:", width=15)
         num = Combobox(self.attack_frame, values=range(1, 6), width=5)
+        num.current(0)
         
         attacker = Label(self.attack_frame, text="attacker", width=10)
         a = Combobox(self.attack_frame, values=host_list, width=6)
+        a.current(1)
         
-        accept = Button(self.attack_frame, text="Accept", command=None, width=10)
+        def acceptAttack(victim = v, num = num, attacker=a):
+            if victim.get() == attacker.get():
+                #TODO error message
+                print "Can not attack itself"
+                return
+            # print victim.get(), num.get(), attacker.get()
+            victimIP = self.net.hosts[int(victim.get()[1:])-1].IP()
+            self.consoles['h3'].handleInt()
+            self.consoles['h3'].sendCmd("python dns_server.py")
+            self.consoles[victim.get()].handleInt()
+            self.consoles[victim.get()].sendCmd("python victim.py < log_victim.txt")
+            
+            self.consoles[attacker.get()].handleInt()
+            self.consoles[attacker.get()].sendCmd("python attacker.py "+victimIP+" < log_attacker.txt")
+
+        accept = Button(self.attack_frame, text="Accept", command=partial(acceptAttack, v, num, a), width=10)
         
         block = [Label(self.attack_frame, text="",width=4 ) for i in range(0,15)]
 
@@ -204,9 +266,13 @@ class MainConsole( Frame ):
     def select(self, nodeName, index):
         if self.selected[index] is not None:
             # self.cframe.pack_forget()
+            self.level3bar.buttons[index][int(self.selected[index].node.name[1:])].configure(style="UnSelected.TButton")
+            self.level3bar.buttons[abs(index-1)][int(self.selected[index].node.name[1:])].state(["!disabled"])
             self.selected[index].pack_forget()
 
         self.selected[index] = self.consoles[nodeName]
+        self.level3bar.buttons[index][int(nodeName[1:])].configure(style="Selected.TButton")
+        self.level3bar.buttons[abs(index-1)][int(nodeName[1:])].state(["disabled"])
         self.cframe.pack(expand = True, fill = "both")
         if index == 0:
             self.selected[index].pack(expand = True, fill = 'both', side="left")
@@ -327,8 +393,8 @@ class MainConsole( Frame ):
                 name = 'h'+str(i+1)
                 cmd1 = partial(self.select, name, 0)
                 cmd2 = partial(self.select, name, 1)
-                b1 = Button(f1, text=name, command=cmd1, width=4)
-                b2 = Button(f2, text=name, command=cmd2, width=4)
+                b1 = Button(f1, text=name, command=cmd1, width=4, style="UnSelected.TButton")
+                b2 = Button(f2, text=name, command=cmd2, width=4, style="UnSelected.TButton")
                 if i < 8:
                     b1.pack(side='left')
                     b2.pack(side='left')

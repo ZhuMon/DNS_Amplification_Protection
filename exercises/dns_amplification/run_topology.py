@@ -13,7 +13,7 @@ sys.path.append(
             '../../utils/'))
 
 from run_exercise import *
-
+from mininetGUI import *
 
 
 if __name__ == '__main__':
@@ -31,7 +31,8 @@ if __name__ == '__main__':
 
     sleep(1)
     
-    app = ConsoleApp(exercise.net, width=4 )
+    # app = ConsoleApp(exercise.net, width=4 )
+    app = MainConsole(exercise.net)
     
     gui_th = threading.Thread(target=app.mainloop)
     gui_th.setDaemon(True)

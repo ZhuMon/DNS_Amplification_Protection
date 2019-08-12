@@ -40,6 +40,8 @@ def main():
     #vic_addr = socket.gethostbyname(sys.argv[2])
     addr = "10.0.3.3"
     vic_addr = "10.0.1.1"
+    if len(sys.argv) > 0:
+        vic_addr = sys.argv[1]
     
     iface = get_if()
     print("iface: ", iface)
