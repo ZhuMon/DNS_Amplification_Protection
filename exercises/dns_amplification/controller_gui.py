@@ -48,7 +48,9 @@ class ControllerGui():
         self.cv_topo = Canvas(self.fr_bg,bg = self.bg, height = 400, width = 400,highlightthickness=0)
         self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
 
-        self.cv_table = Canvas(self.fr_bg,bg = self.bg, height = 400, width = 700,highlightthickness=0)
+        self.fr_mid = Frame(self.fr_bg, height = 400, width = 300, style="TFrame")
+
+        self.fr_table = Frame(self.fr_bg, height = 400, width = 400)
 
         self.cv_btm= Canvas(self.fr_tp, height = 100, width = g_width,highlightthickness=0)
         self.cv_btm.create_image(0,0, image=self.b_bgPhoto, anchor = "nw")
@@ -57,16 +59,27 @@ class ControllerGui():
 
 
         self.var = StringVar()
-        self.L1 = Label(self.fr_bg, textvariable=self.var, width=30, anchor="center", background=self.bg)
+        self.L1 = Label(self.fr_mid, textvariable=self.var, width=30, anchor="center", background=self.bg)
 
-        self.thres = Label(self.fr_bg, text="Packet Threshold:", anchor="center", background=self.bg)
+        self.thres = Label(self.fr_mid, text="Threshold:", anchor="center", background=self.bg)
         
         self.usrIn = StringVar()
         self.usrIn.set("")
-        self.thresIn = Entry(self.fr_bg, textvariable=self.usrIn, width=5, font=self.fonts)
-        self.enter = Button(self.fr_bg, text="Enter", command=self.getThreshold)
+        self.thresIn = Entry(self.fr_mid, textvariable=self.usrIn, width=8, font=self.fonts)
+        self.enter = Button(self.fr_mid, text="Enter", command=self.getThreshold, width=5)
 
-        self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
+        self.tree = Treeview(self.fr_table, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
+        self.ybar = Scrollbar(self.fr_table, orient=VERTICAL, command=self.tree.yview)
+        self.tree.column('col1', width=100, anchor='center')
+        self.tree.column('col2', width=100, anchor='center')
+        self.tree.column('col3', width=92, anchor='center')
+        self.tree.column('col4', width=92, anchor='center')
+        self.tree.heading('col1', text='name')
+        self.tree.heading('col2', text='port')
+        self.tree.heading('col3', text='q_pkt')
+        self.tree.heading('col4', text='r_pkt')
+        self.tree.configure(yscrollcommand=self.ybar.set)
+        self.tree.bind("<Double-1>", self.dbClick2ShowNode)
 
 
         self.ge_network()
@@ -74,9 +87,9 @@ class ControllerGui():
 
 
 
-        self.button_quit = Button(self.root, style="Q.TButton",command=self.quit)
+        self.button_quit = Button(self.fr_mid, style="Q.TButton",command=self.quit)
 
-        self.button_refresh = Button(self.root, style="R.TButton", command=self.refresh_network)
+        self.button_refresh = Button(self.fr_mid, style="R.TButton", command=self.refresh_network)
         #self.cv.pack()
         self.cv_topo.bind('<Motion>' , self.move_handler)
         self.cv_topo.bind('<Button-1>', self.click_handler)
@@ -84,7 +97,7 @@ class ControllerGui():
         self.shohid = StringVar()
         self.shohid.set("hide")
 
-        self.button_InfShowHide = Button(self.cv_topo, textvariable=self.shohid, command=self.labelShowHide)
+        self.button_InfShowHide = Button(self.fr_mid, textvariable=self.shohid, command=self.labelShowHide)
 
         self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_topo))
         self.edgeWarn_th.setDaemon(True)
@@ -94,8 +107,9 @@ class ControllerGui():
         self.on_off_xpos = 150
         self.on_off_ypos = 500
 
+        self.rate_set = []
         for text, mode in modes:
-            self.rate_set = Radiobutton(self.fr_bg, text=text, variable=self.v, value=mode, command=self.mitigation).place(x=self.on_off_xpos, y=self.on_off_ypos, anchor=W)
+            self.rate_set.append(Radiobutton(self.fr_mid, text=text, variable=self.v, value=mode, command=self.mitigation))
             self.on_off_ypos += 25
 
         self.typeSetting()
@@ -106,20 +120,33 @@ class ControllerGui():
         self.fr_tp.pack(side="bottom")
         # self.fr_tb.pack(side="right")
 
-        self.L1.place(x=85, y=100)
-        self.thres.place(x=480, y=420)
-        self.thresIn.place(x=600, y=420)
+        # self.L1.place(x=85, y=100)
+        # self.thres.place(x=480, y=420)
+        # self.thresIn.place(x=600, y=420)
 
-        self.button_quit.place(x=850, y=450)
-        self.button_refresh.place(x=850, y=400)
+        # self.button_InfShowHide.place(x=10, y=370)
+        # self.enter.place(x=655, y=420)
+        # self.button_quit.place(x=850, y=450)
+        # self.button_refresh.place(x=850, y=400)
+
+        self.L1.grid(row=0, column=0, pady=(0,20))
+        self.thres.grid(row=1, column=0, sticky="W")
+        self.thresIn.grid(row=1, column=0 )
+        self.enter.grid(row = 1, column=0, sticky="E")
+        self.button_InfShowHide.grid(row=4, column=0, pady=20)
+        self.rate_set[0].grid(row=5, column=0)
+        self.rate_set[1].grid(row=6, column=0)
+
+        self.button_refresh.grid(row=8, column = 0, pady=(30,0))
+        self.button_quit.grid(row=9, column=0)
 
         self.cv_tp.pack(expand="Yes", side="top", fill="both",ipadx=0,ipady=0,padx=0,pady=0)
         self.cv_topo.pack(expand="Yes", anchor="center",side="left", fill="both")
-        self.cv_table.pack(expand="Yes", anchor="center",side="right", fill="both")
+        self.fr_mid.pack(expand="Yes",side="left", anchor="center")
+        self.fr_table.pack(expand="Yes", side="right",anchor="center",fill="both")
+
         self.cv_btm.pack(expand="Yes", side="bottom", fill="both")
 
-        self.button_InfShowHide.place(x=10, y=370)
-        self.enter.place(x=655, y=420)
 
     def initStyle(self):
 
@@ -177,6 +204,9 @@ class ControllerGui():
                 background=[("active",self.bg)],
                 image=[("active",self.b_refreshPhoto)],
                 )
+        self.style.configure("TFrame",
+                background = self.bg, 
+                )
 
     def ge_network(self):
         """ generate network """
@@ -194,7 +224,7 @@ class ControllerGui():
         for s, mac in sorted(self.sw_mac.items()):
             self.G.add_node(mac.encode('utf-8'))
             if s in connected_gw:
-                pos[mac] = (1.2*myCos(90+15.0*connected_gw.index(s)), -1.2+connected_gw.index(s)*0.225)
+                pos[mac] = (1.2*myCos(90+15.0*connected_gw.index(s)), -1.4+connected_gw.index(s)*0.225)
                 # pos[mac] = (-1, -1.2+connected_gw.index(s)*0.225)
                 for port, node in self.event.node_links[s]:
                     if node[0] == 's':
@@ -456,6 +486,8 @@ class ControllerGui():
     def click_handler(self, event):
         """ click one node to show information """
         if self.tree != None:
+            self.tree.pack_forget()
+            self.ybar.pack_forget()
             x = self.tree.get_children()
             for item in x:
                 self.tree.delete(item)
@@ -465,27 +497,18 @@ class ControllerGui():
                     self.cv_topo.itemconfig(self.switches[s_mac], fill=self.sw_color)
                 for h_mac, pos in self.hosts.items():
                     self.cv_topo.itemconfig(self.hosts[h_mac], fill=self.host_color)
-                self.tree = Treeview(self.root, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
-                self.tree.column('col1', width=100, anchor='center')
-                self.tree.column('col2', width=70, anchor='center')
-                self.tree.column('col3', width=75, anchor='center')
-                self.tree.column('col4', width=75, anchor='center')
-                self.tree.heading('col1', text='name')
-                self.tree.heading('col2', text='port')
-                self.tree.heading('col3', text='pkt_q')
-                self.tree.heading('col4', text='pkt_r')
+                # self.tree = Treeview(self.fr_table, columns=('col1', 'col2', 'col3', 'col4') ,show='headings')
 
                 inf = self.event.getNodeInf(node)
 
                 for i in inf:
                    self.tree.insert('', 'end', values=i)
 
-                self.ybar = Scrollbar(self.root, orient=VERTICAL, command=self.tree.yview)
-                self.tree.configure(yscrollcommand=self.ybar.set)
-                self.tree.place(x=480, y=170)
-                self.ybar.place(x=800, y=170, height=218)
+                # self.tree.place(x=480, y=170)
+                # self.ybar.place(x=800, y=170, height=218)
+                self.tree.pack(side="left", fill='both', pady=60)
+                self.ybar.pack(side="left", fill='y', pady=60)
 
-                self.tree.bind("<Double-1>", self.dbClick2ShowNode)
 
     def getThreshold(self):
         try:
