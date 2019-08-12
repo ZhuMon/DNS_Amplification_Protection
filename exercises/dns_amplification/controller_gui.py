@@ -207,6 +207,9 @@ class ControllerGui():
         self.style.configure("TFrame",
                 background = self.bg, 
                 )
+        self.style.configure("TLabel",
+                background = self.bg, 
+                )
 
     def ge_network(self):
         """ generate network """
