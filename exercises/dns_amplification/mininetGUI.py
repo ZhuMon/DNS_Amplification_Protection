@@ -300,6 +300,19 @@ class MainConsole( Frame ):
     def hostView(self):
         self.clearWidget(3)
         self.level3bar = self.createMenuBar("hostView")
+        if self.selected[0] != None or self.selected[1] != None:
+            self.cframe.pack(expand = True, fill = "both")
+        if self.selected[0] != None:
+            self.selected[0].pack(expand = True, fill = 'both', side="left")
+            btn_index = int(self.selected[0].node.name[1:])
+            self.level3bar.buttons[0][btn_index].configure(style="Selected.TButton")
+            self.displayBtn(0, btn_index)
+
+        if self.selected[1] != None:
+            self.selected[1].pack(expand = True, fill = 'both', side="right")
+            btn_index = int(self.selected[1].node.name[1:])
+            self.level3bar.buttons[1][btn_index].configure(style="Selected.TButton")
+            self.displayBtn(1, btn_index)
 
     def moveViewBtn(self, group, side):
         """ 
@@ -307,6 +320,7 @@ class MainConsole( Frame ):
         side:  str : "left" or "right"
         """
 
+        # display rightside button
         if side == "right":
             self.level3bar.buttons[group][0].state(["!disabled"])
             for i in range(self.hostViewBarLeft[group], self.hostViewBarRight[group]+1):
@@ -324,7 +338,7 @@ class MainConsole( Frame ):
             else:
                 self.level3bar.buttons[group][-1].state(["!disabled"])
             
-            
+        # display leftside button
         elif side == "left":
             self.level3bar.buttons[group][-1].state(["!disabled"])
             for i in range(self.hostViewBarLeft[group], self.hostViewBarRight[group]+1):
@@ -342,6 +356,17 @@ class MainConsole( Frame ):
             else:
                 self.level3bar.buttons[group][0].state(["!disabled"])
         
+    def displayBtn(self, group, btn_index):
+        """ Used in Host - View """
+        left = self.hostViewBarLeft[group] - btn_index
+        right = btn_index - self.hostViewBarRight[group]
+        while left > 0:
+            self.moveViewBtn(group, "left")
+            left -= 1
+
+        while right > 0:
+            self.moveViewBtn(group, "right")
+            right -= 1
 
     def callController(self):
         None
@@ -395,7 +420,9 @@ class MainConsole( Frame ):
                 cmd2 = partial(self.select, name, 1)
                 b1 = Button(f1, text=name, command=cmd1, width=4, style="UnSelected.TButton")
                 b2 = Button(f2, text=name, command=cmd2, width=4, style="UnSelected.TButton")
-                if i < 8:
+
+                self.viewBtnLen = 8
+                if i < self.viewBtnLen:
                     b1.pack(side='left')
                     b2.pack(side='left')
                 else:
