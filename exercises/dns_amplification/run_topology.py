@@ -34,10 +34,11 @@ if __name__ == '__main__':
     # app = ConsoleApp(exercise.net, width=4 )
     app = MainConsole(exercise.net)
     
-    gui_th = threading.Thread(target=app.mainloop)
-    gui_th.setDaemon(True)
-    gui_th.start()
+    app.mainloop()
+    # gui_th = threading.Thread(target=app.mainloop)
+    # gui_th.setDaemon(True)
+    # gui_th.start()
 
 
-    exercise.do_net_cli()
-    exercise.net.stop()
+    # exercise.do_net_cli()
+    # exercise.net.stop()

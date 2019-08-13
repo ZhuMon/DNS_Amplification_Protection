@@ -1,5 +1,6 @@
 import re
 from time import sleep
+from threading import Thread
 
 from Tkinter import *
 from ttk import *
@@ -9,6 +10,7 @@ from mininet.log import setLogLevel
 from mininet.topolib import TreeNet
 from mininet.examples.consoles import Graph
 
+import mycontroller 
 # Make it easier to construct and assign objects
 
 def assign( obj, **kwargs ):
@@ -145,6 +147,7 @@ class MainConsole( Frame ):
 
         self.initStyle()
         self.createCframe()
+        self.controller_th = None
         
         # self.cframe.pack(expand=True, fill='both')
 
@@ -369,7 +372,10 @@ class MainConsole( Frame ):
             right -= 1
 
     def callController(self):
-        None
+        if self.controller_th == None or self.controller_th.isAlive() == False:
+            self.controller_th = Thread(target=mycontroller.main)
+            self.controller_th.setDaemon(True)
+            self.controller_th.start()
 
     def createMenuBar(self, level=None):
         f = Frame(self)

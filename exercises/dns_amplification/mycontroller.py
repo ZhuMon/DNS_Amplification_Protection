@@ -441,7 +441,7 @@ def ip2name(ip_in):
             return h
     print "can't find ip:",ip_in,"in ip2name"
 
-def main(p4info_file_path, bmv2_file_path):
+def main(p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build/basic.json'):
     """
         main function
     """
@@ -592,6 +592,7 @@ def main(p4info_file_path, bmv2_file_path):
                     print "------------"
                     print sw_name,"res_num: ", res_num
                     print "flag: ", flag
+                    print "threshold: ", thr_res_num
 
                     if res_num >= thr_res_num:
                         quick_cool_down[sw_name] = 0
@@ -685,4 +686,5 @@ if __name__ == '__main__':
         print "\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json
         parser.exit(1)
 
-    main(args.p4info, args.bmv2_json)
+    # main(args.p4info, args.bmv2_json)
+    main()

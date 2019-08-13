@@ -27,7 +27,7 @@ class ControllerGui():
 
         """
         self.event = event
-        self.root = Tk()
+        self.root = Toplevel()
         self.root.title("Controller GUI")
         self.root.geometry(win_size)
 
@@ -521,7 +521,7 @@ class ControllerGui():
             messagebox.showerror("Error", "You enter the wrong type !!\nPlease enter a number with type \"int\"")
         else:
             if 0 <= int(self.usrIn.get()) <= 1000:
-                self.event.thr_res_num = self.usrIn.get()
+                self.event.thr_res_num = int(self.usrIn.get())
                 qpktThreshold = self.usrIn.get()
                 rpktThreshold = self.usrIn.get()
                 print "You change the threshold to " + str(self.event.thr_res_num)
