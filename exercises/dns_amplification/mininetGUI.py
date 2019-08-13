@@ -163,6 +163,9 @@ class MainConsole( Frame ):
 
     def initStyle(self):
         self.style = Style()
+        self.style.configure("Menubar.TFrame",
+                background="gray"
+                )
         self.style.configure("Attack.TFrame",
                 background="white"
                 )
@@ -213,29 +216,16 @@ class MainConsole( Frame ):
         
         choose_attacker = Label(self.attack_frame, text="Choose attacker:", width=15)
         attacker_num = Label(self.attack_frame, text="attacker number:", width=15)
-        num = Combobox(self.attack_frame, values=range(1, 6), width=5)
-        num.current(0)
+        self.att_num_com = Combobox(self.attack_frame, values=range(1, 6), width=5)
+        self.att_num_com.current(0)
+        self.att_num_com.bind("<<ComboboxSelected>>", partial(self.changeAttackerNum, host_list = host_list))
         
+        self.attacker = []
         attacker = Label(self.attack_frame, text="attacker", width=10)
-        a = Combobox(self.attack_frame, values=host_list, width=6)
-        a.current(1)
-        
-        def acceptAttack(victim = v, num = num, attacker=a):
-            if victim.get() == attacker.get():
-                #TODO error message
-                print "Can not attack itself"
-                return
-            # print victim.get(), num.get(), attacker.get()
-            victimIP = self.net.hosts[int(victim.get()[1:])-1].IP()
-            self.consoles['h3'].handleInt()
-            self.consoles['h3'].sendCmd("python dns_server.py")
-            self.consoles[victim.get()].handleInt()
-            self.consoles[victim.get()].sendCmd("python victim.py < log_victim.txt")
-            
-            self.consoles[attacker.get()].handleInt()
-            self.consoles[attacker.get()].sendCmd("python attacker.py "+victimIP+" < log_attacker.txt")
+        self.changeAttackerNum(event=None, host_list = host_list)
+       
 
-        accept = Button(self.attack_frame, text="Accept", command=partial(acceptAttack, v, num, a), width=10)
+        accept = Button(self.attack_frame, text="Accept", command=partial(self.acceptAttack, v), width=10)
         
         block = [Label(self.attack_frame, text="",width=4 ) for i in range(0,15)]
 
@@ -255,9 +245,9 @@ class MainConsole( Frame ):
         v.grid(row=1, column=2)
         choose_attacker.grid(row=2, column=1)
         attacker_num.grid(row=2, column=2)
-        num.grid(row=2, column=3)
+        self.att_num_com.grid(row=2, column=3)
         attacker.grid(row=2, column=4)
-        a.grid(row=2, column=5)
+        # a.grid(row=2, column=5)
         accept.grid(row=14, column=14)
 
         
@@ -291,6 +281,41 @@ class MainConsole( Frame ):
         self.clearWidget(4)
         self.attack_frame.pack(expand = True, fill = "both")
         self.cframe.pack(expand = True, fill = "both")
+
+    def changeAttackerNum(self, event, host_list):
+        if self.attacker != []:
+            for a in self.attacker:
+                a.grid_forget()
+        self.attacker = []
+        for i in range(0, int(self.att_num_com.get())):
+            a = Combobox(self.attack_frame, values=host_list, width=6)
+            a.current(i+1)
+            a.grid(row=2+i, column=5)
+            self.attacker.append(a)
+            
+
+    def acceptAttack(self, victim):
+        tmp = []
+        for a in self.attacker:
+            if victim.get() == a.get():
+                #TODO error message
+                print "Can not attack itself!"
+                return
+            if a.get() in tmp:
+                print "There are same attacker"
+                return
+            tmp.append(a.get())
+
+        # print victim.get(), self.att_num_com.get(), attacker.get()
+        victimIP = self.net.hosts[int(victim.get()[1:])-1].IP()
+        self.consoles['h3'].handleInt()
+        self.consoles['h3'].sendCmd("python dns_server.py")
+        self.consoles[victim.get()].handleInt()
+        self.consoles[victim.get()].sendCmd("python victim.py < log_victim.txt")
+        
+        for a in self.attacker:
+            self.consoles[a.get()].handleInt()
+            self.consoles[a.get()].sendCmd("python attacker.py "+victimIP+" < log_attacker.txt")
 
     def ping(self):
         self.clearWidget(4)
@@ -378,7 +403,7 @@ class MainConsole( Frame ):
             self.controller_th.start()
 
     def createMenuBar(self, level=None):
-        f = Frame(self)
+        f = Frame(self, style="Menubar.TFrame")
         buttons = []
         
         if level == "menu":

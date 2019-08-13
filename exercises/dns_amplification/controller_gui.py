@@ -113,7 +113,6 @@ class ControllerGui():
             self.on_off_ypos += 25
 
         self.typeSetting()
-        self.root.mainloop()
 
     def typeSetting(self):
         self.fr_bg.pack()
@@ -407,7 +406,7 @@ class ControllerGui():
                     edgeWidth_q = 7 if edgeWidth_q < 7 else edgeWidth_q
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[0], fill=self.edgeColorCtr(self.q_color, edgeWidth_q, "q"), width=edgeWidth_q)
                 if pktNum_r <= rpktThreshold:
-                    edgeWidth_r = (pktNum_q%5)+2
+                    edgeWidth_r = (pktNum_r%5)+2
                     edgeWidth_r = 2 if edgeWidth_r < 2 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.r_color, width=edgeWidth_r)
                 elif pktNum_r > rpktThreshold:
@@ -561,5 +560,6 @@ def main():
     event = myEvent(topology, direction, node_links)
     event.recordName(h_mac, sw_mac)
     c = ControllerGui(event, sw_mac, h_mac, topology)
+    c.root.mainloop()
 if __name__ == '__main__':
     main()

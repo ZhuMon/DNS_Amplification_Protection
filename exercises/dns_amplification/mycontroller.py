@@ -664,6 +664,7 @@ def main(p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build
         printGrpcError(e)
 
     ShutdownAllSwitchConnections()
+    print "====== Close Controller ======"
 
 if __name__ == '__main__': 
     # parser = argparse.ArgumentParser(description='P4Runtime Controller')
