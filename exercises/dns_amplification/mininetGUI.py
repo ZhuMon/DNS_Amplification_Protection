@@ -6,6 +6,7 @@ from Tkinter import *
 from ttk import *
 from Tkinter import Scale
 from functools import partial
+import tkMessageBox as messagebox
 
 from mininet.log import setLogLevel
 from mininet.topolib import TreeNet
@@ -331,10 +332,10 @@ class MainConsole( Frame ):
         for a, interval, random, r, w, pkt_num, num_in, t in self.attacker:
             if victim.get() == a.get():
                 #TODO error message
-                print "Can not attack itself!"
+                messagebox.showerror("Error", "Can not attack itself !!")
                 return
             if a.get() in tmp:
-                print "There are same attacker"
+                messagebox.showerror("Error", "There are the same attacker")
                 return
             tmp.append(a.get())
 
