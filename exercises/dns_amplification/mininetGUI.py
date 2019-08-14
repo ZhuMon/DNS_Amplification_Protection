@@ -4,6 +4,7 @@ from threading import Thread
 
 from Tkinter import *
 from ttk import *
+from Tkinter import Scale
 from functools import partial
 
 from mininet.log import setLogLevel
@@ -284,19 +285,50 @@ class MainConsole( Frame ):
 
     def changeAttackerNum(self, event, host_list):
         if self.attacker != []:
-            for a in self.attacker:
+            for a, interval, random, r, w, pkt_num, num_in, t in self.attacker:
                 a.grid_forget()
+                interval.grid_forget()
+                random.grid_forget()
+                w.grid_forget()
+                pkt_num.grid_forget()
+                num_in.grid_forget()
+
+                a.destroy()
+                interval.destroy()
+                random.destroy()
+                w.destroy()
+                pkt_num.destroy()
+                num_in.destroy()
+
         self.attacker = []
         for i in range(0, int(self.att_num_com.get())):
             a = Combobox(self.attack_frame, values=host_list, width=6)
             a.current(i+1)
+            interval = Label(self.attack_frame, text="attack interval")
+            r = IntVar()
+            random = Checkbutton(self.attack_frame, text="random", variable=r,onvalue=1, offvalue=0)
+            w = Scale(self.attack_frame, from_=0, to=1,orient=HORIZONTAL,resolution=0.01)
+
+            pkt_num = Label(self.attack_frame, text="attack packet num")
+            t = IntVar()
+            t.set(500)
+            num_in = Entry(self.attack_frame, textvariable=t, width=8)
+            
             a.grid(row=2+i, column=5)
-            self.attacker.append(a)
+            interval.grid(row=2+i, column=6)
+            random.grid(row=2+i, column=7, sticky="S")
+            w.grid(row=2+i, column=7, sticky="N")
+            pkt_num.grid(row=2+i, column=8)
+            num_in.grid(row=2+i, column=9)
+
+            self.attacker.append([a, interval, random, r, w, pkt_num, num_in, t])
+            
+            
             
 
     def acceptAttack(self, victim):
         tmp = []
-        for a in self.attacker:
+        for a, interval, random, r, w, pkt_num, num_in, t in self.attacker:
             if victim.get() == a.get():
                 #TODO error message
                 print "Can not attack itself!"
@@ -308,14 +340,19 @@ class MainConsole( Frame ):
 
         # print victim.get(), self.att_num_com.get(), attacker.get()
         victimIP = self.net.hosts[int(victim.get()[1:])-1].IP()
-        self.consoles['h3'].handleInt()
+
+        # clear all host consoles
+        for host in self.net.hosts:
+            self.consoles[host.name].handleInt()
+            self.consoles[host.name].clear()
+
+
         self.consoles['h3'].sendCmd("python dns_server.py")
-        self.consoles[victim.get()].handleInt()
         self.consoles[victim.get()].sendCmd("python victim.py < log_victim.txt")
         
-        for a in self.attacker:
-            self.consoles[a.get()].handleInt()
-            self.consoles[a.get()].sendCmd("python attacker.py "+victimIP+" < log_attacker.txt")
+        for a, interval, random, r, w, pkt_num, num_in, t  in self.attacker:
+            n = -1 if r.get() == 1 else float(w.get())
+            self.consoles[a.get()].sendCmd("python ge_dns.py "+str(t.get())+" "+str(n)+" | python attacker.py "+victimIP)
 
     def ping(self):
         self.clearWidget(4)
@@ -330,6 +367,7 @@ class MainConsole( Frame ):
         self.level3bar = self.createMenuBar("hostView")
         if self.selected[0] != None or self.selected[1] != None:
             self.cframe.pack(expand = True, fill = "both")
+
         if self.selected[0] != None:
             self.selected[0].pack(expand = True, fill = 'both', side="left")
             btn_index = int(self.selected[0].node.name[1:])
