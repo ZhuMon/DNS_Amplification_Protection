@@ -406,7 +406,7 @@ control MyIngress(inout headers hdr,
                         reg_ingress.read(tmp, index);
                         s_reg.read(s, ip_last);
                         // if change threshold of ip_f, remember to change controller's 
-                        if (ip_f > 680 || s != 0){
+                        if (ip_f > 300 || s != 0){
                             s_reg.write(ip_last, hdr.ipv4.dstAddr);
                             ipv4_lpm.apply();
                         } else if (tmp > 10){

@@ -489,6 +489,10 @@ def main(p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build
                     hosts[p_inf["name"]] = p_inf["mac"]
                     host_ip[p_inf["name"]] = p_inf["ip"]
 
+        # re-Master
+        for i in range(0, len(sw)):
+            sw[i].MasterArbitrationUpdate()
+
         for s, mac in sw_mac.items():
             writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
             writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
@@ -624,7 +628,7 @@ def main(p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build
 
                 for i in range(0, 256):
                     f = read_register(runtimeAPI, "fr_reg", i)
-                    if f > 680:
+                    if f > 300:
                         num = read_register(runtimeAPI, "s_reg", i) # get a host
                         if num == 0:
                             sleep(1)

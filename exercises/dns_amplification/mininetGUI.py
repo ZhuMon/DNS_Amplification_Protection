@@ -334,12 +334,14 @@ class MainConsole( Frame ):
             self.selected[0].pack(expand = True, fill = 'both', side="left")
             btn_index = int(self.selected[0].node.name[1:])
             self.level3bar.buttons[0][btn_index].configure(style="Selected.TButton")
+            self.level3bar.buttons[1][btn_index].state(["disabled"])
             self.displayBtn(0, btn_index)
 
         if self.selected[1] != None:
             self.selected[1].pack(expand = True, fill = 'both', side="right")
             btn_index = int(self.selected[1].node.name[1:])
             self.level3bar.buttons[1][btn_index].configure(style="Selected.TButton")
+            self.level3bar.buttons[0][btn_index].state(["disabled"])
             self.displayBtn(1, btn_index)
 
     def moveViewBtn(self, group, side):
