@@ -62,6 +62,9 @@ class ControllerGui():
         self.L1 = Label(self.fr_mid, textvariable=self.var, width=30, anchor="center", background=self.bg)
 
         self.thres = Label(self.fr_mid, text="Threshold:", anchor="center", background=self.bg)
+
+        self.zoomIn = Button(self.fr_mid, text="Zoom In", command=self.topoZoomIn)
+        self.zoomOut = Button(self.fr_mid, text="Zoom Out", command=self.topoZoomOut)
         
         self.usrIn = StringVar()
         self.usrIn.set("")
@@ -130,8 +133,10 @@ class ControllerGui():
 
         self.L1.grid(row=0, column=0, pady=(0,20))
         self.thres.grid(row=1, column=0, sticky="W")
-        self.thresIn.grid(row=1, column=0 )
-        self.enter.grid(row = 1, column=0, sticky="E")
+        self.thresIn.grid(row=1, column=0)
+        self.enter.grid(row=1, column=0, sticky="E")
+        self.zoomIn.grid(row=2, column=0)
+        self.zoomOut.grid(row=3, column=0)
         self.button_InfShowHide.grid(row=4, column=0, pady=20)
         self.rate_set[0].grid(row=5, column=0)
         self.rate_set[1].grid(row=6, column=0)
@@ -548,6 +553,20 @@ class ControllerGui():
             self.labelSv.place_forget()
             self.labelVt.place_forget()
             self.shohid.set("show")
+
+    def topoZoomIn(self):
+        result = self.cv_topo.find_overlapping(0, 0, 600, 600)
+        for Id in result:
+            #if Id.winfo_class() != 'Label':
+                x1, y1, x2, y2 = self.cv_topo.coords(Id)
+                self.cv_topo.coords(Id, x1*1.5, y1*1.5, x2*1.5, y2*1.5)
+
+    def topoZoomOut(self):
+        result = self.cv_topo.find_overlapping(0, 0, 600, 600)
+        for Id in result:
+            #if Id.winfo_class() != 'Label':
+                x1, y1, x2, y2 = self.cv_topo.coords(Id)
+                self.cv_topo.coords(Id, x1/1.5, y1/1.5, x2/1.5, y2/1.5)
 
 def main():
 
