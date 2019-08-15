@@ -266,8 +266,8 @@ class ControllerGui():
         fixed.append("00:00:00:04:15:00")
         fixed.append("00:00:00:05:15:00")
 
-        self.links = self.G.edges
-        self.nodes = nx.spring_layout(self.G, pos=pos, fixed=fixed)
+        self.links = self.G.edges # [[mac1,mac2],[mac3,mac4],...]
+        self.nodes = nx.spring_layout(self.G, pos=pos, fixed=fixed) # {mac1:[x1,y1], mac2:[x2, y2]}
 
     def refresh_network(self):
         """ refresh network """
@@ -547,7 +547,10 @@ class ControllerGui():
             self.shohid.set("show")
 
     def topoZoomIn(self):
-        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
+        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)  
+        for node, pos in self.nodes.items():
+            self.nodes[node] = [pos[0] *1.5, pos[1] * 1.5]
+
         for Id in result:
             ords = self.cv_topo.coords(Id)
             z = [o*1.5 for o in ords]
@@ -555,9 +558,13 @@ class ControllerGui():
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
             elif len(ords) == 8:
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7])
+        self.labelShowHide()
+        self.labelShowHide()
 
     def topoZoomOut(self):
         result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
+        for node, pos in self.nodes.items():
+            self.nodes[node] = [pos[0] /1.5, pos[1] / 1.5]
         for Id in result:
             ords = self.cv_topo.coords(Id)
             z = [o/1.5 for o in ords]
@@ -565,6 +572,8 @@ class ControllerGui():
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
             elif len(ords) == 8:
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7])
+        self.labelShowHide()
+        self.labelShowHide()
 
 
 def main():
