@@ -165,14 +165,14 @@ class MainConsole( Frame ):
 
     def initStyle(self):
         self.style = Style()
-        self.style.configure("Menubar.TFrame",
-                background="gray"
+        self.style.configure("Menubar.TFrame"#,
+                # background="gray"
                 )
         self.style.configure("Attack.TFrame",
                 background="white"
                 )
         self.style.configure("TLabel",
-                background="white"
+                    background="white"
                 )
         self.style.configure("Selected.TButton",
                 background="red",
@@ -212,44 +212,45 @@ class MainConsole( Frame ):
         self.attack_frame = Frame(self.cframe, style="Attack.TFrame")
         host_list = [h.name for h in self.net.hosts]
         host_list.remove('h3')
-        choose_victim = Label(self.attack_frame, text="Choose a victim: ", width=15)
+        choose_victim = Label(self.attack_frame, text="Choose a victim: ")#, width=15)
         v = Combobox(self.attack_frame, values=host_list, width=6)
         v.current(0)
         
-        choose_attacker = Label(self.attack_frame, text="Choose attacker:", width=15)
-        attacker_num = Label(self.attack_frame, text="attacker number:", width=15)
+        choose_attacker = Label(self.attack_frame, text="Choose attacker:")#, width=15)
+        attacker_num = Label(self.attack_frame, text="num")#, width=15)
         self.att_num_com = Combobox(self.attack_frame, values=range(1, 6), width=5)
         self.att_num_com.current(0)
         self.att_num_com.bind("<<ComboboxSelected>>", partial(self.changeAttackerNum, host_list = host_list))
         
         self.attacker = []
-        attacker = Label(self.attack_frame, text="attacker", width=10)
+        attacker = Label(self.attack_frame, text="name")#, width=10)
         self.changeAttackerNum(event=None, host_list = host_list)
        
+        interval = Label(self.attack_frame, text="attack interval")
+        pkt_num = Label(self.attack_frame, text="attack packet num")
 
         accept = Button(self.attack_frame, text="Accept", command=partial(self.acceptAttack, v), width=10)
         
         block = [Label(self.attack_frame, text="",width=4 ) for i in range(0,15)]
 
         block[0].grid(row=0, column=0)
-        block[1].grid(row=3, column=3)
+        # block[1].grid(row=3, column=3)
         block[2].grid(row=4, column=4)
         block[3].grid(row=5, column=5)
-        block[4].grid(row=6, column=6)
+        block[4].grid(row=6, column=7)
         block[5].grid(row=7, column=7)
-        block[6].grid(row=8, column=8)
-        block[7].grid(row=9, column=9)
-        block[8].grid(row=10, column=10)
-        block[9].grid(row=11, column=11)
-        block[10].grid(row=12, column=12)
+        block[6].grid(row=8, column=7)
+        block[7].grid(row=9, column=7)
 
         choose_victim.grid(row=1, column=1)
-        v.grid(row=1, column=2)
-        choose_attacker.grid(row=2, column=1)
+        v.grid(row=2, column=1)
+        choose_attacker.grid(row=1, column=2)
         attacker_num.grid(row=2, column=2)
-        self.att_num_com.grid(row=2, column=3)
-        attacker.grid(row=2, column=4)
+        self.att_num_com.grid(row=3, column=2)
+        attacker.grid(row=2, column=3)
         # a.grid(row=2, column=5)
+        interval.grid(row=2, column=4, columnspan=2)
+        pkt_num.grid(row=2,column=6)
         accept.grid(row=14, column=14)
 
         
@@ -257,6 +258,7 @@ class MainConsole( Frame ):
     def hostPage(self):
         self.clearWidget(2)
         self.level2bar = self.createMenuBar("hosts")
+        self.clearViewBtn.pack_forget()
 
     def select(self, nodeName, index):
         if self.selected[index] is not None:
@@ -278,6 +280,7 @@ class MainConsole( Frame ):
     def hostFunc(self):
         self.clearWidget(3)
         self.level3bar = self.createMenuBar("hostFunc")
+        self.clearViewBtn.pack_forget()
 
     def attack(self):
         self.clearWidget(4)
@@ -286,50 +289,42 @@ class MainConsole( Frame ):
 
     def changeAttackerNum(self, event, host_list):
         if self.attacker != []:
-            for a, interval, random, r, w, pkt_num, num_in, t in self.attacker:
+            for a, random, r, w, num_in, t in self.attacker:
                 a.grid_forget()
-                interval.grid_forget()
                 random.grid_forget()
                 w.grid_forget()
-                pkt_num.grid_forget()
                 num_in.grid_forget()
 
                 a.destroy()
-                interval.destroy()
                 random.destroy()
                 w.destroy()
-                pkt_num.destroy()
                 num_in.destroy()
 
         self.attacker = []
         for i in range(0, int(self.att_num_com.get())):
             a = Combobox(self.attack_frame, values=host_list, width=6)
             a.current(i+1)
-            interval = Label(self.attack_frame, text="attack interval")
             r = IntVar()
-            random = Checkbutton(self.attack_frame, text="random", variable=r,onvalue=1, offvalue=0)
             w = Scale(self.attack_frame, from_=0, to=1,orient=HORIZONTAL,resolution=0.01)
+            random = Checkbutton(self.attack_frame, text="random", variable=r,onvalue=1, offvalue=0)
 
-            pkt_num = Label(self.attack_frame, text="attack packet num")
             t = IntVar()
             t.set(500)
             num_in = Entry(self.attack_frame, textvariable=t, width=8)
             
-            a.grid(row=2+i, column=5)
-            interval.grid(row=2+i, column=6)
-            random.grid(row=2+i, column=7, sticky="S")
-            w.grid(row=2+i, column=7, sticky="N")
-            pkt_num.grid(row=2+i, column=8)
-            num_in.grid(row=2+i, column=9)
+            a.grid(row=3+i, column=3)
+            w.grid(row=3+i, column=4)
+            random.grid(row=3+i, column=5)
+            num_in.grid(row=3+i, column=6)
 
-            self.attacker.append([a, interval, random, r, w, pkt_num, num_in, t])
+            self.attacker.append([a, random, r, w, num_in, t])
             
             
             
 
     def acceptAttack(self, victim):
         tmp = []
-        for a, interval, random, r, w, pkt_num, num_in, t in self.attacker:
+        for a, random, r, w, num_in, t in self.attacker:
             if victim.get() == a.get():
                 #TODO error message
                 messagebox.showerror("Error", "Can not attack itself !!")
@@ -351,13 +346,15 @@ class MainConsole( Frame ):
         self.consoles['h3'].sendCmd("python dns_server.py")
         self.consoles[victim.get()].sendCmd("python victim.py < log_victim.txt")
         
-        for a, interval, random, r, w, pkt_num, num_in, t  in self.attacker:
+        for a, random, r, w, num_in, t  in self.attacker:
             n = -1 if r.get() == 1 else float(w.get())
             self.consoles[a.get()].sendCmd("python ge_dns.py "+str(t.get())+" "+str(n)+" | python attacker.py "+victimIP)
 
-    def ping(self):
-        self.clearWidget(4)
-        None
+    def stopAttack(self):
+        for host in self.net.hosts:
+            self.consoles[host.name].handleInt()
+            self.consoles[host.name].sendCmd("echo \"========= End =========\"")
+
 
     def iperf(self):
         self.clearWidget(4)
@@ -368,6 +365,7 @@ class MainConsole( Frame ):
         self.level3bar = self.createMenuBar("hostView")
         if self.selected[0] != None or self.selected[1] != None:
             self.cframe.pack(expand = True, fill = "both")
+        self.clearViewBtn.pack(side="left")
 
         if self.selected[0] != None:
             self.selected[0].pack(expand = True, fill = 'both', side="left")
@@ -382,6 +380,10 @@ class MainConsole( Frame ):
             self.level3bar.buttons[1][btn_index].configure(style="Selected.TButton")
             self.level3bar.buttons[0][btn_index].state(["disabled"])
             self.displayBtn(1, btn_index)
+
+    def clearView(self):
+        for host in self.net.hosts:
+            self.consoles[host.name].clear()
 
     def moveViewBtn(self, group, side):
         """ 
@@ -437,6 +439,9 @@ class MainConsole( Frame ):
             self.moveViewBtn(group, "right")
             right -= 1
 
+    def switchPage(self):
+        self.clearWidget(2)
+
     def callController(self):
         if self.controller_th == None or self.controller_th.isAlive() == False:
             self.controller_th = Thread(target=mycontroller.main)
@@ -450,23 +455,24 @@ class MainConsole( Frame ):
         if level == "menu":
             buttons = [
                 ( 'Hosts', self.hostPage),
-                ( 'Switches', None ),
-                ( 'Controllers', self.callController ),
+                ( 'Switches', self.switchPage),
+                ( 'Controller', self.callController ),
                 ( 'Quit', self.quit)
             ]
         elif level == "hosts":
             buttons = [
                 ( 'Function', self.hostFunc),
-                ( 'View', self.hostView)
+                ( 'View', self.hostView),
+                ( 'Clear', self.clearView)
             ]
         elif level == "hostFunc":
             buttons = [
                 ( 'Attack', self.attack),
-                ( 'Ping', self.ping),
+                ( 'Stop', self.stopAttack),
                 ( 'Iperf', self.iperf)
             ]
         elif level == "hostView":
-            f1 = Frame(f, width=self.width/2)
+            f1 = Frame(f, width=self.width /2)
             f2 = Frame(f, width=self.width/2)
             btn_obj = [[],[]]
             l1 = Button(f1, text="<", command=partial(self.moveViewBtn, 0, "left"), width=1)
@@ -524,6 +530,8 @@ class MainConsole( Frame ):
                     b = Button(f, text=name, command=cmd)
                     b.pack(side='left')
                     btn_obj.append(b)
+                    if name == "Clear":
+                        self.clearViewBtn = b
         
         f.pack(padx = 4, pady = 4, fill = 'x')
         return Object(frame = f, buttons = btn_obj)
