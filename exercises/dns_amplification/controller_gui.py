@@ -289,8 +289,8 @@ class ControllerGui():
         """ create node """
 
         for node, pos in self.nodes.items():
-            pos[0] = (self.extend(pos[0], 'x')+2)*100
-            pos[1] = (self.extend(pos[1], 'y')+2)*100
+            pos[0] = (pos[0]+2)*100
+            pos[1] = (pos[1]+2)*100
 
         for link in self.links:
             if self.event.getQR(link[0], link[1], 1) == 'q':
@@ -378,14 +378,6 @@ class ControllerGui():
             if flag == 1:
                 break
 
-    def extend(self, num, axis='x'):
-        """ expand network size """
-        return num
-        # if num < 0:
-            # num = abs(num)
-            # return sqrt(num) * sqrt(2) * (-1)
-        # else:
-        #     return sqrt(num) * sqrt(2)
 
     def edge_traffic_warn(self, event, topology, cv_topo):
         """ detect which edge is busy, warn user via color changing """
