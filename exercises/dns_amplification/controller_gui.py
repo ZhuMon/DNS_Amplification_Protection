@@ -343,7 +343,7 @@ class ControllerGui():
                     self.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
 
             else:
-                host = self.cv_topo.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color, outline="black")
+                host = self.cv_topo.create_rectangle(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.host_color, outline="black")
                 # host = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_host)
                 self.hosts[node] = host
                 if node[0:] == "00:00:00:00:03:03":
@@ -557,8 +557,6 @@ class ControllerGui():
             z = [o*1.5 for o in ords]
             if len(ords) == 4:
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
-            elif len(ords) == 8:
-                self.cv_topo.coords(Id, z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7])
         self.labelShowHide()
         self.labelShowHide()
 
@@ -572,8 +570,6 @@ class ControllerGui():
             z = [o/1.5 for o in ords]
             if len(ords) == 4:
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
-            elif len(ords) == 8:
-                self.cv_topo.coords(Id, z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7])
         self.labelShowHide()
         self.labelShowHide()
 
