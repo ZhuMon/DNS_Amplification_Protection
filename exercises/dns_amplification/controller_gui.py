@@ -555,18 +555,25 @@ class ControllerGui():
             self.shohid.set("show")
 
     def topoZoomIn(self):
-        result = self.cv_topo.find_overlapping(0, 0, 600, 600)
+        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
         for Id in result:
-            #if Id.winfo_class() != 'Label':
-                x1, y1, x2, y2 = self.cv_topo.coords(Id)
-                self.cv_topo.coords(Id, x1*1.5, y1*1.5, x2*1.5, y2*1.5)
+            ords = self.cv_topo.coords(Id)
+            z = [o*1.5 for o in ords]
+            if len(ords) == 4:
+                self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
+            elif len(ords) == 8:
+                self.cv_topo.coords(Id, z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7])
 
     def topoZoomOut(self):
-        result = self.cv_topo.find_overlapping(0, 0, 600, 600)
+        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
         for Id in result:
-            #if Id.winfo_class() != 'Label':
-                x1, y1, x2, y2 = self.cv_topo.coords(Id)
-                self.cv_topo.coords(Id, x1/1.5, y1/1.5, x2/1.5, y2/1.5)
+            ords = self.cv_topo.coords(Id)
+            z = [o/1.5 for o in ords]
+            if len(ords) == 4:
+                self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
+            elif len(ords) == 8:
+                self.cv_topo.coords(Id, z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7])
+
 
 def main():
 
