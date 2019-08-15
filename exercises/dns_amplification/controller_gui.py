@@ -182,7 +182,7 @@ class ControllerGui():
         self.b_refreshPhoto = ImageTk.PhotoImage(b_refreshImage) 
         TBgImage = Image.open('Img/top_bg.png').resize((1100,100), Image.ANTIALIAS)
         BBgImage = Image.open('Img/bottom_bg.png').resize((1100,100), Image.ANTIALIAS)
-        TopoBgImage = Image.open('Img/gray_bg.png').resize((400,400), Image.ANTIALIAS)
+        TopoBgImage = Image.open('Img/gray_bg.png').resize((500,500), Image.ANTIALIAS)
 
         self.t_bgPhoto = ImageTk.PhotoImage(TBgImage)
         self.b_bgPhoto = ImageTk.PhotoImage(BBgImage)
@@ -337,10 +337,10 @@ class ControllerGui():
                 self.switches[node] = sw
                 if node[0:] == "00:00:00:04:15:00":
                     self.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelGw.place(x=pos[0]-25, y=pos[1]+15)
+                    self.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
                 if node[0:] == "00:00:00:05:15:00":
                     self.labelRt = Label(self.cv_topo, text="Router", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelRt.place(x=pos[0]-25, y=pos[1]+15)
+                    self.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
 
             else:
                 host = self.cv_topo.create_polygon(pos[0], pos[1], pos[0], pos[1]+self.node_size, pos[0]+self.node_size, pos[1]+self.node_size, pos[0]+self.node_size, pos[1], fill=self.host_color, outline="black")
@@ -348,10 +348,10 @@ class ControllerGui():
                 self.hosts[node] = host
                 if node[0:] == "00:00:00:00:03:03":
                     self.labelSv = Label(self.cv_topo, text=" DNS\nServer", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelSv.place(x=pos[0]-25, y=pos[1]+15)
+                    self.labelSv.place(x=pos[0] , y=pos[1]+self.node_size)
                 if node[0:] == "00:00:00:00:01:01":
                     self.labelVt = Label(self.cv_topo, text="Victim", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.labelVt.place(x=pos[0]-25, y=pos[1]+15)
+                    self.labelVt.place(x=pos[0] , y=pos[1]+self.node_size)
 
         self.overlaplist = []
         self.comparelist = []
@@ -530,14 +530,14 @@ class ControllerGui():
             for node, pos in self.nodes.items():
                 if node[15:] == "00" :
                     if node[0:] == "00:00:00:04:15:00":
-                        self.labelGw.place(x=pos[0]-25, y=pos[1]+15)
+                        self.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
                     if node[0:] == "00:00:00:05:15:00":
-                        self.labelRt.place(x=pos[0]-25, y=pos[1]+15)
+                        self.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
                 else:
                     if node[0:] == "00:00:00:00:03:03":
-                        self.labelSv.place(x=pos[0]-25, y=pos[1]+15)
+                        self.labelSv.place(x=pos[0] , y=pos[1]+self.node_size)
                     if node[0:] == "00:00:00:00:01:01":
-                        self.labelVt.place(x=pos[0]-25, y=pos[1]+15)
+                        self.labelVt.place(x=pos[0] , y=pos[1]+self.node_size)
             self.shohid.set("hide")
         elif self.shohid.get() == "hide":
             self.labelGw.place_forget()
@@ -547,7 +547,8 @@ class ControllerGui():
             self.shohid.set("show")
 
     def topoZoomIn(self):
-        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)  
+        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
+        self.node_size *= 1.5
         for node, pos in self.nodes.items():
             self.nodes[node] = [pos[0] *1.5, pos[1] * 1.5]
 
@@ -563,6 +564,7 @@ class ControllerGui():
 
     def topoZoomOut(self):
         result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
+        self.node_size /= 1.5
         for node, pos in self.nodes.items():
             self.nodes[node] = [pos[0] /1.5, pos[1] / 1.5]
         for Id in result:
