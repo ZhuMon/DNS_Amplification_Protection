@@ -18,6 +18,8 @@ from event import myEvent
 win_size = '1100x600'
 g_height = 600
 g_width = 1100
+fr_topo_height = 400
+fr_topo_width = 400
 qpktThreshold = 0
 rpktThreshold = 0 
 modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
@@ -53,7 +55,8 @@ class ControllerGui():
         self.cv_tp = Canvas(self.fr_bg, height = 100, width = g_width,highlightthickness=0)
         self.cv_tp.create_image(0,0, image=self.t_bgPhoto, anchor = "nw")
         
-        self.cv_topo = Canvas(self.fr_bg,bg = self.bg, height = 400, width = 400,highlightthickness=0)
+        self.fr_topo = Frame(self.fr_bg, height = fr_topo_height, width = fr_topo_width)
+        self.cv_topo = Canvas(self.fr_topo,bg = self.bg, height = fr_topo_height, width = fr_topo_width, highlightthickness=0)
         self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
 
         self.fr_mid = Frame(self.fr_bg, height = 400, width = 300, style="TFrame")
@@ -75,6 +78,10 @@ class ControllerGui():
         self.zoomState = "Not"
         self.zoomIn = Button(self.fr_mid, text="Zoom In", command=partial(self.topoZoom, InOut="in"))
         self.zoomOut = Button(self.fr_mid, text="Zoom Out", command=partial(self.topoZoom, InOut="out"))
+
+        self.topo_xscroll = Scrollbar(self.fr_topo, orient="horizontal", command=self.cv_topo.xview)
+        self.topo_yscroll = Scrollbar(self.fr_topo, orient="vertical", command=self.cv_topo.yview)
+        self.cv_topo.configure(yscrollcommand=self.topo_yscroll.set, xscrollcommand=self.topo_xscroll.set)
         
         self.usrIn = StringVar()
         self.usrIn.set("")
@@ -154,8 +161,12 @@ class ControllerGui():
         self.button_refresh.grid(row=8, column = 0, pady=(30,0))
         self.button_quit.grid(row=9, column=0)
 
+        self.topo_xscroll.pack(expand="Yes", side="bottom", fill="x", ipady=0)
+        self.topo_yscroll.pack(expand="Yes", side="right", fill="y", ipadx=0)
+        self.cv_topo.pack(expand="Yes", anchor="center", side="left")
+
         self.cv_tp.pack(expand="Yes", side="top", fill="both",ipadx=0,ipady=0,padx=0,pady=0)
-        self.cv_topo.pack(expand="Yes", anchor="center",side="left", fill="both")
+        self.fr_topo.pack(expand="Yes", anchor="center",side="left", fill="both")
         self.fr_mid.pack(expand="Yes",side="left", anchor="center")
         self.fr_table.pack(expand="Yes", side="right",anchor="center",fill="both")
 
@@ -192,7 +203,7 @@ class ControllerGui():
         self.b_refreshPhoto = ImageTk.PhotoImage(b_refreshImage) 
         TBgImage = Image.open('Img/top_bg.png').resize((1100,100), Image.ANTIALIAS)
         BBgImage = Image.open('Img/bottom_bg.png').resize((1100,100), Image.ANTIALIAS)
-        TopoBgImage = Image.open('Img/gray_bg.png').resize((500,500), Image.ANTIALIAS)
+        TopoBgImage = Image.open('Img/gray_bg.png').resize((400,400), Image.ANTIALIAS)
 
         self.t_bgPhoto = ImageTk.PhotoImage(TBgImage)
         self.b_bgPhoto = ImageTk.PhotoImage(BBgImage)
