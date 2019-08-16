@@ -2,6 +2,7 @@ import threading
 import random
 from time import sleep
 from math import sqrt,cos,sin,pi
+from functools import partial
 
 from Tkinter import *
 import tkMessageBox as messagebox
@@ -20,6 +21,13 @@ g_width = 1100
 qpktThreshold = 0
 rpktThreshold = 0 
 modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
+
+def assign(obj, **kwargs):
+    obj.__dict__.update(kwargs)
+
+class Object(object):
+    def __init__(self, **kwargs):
+        assign(self, **kwargs)
 
 class ControllerGui():
     def __init__(self, event, sw_mac, h_mac, topology):
@@ -63,8 +71,10 @@ class ControllerGui():
 
         self.thres = Label(self.fr_mid, text="Threshold:", anchor="center", background=self.bg)
 
-        self.zoomIn = Button(self.fr_mid, text="Zoom In", command=self.topoZoomIn)
-        self.zoomOut = Button(self.fr_mid, text="Zoom Out", command=self.topoZoomOut)
+        self.zoom = Object(x1=0, y1=0, x2=0, y2=0, rect=self.cv_topo.create_rectangle(0,0,0,0), area=0)
+        self.zoomState = "Not"
+        self.zoomIn = Button(self.fr_mid, text="Zoom In", command=partial(self.topoZoom, InOut="in"))
+        self.zoomOut = Button(self.fr_mid, text="Zoom Out", command=partial(self.topoZoom, InOut="out"))
         
         self.usrIn = StringVar()
         self.usrIn.set("")
@@ -546,32 +556,54 @@ class ControllerGui():
             self.labelVt.place_forget()
             self.shohid.set("show")
 
-    def topoZoomIn(self):
+    def zoomRecord(self, event):
+        self.zoom.x1 = event.x
+        self.zoom.y1 = event.y
+
+    def zoomCreate(self, event):
+        self.cv_topo.delete(self.zoom.rect)
+        self.zoom.x2 = event.x
+        self.zoom.y2 = event.y
+        self.zoom.rect = self.cv_topo.create_rectangle(self.zoom.x1, self.zoom.y1, self.zoom.x2, self.zoom.y2)
+        self.zoom.area = abs(self.zoom.x2-self.zoom.x1)*abs(self.zoom.y2-self.zoom.y1)
+
+    
+
+    def zoomRelease(self, event=None, InOut="in"):
         result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
-        self.node_size *= 1.5
+        
+        op = "*" if InOut=="in" else "/"
+        mag = 1.5
+
+        self.node_size = eval("self.node_size "+op+" mag")
         for node, pos in self.nodes.items():
-            self.nodes[node] = [pos[0] *1.5, pos[1] * 1.5]
+            self.nodes[node] = [eval("pos[0] "+op+" mag"), eval("pos[1] "+op+" mag")]
 
         for Id in result:
             ords = self.cv_topo.coords(Id)
-            z = [o*1.5 for o in ords]
+            z = [eval("o"+op+"mag") for o in ords]
             if len(ords) == 4:
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
         self.labelShowHide()
         self.labelShowHide()
+        self.cv_topo.delete(self.zoom.rect)
 
-    def topoZoomOut(self):
-        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
-        self.node_size /= 1.5
-        for node, pos in self.nodes.items():
-            self.nodes[node] = [pos[0] /1.5, pos[1] / 1.5]
-        for Id in result:
-            ords = self.cv_topo.coords(Id)
-            z = [o/1.5 for o in ords]
-            if len(ords) == 4:
-                self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
-        self.labelShowHide()
-        self.labelShowHide()
+    def topoZoom(self, InOut="in"):
+        self.cv_topo.unbind("<Button-1>")
+        self.cv_topo.unbind("<B1-Motion>")
+        self.cv_topo.unbind("<ButtonRelease-1>")
+
+        if self.zoomState == InOut:
+            self.zoomState = "Not"
+            self.cv_topo.bind('<Motion>' , self.move_handler)
+            self.cv_topo.bind('<Button-1>', self.click_handler)
+        else:
+            self.zoomState = InOut
+            self.cv_topo.bind("<Button-1>", self.zoomRecord)
+            self.cv_topo.bind("<B1-Motion>", self.zoomCreate)
+            self.cv_topo.bind("<ButtonRelease-1>", partial(self.zoomRelease,InOut=InOut))
+
+
 
 
 def main():
