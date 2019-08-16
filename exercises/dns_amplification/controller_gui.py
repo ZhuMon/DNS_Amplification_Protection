@@ -74,7 +74,10 @@ class ControllerGui():
 
         self.thres = Label(self.fr_mid, text="Threshold:", anchor="center", background=self.bg)
 
-        self.zoom = Object(x1=0, y1=0, x2=0, y2=0, rect=self.cv_topo.create_rectangle(0,0,0,0), area=0)
+        self.zoom = Object(x1=0, y1=0, x2=0, y2=0, area=0, 
+                rect=self.cv_topo.create_rectangle(0,0,0,0), 
+                width = fr_topo_width, 
+                height = fr_topo_height)
         self.zoomState = "Not"
         self.zoomIn = Button(self.fr_mid, text="Zoom In", command=partial(self.topoZoom, InOut="in"))
         self.zoomOut = Button(self.fr_mid, text="Zoom Out", command=partial(self.topoZoom, InOut="out"))
@@ -585,6 +588,10 @@ class ControllerGui():
         
         op = "*" if InOut=="in" else "/"
         mag = 1.5
+
+        self.zoom.width = eval("self.zoom.width"+op+"mag")
+        self.zoom.height= eval("self.zoom.height"+op+"mag")
+        self.cv_topo.configure(scrollregion=(0,0,self.zoom.width,self.zoom.height))
 
         self.node_size = eval("self.node_size "+op+" mag")
         for node, pos in self.nodes.items():
