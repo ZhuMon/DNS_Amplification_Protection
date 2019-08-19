@@ -579,13 +579,13 @@ class ControllerGui():
             self.shohid.set("show")
 
     def zoomRecord(self, event):
-        self.zoom.x1 = event.x
-        self.zoom.y1 = event.y
+        self.zoom.x1 = self.cv_topo.canvasx(event.x)
+        self.zoom.y1 = self.cv_topo.canvasy(event.y)
 
     def zoomCreate(self, event):
         self.cv_topo.delete(self.zoom.rect)
-        self.zoom.x2 = event.x
-        self.zoom.y2 = event.y
+        self.zoom.x2 = self.cv_topo.canvasx(event.x)
+        self.zoom.y2 = self.cv_topo.canvasy(event.y)
         self.zoom.rect = self.cv_topo.create_rectangle(self.zoom.x1, self.zoom.y1, self.zoom.x2, self.zoom.y2)
         self.zoom.area = abs(self.zoom.x2-self.zoom.x1)*abs(self.zoom.y2-self.zoom.y1)
 
@@ -595,11 +595,26 @@ class ControllerGui():
         result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
         
         op = "*" if InOut=="in" else "/"
-        mag = 1.5
+        mag = sqrt((400*400)/self.zoom.area)
+        if mag >= 8:
+            mag = 8
+        elif mag >= 4:
+            mag = 4
+        elif mag >= 2:
+            mag = 2
+        elif mag >= 0:
+            mag = 1.5
 
         self.zoom.width = eval("self.zoom.width"+op+"mag")
         self.zoom.height= eval("self.zoom.height"+op+"mag")
+        if fr_topo_width-50 < self.zoom.width < fr_topo_width+50:
+            self.zoom.width = fr_topo_width
+            self.zoom.height = fr_topo_height
+
         self.cv_topo.configure(scrollregion=(0,0,self.zoom.width,self.zoom.height))
+        self.cv_topo.yview_moveto(eval("self.zoom.y1"+op+"mag")/self.zoom.height)
+        print self.cv_topo.canvasy(eval("self.zoom.y1"+op+"mag")/self.zoom.height)
+        self.cv_topo.xview_moveto(eval("self.zoom.x1"+op+"mag")/self.zoom.width)
 
         self.node_size = eval("self.node_size "+op+" mag")
         for node, pos in self.nodes.items():
