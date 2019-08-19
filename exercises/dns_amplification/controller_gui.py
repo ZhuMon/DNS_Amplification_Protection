@@ -164,8 +164,8 @@ class ControllerGui():
         self.button_refresh.grid(row=8, column = 0, pady=(30,0))
         self.button_quit.grid(row=9, column=0)
 
-        self.topo_xscroll.pack(expand="Yes", side="bottom", fill="x", ipady=0)
-        self.topo_yscroll.pack(expand="Yes", side="right", fill="y", ipadx=0)
+        self.topo_xscroll.pack(side="bottom", fill="x", ipady=0)
+        self.topo_yscroll.pack(side="right", fill="y", ipadx=0)
         self.cv_topo.pack(expand="Yes", anchor="center", side="left")
 
         self.cv_tp.pack(expand="Yes", side="top", fill="both",ipadx=0,ipady=0,padx=0,pady=0)
@@ -255,11 +255,11 @@ class ControllerGui():
         for s, mac in sorted(self.sw_mac.items()):
             self.G.add_node(mac.encode('utf-8'))
             if s in connected_gw:
-                pos[mac] = (1.2*myCos(90+15.0*connected_gw.index(s)), -1.4+connected_gw.index(s)*0.225)
+                pos[mac] = (0.2+1.1*myCos(90+15.0*connected_gw.index(s)), -1.4+connected_gw.index(s)*0.225)
                 # pos[mac] = (-1, -1.2+connected_gw.index(s)*0.225)
                 for port, node in self.event.node_links[s]:
                     if node[0] == 's':
-                        pos[self.sw_mac[node]] = (-1.5,pos[mac][1])
+                        pos[self.sw_mac[node]] = (-1.2,pos[mac][1])
                         fixed.append(self.sw_mac[node])
                         for p,n in self.event.node_links[node]:
                             if n[0] == 'h':
@@ -284,11 +284,19 @@ class ControllerGui():
 
         self.G.add_edges_from(edge)
 
-        pos["00:00:00:04:15:00"] = (0.0,0)
+        pos["00:00:00:04:15:00"] = (0.2,0)
         pos["00:00:00:05:15:00"] = (0.7,0)
+        pos["00:00:00:00:03:03"] = (1.5,0.5)
+        pos["00:00:00:00:02:02"] = (1.5,-0.5)
+        pos["00:00:00:03:15:00"] = (1.1,0.25)
+        pos["00:00:00:02:15:00"] = (1.1,-0.25)
 
         fixed.append("00:00:00:04:15:00")
         fixed.append("00:00:00:05:15:00")
+        fixed.append("00:00:00:00:03:03")
+        fixed.append("00:00:00:00:02:02")
+        fixed.append("00:00:00:03:15:00")
+        fixed.append("00:00:00:02:15:00")
 
         self.links = self.G.edges # [[mac1,mac2],[mac3,mac4],...]
         self.nodes = nx.spring_layout(self.G, pos=pos, fixed=fixed) # {mac1:[x1,y1], mac2:[x2, y2]}
