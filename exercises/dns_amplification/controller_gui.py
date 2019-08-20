@@ -48,6 +48,7 @@ class MyScrollbar(Scrollbar, object):
             self.cv.labelRt.place_forget()
             self.cv.labelSv.place_forget()
             self.cv.labelVt.place_forget()
+            self.cv.labelCt.place_forget()
             x0 = self.cv.canvasx(0)
             y0 = self.cv.canvasy(0)
             for node, pos in self.nodes.items():
@@ -56,6 +57,7 @@ class MyScrollbar(Scrollbar, object):
                 if node[15:] == "00" :
                     if node[0:] == "00:00:00:04:15:00":
                         self.cv.labelGw.place(x=wx , y=wy+self.node_size)
+                        self.cv.labelCt.place(x=wx+60, y=4*self.node_size+wy+60+sqrt(3)*self.node_size)
                     if node[0:] == "00:00:00:05:15:00":
                         self.cv.labelRt.place(x=wx , y=wy+self.node_size)
                 else:
@@ -95,6 +97,7 @@ class ControllerGui():
         self.cv_topo.labelRt = None
         self.cv_topo.labelSv = None
         self.cv_topo.labelVt = None
+        self.cv_topo.labelCt = None
 
         self.fr_mid = Frame(self.fr_bg, height = 400, width = 300, style="TFrame")
 
@@ -362,6 +365,7 @@ class ControllerGui():
         self.cv_topo.labelRt.destroy()
         self.cv_topo.labelSv.destroy()
         self.cv_topo.labelVt.destroy()
+        self.cv_topo.labelCt.destroy()
         self.event.cleanObjID()
 
         self.ge_network()
@@ -422,9 +426,19 @@ class ControllerGui():
                 if node[0:] == "00:00:00:04:15:00":
                     self.cv_topo.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
+                    self.controller = self.cv_topo.create_polygon(
+                            pos[0]+60, 4*self.node_size+pos[1]+60,
+                            pos[0]+60+self.node_size, 4*self.node_size+pos[1]+60,
+                            pos[0]+60+1.5*self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size/2,
+                            pos[0]+60+self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size,
+                            pos[0]+60, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size,
+                            pos[0]+60-0.5*self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size/2, fill="white", outline="black")
+                    self.cv_topo.labelCt = Label(self.cv_topo, text="Controller", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.cv_topo.labelCt.place(x=pos[0]+60, y=4*self.node_size+pos[1]+60+sqrt(3)*self.node_size)
                 if node[0:] == "00:00:00:05:15:00":
                     self.cv_topo.labelRt = Label(self.cv_topo, text="Router", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
+
 
             else:
                 host = self.cv_topo.create_rectangle(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.host_color, outline="black")
@@ -619,6 +633,8 @@ class ControllerGui():
                 if node[15:] == "00" :
                     if node[0:] == "00:00:00:04:15:00":
                         self.cv_topo.labelGw.place(x=wx , y=wy+self.node_size)
+                        self.cv_topo.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
+                        self.cv_topo.labelCt.place(x=pos[0]+60, y=4*self.node_size+pos[1]+60+sqrt(3)*self.node_size)
                     if node[0:] == "00:00:00:05:15:00":
                         self.cv_topo.labelRt.place(x=wx , y=wy+self.node_size)
                 else:
@@ -632,6 +648,7 @@ class ControllerGui():
             self.cv_topo.labelRt.place_forget()
             self.cv_topo.labelSv.place_forget()
             self.cv_topo.labelVt.place_forget()
+            self.cv_topo.labelCt.place_forget()
             self.shohid.set("show")
 
     def zoomRecord(self, event):
@@ -683,6 +700,11 @@ class ControllerGui():
             z = [eval("o"+op+"mag") for o in ords]
             if len(ords) == 4:
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
+            if len(ords) == 12:
+                self.cv_topo.coords(Id,
+                        z[0], z[1], z[2], z[3],
+                        z[4], z[5], z[6], z[7],
+                        z[8], z[9], z[10], z[11])
         self.labelShowHide()
         self.labelShowHide()
         self.cv_topo.delete(self.zoom.rect)
@@ -726,7 +748,6 @@ class ControllerGui():
             self.cv_topo.bind("<Button-1>", self.zoomRecord)
             self.cv_topo.bind("<B1-Motion>", self.zoomCreate)
             self.cv_topo.bind("<ButtonRelease-1>", partial(self.zoomRelease,InOut=InOut))
-
 
 
 
