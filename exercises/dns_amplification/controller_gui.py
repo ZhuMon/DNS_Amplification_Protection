@@ -618,7 +618,7 @@ class ControllerGui():
         self.var.set('')
         
         for node, pos in self.nodes.items():
-            if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
+            if  pos[0] < self.cv_topo.canvasx(event.x) < pos[0]+self.node_size and pos[1] < self.cv_topo.canvasy(event.y) < pos[1]+self.node_size:
                 name = self.event.mac2name(node)
                 if node[15:] == "00" :
                     self.var.set(name+" : "+node)
@@ -635,7 +635,7 @@ class ControllerGui():
             for item in x:
                 self.tree.delete(item)
         for node, pos in self.nodes.items():
-            if  pos[0] < event.x < pos[0]+self.node_size and pos[1] < event.y < pos[1]+self.node_size:
+            if  pos[0] < self.cv_topo.canvasx(event.x) < pos[0]+self.node_size and pos[1] < self.cv_topo.canvasy(event.y) < pos[1]+self.node_size:
                 for s_mac, pos in self.switches.items():
                     self.cv_topo.itemconfig(self.switches[s_mac], fill=self.sw_color)
                 for h_mac, pos in self.hosts.items():
