@@ -370,9 +370,19 @@ class ControllerGui():
                 if node[0:] == "00:00:00:04:15:00":
                     self.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
+                    self.controller = self.cv_topo.create_polygon(
+                            pos[0]+60, 4*self.node_size+pos[1]+60,
+                            pos[0]+60+self.node_size, 4*self.node_size+pos[1]+60,
+                            pos[0]+60+1.5*self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size/2,
+                            pos[0]+60+self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size,
+                            pos[0]+60, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size,
+                            pos[0]+60-0.5*self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size/2, fill="white", outline="black")
+                    #self.labelCt = Label()
+                    #self.labelCt.place(x=pos[0]+60, y=4*self.node_size+pos[1]+60+sqrt(3)*self.node_size)
                 if node[0:] == "00:00:00:05:15:00":
                     self.labelRt = Label(self.cv_topo, text="Router", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
+
 
             else:
                 host = self.cv_topo.create_rectangle(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.host_color, outline="black")
@@ -610,6 +620,11 @@ class ControllerGui():
             z = [eval("o"+op+"mag") for o in ords]
             if len(ords) == 4:
                 self.cv_topo.coords(Id, z[0], z[1], z[2], z[3])
+            if len(ords) == 12:
+                self.cv_topo.coords(Id,
+                        z[0], z[1], z[2], z[3],
+                        z[4], z[5], z[6], z[7],
+                        z[8], z[9], z[10], z[11])
         self.labelShowHide()
         self.labelShowHide()
         self.cv_topo.delete(self.zoom.rect)
@@ -628,7 +643,6 @@ class ControllerGui():
             self.cv_topo.bind("<Button-1>", self.zoomRecord)
             self.cv_topo.bind("<B1-Motion>", self.zoomCreate)
             self.cv_topo.bind("<ButtonRelease-1>", partial(self.zoomRelease,InOut=InOut))
-
 
 
 
