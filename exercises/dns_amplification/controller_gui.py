@@ -51,16 +51,13 @@ class MyScrollbar(Scrollbar, object):
             x0 = self.cv.canvasx(0)
             y0 = self.cv.canvasy(0)
             for node, pos in self.nodes.items():
+                wx = pos[0]-x0
+                wy = pos[1]-y0
                 if node[15:] == "00" :
-                    wx = pos[0]-x0
-                    wy = pos[1]-y0
                     if node[0:] == "00:00:00:04:15:00":
                         self.cv.labelGw.place(x=wx , y=wy+self.node_size)
-                        # if self.orient = "horizental":
-                        #     x = wx
                     if node[0:] == "00:00:00:05:15:00":
                         self.cv.labelRt.place(x=wx , y=wy+self.node_size)
-                        # print wx, wy
                 else:
                     if node[0:] == "00:00:00:00:03:03":
                         self.cv.labelSv.place(x=wx , y=wy+self.node_size)
@@ -273,6 +270,20 @@ class ControllerGui():
                 background=[("active",self.bg)],
                 image=[("active",self.b_refreshPhoto)],
                 )
+        self.style.configure("Selected.TButton",
+                background="red",
+                foreground="white"
+                )
+        self.style.map("Selected.TButton",
+                background=[("active", "pink")],
+                foreground=[("active", "white")]
+                )
+        self.style.map("TButton",
+                background=[("active", "pink")],
+                foreground=[("active", "white")]
+                )
+        
+
         self.style.configure("TFrame",
                 background = self.bg, 
                 )
@@ -600,17 +611,21 @@ class ControllerGui():
 
     def labelShowHide(self):
         if self.shohid.get() == "show":
+            x0 = self.cv_topo.canvasx(0)
+            y0 = self.cv_topo.canvasy(0)
             for node, pos in self.nodes.items():
+                wx = pos[0] - x0
+                wy = pos[1] - y0
                 if node[15:] == "00" :
                     if node[0:] == "00:00:00:04:15:00":
-                        self.cv_topo.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
+                        self.cv_topo.labelGw.place(x=wx , y=wy+self.node_size)
                     if node[0:] == "00:00:00:05:15:00":
-                        self.cv_topo.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
+                        self.cv_topo.labelRt.place(x=wx , y=wy+self.node_size)
                 else:
                     if node[0:] == "00:00:00:00:03:03":
-                        self.cv_topo.labelSv.place(x=pos[0] , y=pos[1]+self.node_size)
+                        self.cv_topo.labelSv.place(x=wx , y=wy+self.node_size)
                     if node[0:] == "00:00:00:00:01:01":
-                        self.cv_topo.labelVt.place(x=pos[0] , y=pos[1]+self.node_size)
+                        self.cv_topo.labelVt.place(x=wx , y=wy+self.node_size)
             self.shohid.set("hide")
         elif self.shohid.get() == "hide":
             self.cv_topo.labelGw.place_forget()
@@ -633,9 +648,11 @@ class ControllerGui():
     
 
     def zoomRelease(self, event=None, InOut="in"):
-        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
         
         op = "*" if InOut=="in" else "/"
+        if self.zoom.area < 1:
+            self.zoom.area = 1
+
         mag = sqrt((400*400)/self.zoom.area)
         if mag >= 8:
             mag = 8
@@ -646,7 +663,7 @@ class ControllerGui():
         elif mag >= 0:
             mag = 1.5
 
-        self.zoom.width = eval("self.zoom.width"+op+"mag")
+        self.zoom.width = eval("self.zoom.width "+op+"mag")
         self.zoom.height= eval("self.zoom.height"+op+"mag")
         if fr_topo_width-50 < self.zoom.width < fr_topo_width+50:
             self.zoom.width = fr_topo_width
@@ -660,6 +677,7 @@ class ControllerGui():
         for node, pos in self.nodes.items():
             self.nodes[node] = [eval("pos[0] "+op+" mag"), eval("pos[1] "+op+" mag")]
 
+        result = self.cv_topo.find_overlapping(0, 0, 10000, 10000)
         for Id in result:
             ords = self.cv_topo.coords(Id)
             z = [eval("o"+op+"mag") for o in ords]
@@ -669,21 +687,41 @@ class ControllerGui():
         self.labelShowHide()
         self.cv_topo.delete(self.zoom.rect)
         self.cv_topo.configure(
-                yscrollcommand=
-                partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size),
-                xscrollcommand=
-                partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size))
+                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size),
+                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size))
 
+        if self.zoom.width * 8 > 10000:
+            self.zoomIn.state(["disabled"])
+            # self.topoZoom(InOut=self.zoomState)
+        elif self.zoom.width / 8 <  50:
+            self.zoomOut.state(["disabled"])
+            # self.topoZoom(InOut=self.zoomState)
+        else:
+            self.zoomIn.state(["!disabled"])
+            self.zoomOut.state(["!disabled"])
+            # self.topoZoom(InOut=self.zoomState)
+            
     def topoZoom(self, InOut="in"):
         self.cv_topo.unbind("<Button-1>")
         self.cv_topo.unbind("<B1-Motion>")
         self.cv_topo.unbind("<ButtonRelease-1>")
 
+
         if self.zoomState == InOut:
+            self.zoomIn.configure(style="TButton")
+            self.zoomOut.configure(style="TButton")
+
             self.zoomState = "Not"
             self.cv_topo.bind('<Motion>' , self.move_handler)
             self.cv_topo.bind('<Button-1>', self.click_handler)
-        else:
+        else: # self.zoomState = "Not"
+            if InOut == "in":
+                self.zoomIn.configure(style="Selected.TButton")
+                self.zoomOut.configure(style="TButton")
+            elif InOut == "out":
+                self.zoomIn.configure(style="TButton")
+                self.zoomOut.configure(style="Selected.TButton")
+
             self.zoomState = InOut
             self.cv_topo.bind("<Button-1>", self.zoomRecord)
             self.cv_topo.bind("<B1-Motion>", self.zoomCreate)
