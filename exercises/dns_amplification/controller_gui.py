@@ -22,7 +22,7 @@ fr_topo_height = 400
 fr_topo_width = 400
 qpktThreshold = 0
 rpktThreshold = 0 
-modes = [("Mitigation On", "On"),("Mitigation Off", "Off")]
+modes = ["Mitigation On","Mitigation Off"]
 
 def assign(obj, **kwargs):
     obj.__dict__.update(kwargs)
@@ -119,8 +119,8 @@ class ControllerGui():
                 width = fr_topo_width, 
                 height = fr_topo_height)
         self.zoomState = "Not"
-        self.zoomIn = Button(self.fr_mid, text="Zoom In", command=partial(self.topoZoom, InOut="in"))
-        self.zoomOut = Button(self.fr_mid, text="Zoom Out", command=partial(self.topoZoom, InOut="out"))
+        self.zoomIn = Button(self.fr_mid, style="in.zoom.TButton", command=partial(self.topoZoom, InOut="in"))
+        self.zoomOut = Button(self.fr_mid, style="out.zoom.TButton", command=partial(self.topoZoom, InOut="out"))
 
         
         self.usrIn = StringVar()
@@ -171,11 +171,12 @@ class ControllerGui():
         self.on_off_xpos = 150
         self.on_off_ypos = 500
 
-        self.rate_set = []
-        for text, mode in modes:
-            self.rate_set.append(Radiobutton(self.fr_mid, text=text, variable=self.v, value=mode, command=self.mitigation))
-            self.on_off_ypos += 25
+        # self.rate_set = []
+        # for text, mode in modes:
+            # self.rate_set.append(Radiobutton(self.fr_mid, text=text, variable=self.v, value=mode, command=self.mitigation))
+        #     self.on_off_ypos += 25
 
+        self.rate_set = Checkbutton(self.fr_mid, text=modes[1], variable=self.v, onvalue="On", offvalue="Off", command=self.mitigation)
         self.typeSetting()
 
     def typeSetting(self):
@@ -199,8 +200,8 @@ class ControllerGui():
         self.zoomIn.grid(row=2, column=0)
         self.zoomOut.grid(row=3, column=0)
         self.button_InfShowHide.grid(row=4, column=0, pady=20)
-        self.rate_set[0].grid(row=5, column=0)
-        self.rate_set[1].grid(row=6, column=0)
+        self.rate_set.grid(row=5, column=0)
+        # self.rate_set[1].grid(row=6, column=0)
 
         self.button_refresh.grid(row=8, column = 0, pady=(30,0))
         self.button_quit.grid(row=9, column=0)
@@ -253,8 +254,42 @@ class ControllerGui():
         self.b_bgPhoto = ImageTk.PhotoImage(BBgImage)
         self.topo_bgPhoto = ImageTk.PhotoImage(TopoBgImage)
 
+        upzinImage = Image.open('Img/up_zoomin.png').resize((180,42), Image.ANTIALIAS)
+        downzinImage = Image.open('Img/down_zoomin.png').resize((180,42), Image.ANTIALIAS)
+        actzinImage = Image.open('Img/active_zoomin.png').resize((180,42), Image.ANTIALIAS)
+        diszinImage = Image.open('Img/disable_zoomin.png').resize((180,42), Image.ANTIALIAS)
+
+        self.upzinPhoto = ImageTk.PhotoImage(upzinImage) 
+        self.downzinPhoto = ImageTk.PhotoImage(downzinImage) 
+        self.actzinPhoto = ImageTk.PhotoImage(actzinImage) 
+        self.diszinPhoto = ImageTk.PhotoImage(diszinImage) 
+
+        upzoutImage = Image.open('Img/up_zoomout.png').resize((180,42), Image.ANTIALIAS)
+        downzoutImage = Image.open('Img/down_zoomout.png').resize((180,42), Image.ANTIALIAS)
+        actzoutImage = Image.open('Img/active_zoomout.png').resize((180,42), Image.ANTIALIAS)
+        diszoutImage = Image.open('Img/disable_zoomout.png').resize((180,42), Image.ANTIALIAS)
+
+        self.upzoutPhoto = ImageTk.PhotoImage(upzoutImage) 
+        self.downzoutPhoto = ImageTk.PhotoImage(downzoutImage) 
+        self.actzoutPhoto = ImageTk.PhotoImage(actzoutImage) 
+        self.diszoutPhoto = ImageTk.PhotoImage(diszoutImage) 
+
+
         ####################  Style  ####################        
         self.style = Style()
+
+        self.style.configure("TButton",
+                font=self.fonts, relief="flat")
+
+        self.style.map("TButton",
+                background=[("active", "pink"), ("disabled", "#f0f0f0")],
+                foreground=[("active", "white"), ("disabled", "white")]
+                )
+        self.style.map("Selected.TButton",
+                background=[("active", "pink"), ("disabled", "#f0f0f0")],
+                foreground=[("active", "white"), ("disabled", "white")]
+                )
+
         self.style.configure("Q.TButton",
                 background=self.bg, 
                 font=self.fonts, relief="flat", 
@@ -267,25 +302,26 @@ class ControllerGui():
 
         self.style.configure("R.TButton",
                 background=self.bg,
-                font=self.fonts, relief="flat", 
                 image = self.refreshPhoto, padding=0)
         self.style.map("R.TButton",
                 background=[("active",self.bg)],
                 image=[("active",self.b_refreshPhoto)],
                 )
-        self.style.configure("Selected.TButton",
-                background="red",
-                foreground="white"
-                )
-        self.style.map("Selected.TButton",
-                background=[("active", "pink")],
-                foreground=[("active", "white")]
-                )
-        self.style.map("TButton",
-                background=[("active", "pink")],
-                foreground=[("active", "white")]
-                )
+
+        self.style.configure("zoom.TButton", background=self.bg, padding=0)
+        self.style.map("zoom.TButton",
+                background=[("active", self.bg), ("disabled", self.bg)])
+
+        self.style.configure("in.zoom.TButton", image = self.upzinPhoto)
+        self.style.map("in.zoom.TButton",
+                image = [("active", self.actzinPhoto), ("disabled", self.diszinPhoto)])
+        self.style.configure("S.in.zoom.TButton", image = self.downzinPhoto)
+
         
+        self.style.configure("out.zoom.TButton", image = self.upzoutPhoto)
+        self.style.map("out.zoom.TButton",
+                image = [("active", self.actzoutPhoto), ("disabled", self.diszoutPhoto)])
+        self.style.configure("S.out.zoom.TButton", image = self.downzoutPhoto)
 
         self.style.configure("TFrame",
                 background = self.bg, 
@@ -532,9 +568,11 @@ class ControllerGui():
     def mitigation(self):
         if self.v.get() == "On":
             self.event.setMeterFlag(1)
+            self.rate_set.configure(text=modes[0])
             print "Mitigation is opened"
         elif self.v.get() == "Off":
             self.event.setMeterFlag(0)
+            self.rate_set.configure(text=modes[1])
             print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
@@ -711,17 +749,18 @@ class ControllerGui():
                 yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size),
                 xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size))
 
-        if self.zoom.width * 8 > 10000:
+        tmp = self.zoomState
+        if self.zoom.width * 8 > 10000 and self.zoomState == "in":
             self.zoomIn.state(["disabled"])
-            # self.topoZoom(InOut=self.zoomState)
-        elif self.zoom.width / 8 <  50:
+        elif self.zoom.width / 8 <  50 and self.zoomState == "out":
             self.zoomOut.state(["disabled"])
-            # self.topoZoom(InOut=self.zoomState)
         else:
             self.zoomIn.state(["!disabled"])
             self.zoomOut.state(["!disabled"])
-            # self.topoZoom(InOut=self.zoomState)
+            self.zoomState = "Not"
             
+        self.topoZoom(InOut=tmp)
+
     def topoZoom(self, InOut="in"):
         self.cv_topo.unbind("<Button-1>")
         self.cv_topo.unbind("<B1-Motion>")
@@ -729,19 +768,19 @@ class ControllerGui():
 
 
         if self.zoomState == InOut:
-            self.zoomIn.configure(style="TButton")
-            self.zoomOut.configure(style="TButton")
+            self.zoomIn.configure(style="in.zoom.TButton")
+            self.zoomOut.configure(style="out.zoom.TButton")
 
             self.zoomState = "Not"
             self.cv_topo.bind('<Motion>' , self.move_handler)
             self.cv_topo.bind('<Button-1>', self.click_handler)
         else: # self.zoomState = "Not"
             if InOut == "in":
-                self.zoomIn.configure(style="Selected.TButton")
-                self.zoomOut.configure(style="TButton")
+                self.zoomIn.configure(style="S.in.zoom.TButton")
+                self.zoomOut.configure(style="out.zoom.TButton")
             elif InOut == "out":
-                self.zoomIn.configure(style="TButton")
-                self.zoomOut.configure(style="Selected.TButton")
+                self.zoomIn.configure(style="in.zoom.TButton")
+                self.zoomOut.configure(style="S.out.zoom.TButton")
 
             self.zoomState = InOut
             self.cv_topo.bind("<Button-1>", self.zoomRecord)
