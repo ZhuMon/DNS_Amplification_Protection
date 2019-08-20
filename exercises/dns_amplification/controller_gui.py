@@ -44,7 +44,7 @@ class MyScrollbar(Scrollbar, object):
         super(MyScrollbar, self).set(a,b)
         self.node_size = node_size
         self.nodes = nodes
-        self.shohid
+        self.shohid = shohid
         if self.cv.labelGw != None:
             self.cv.labelGw.place_forget()
             self.cv.labelRt.place_forget()
@@ -73,27 +73,6 @@ class MyScrollbar(Scrollbar, object):
             self.cv.labelSv.place_forget()
             self.cv.labelVt.place_forget()
             self.cv.labelCt.place_forget()
-#        if self.shohid == "hide":
-#            self.cv.labelGw.place_forget()
-#            self.cv.labelRt.place_forget()
-#            self.cv.labelSv.place_forget()
-#            self.cv.labelVt.place_forget()
-#            self.cv.labelCt.place_forget()
-#            for node, pos in self.nodes.items():
-#                wx = pos[0]-x0
-#                wy = pos[1]-y0
-#                if node[15:] == "00" :
-#                    if node[0:] == "00:00:00:04:15:00":
-#                        self.cv.labelGw.place(x=wx , y=wy+self.node_size)
-#                        self.cv.labelCt.place(x=wx+6*self.node_size, y=10*self.node_size+wy+sqrt(3)*self.node_size)
-#                    if node[0:] == "00:00:00:05:15:00":
-#                        self.cv.labelRt.place(x=wx , y=wy+self.node_size)
-#                else:
-#                    if node[0:] == "00:00:00:00:03:03":
-#                        self.cv.labelSv.place(x=wx , y=wy+self.node_size)
-#                    if node[0:] == "00:00:00:00:01:01":
-#                        self.cv.labelVt.place(x=wx , y=wy+self.node_size)
-
            
 
 class ControllerGui():
@@ -709,6 +688,9 @@ class ControllerGui():
                     if node[0:] == "00:00:00:00:01:01":
                         self.cv_topo.labelVt.place(x=wx , y=wy+self.node_size)
             self.cv_topo.shohid.set("hide")
+            self.cv_topo.configure(
+                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, shohid=self.cv_topo.shohid.get()),
+                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get()))
         elif self.cv_topo.shohid.get() == "hide":
             self.cv_topo.labelGw.place_forget()
             self.cv_topo.labelRt.place_forget()
@@ -716,6 +698,9 @@ class ControllerGui():
             self.cv_topo.labelVt.place_forget()
             self.cv_topo.labelCt.place_forget()
             self.cv_topo.shohid.set("show")
+            self.cv_topo.configure(
+                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, shohid=self.cv_topo.shohid.get()),
+                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get()))
 
     def zoomRecord(self, event):
         self.zoom.x1 = self.cv_topo.canvasx(event.x)
@@ -773,11 +758,10 @@ class ControllerGui():
                         z[8], z[9], z[10], z[11])
         self.labelShowHide()
         self.labelShowHide()
-        #self.shohid.set("hide")
         self.cv_topo.delete(self.zoom.rect)
         self.cv_topo.configure(
-                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size),
-                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size))
+                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, shohid=self.cv_topo.shohid.get()),
+                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get()))
 
         tmp = self.zoomState
         if self.zoom.width * 8 > 10000 and self.zoomState == "in":
