@@ -57,7 +57,7 @@ class MyScrollbar(Scrollbar, object):
                 if node[15:] == "00" :
                     if node[0:] == "00:00:00:04:15:00":
                         self.cv.labelGw.place(x=wx , y=wy+self.node_size)
-                        self.cv.labelCt.place(x=wx+60, y=4*self.node_size+wy+60+sqrt(3)*self.node_size)
+                        self.cv.labelCt.place(x=wx+self.node_size*6, y=4*self.node_size+wy+self.node_size*6+sqrt(3)*self.node_size)
                     if node[0:] == "00:00:00:05:15:00":
                         self.cv.labelRt.place(x=wx , y=wy+self.node_size)
                 else:
@@ -427,14 +427,14 @@ class ControllerGui():
                     self.cv_topo.labelGw = Label(self.cv_topo, text="Gateway\n Switch", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
                     self.controller = self.cv_topo.create_polygon(
-                            pos[0]+60, 4*self.node_size+pos[1]+60,
-                            pos[0]+60+self.node_size, 4*self.node_size+pos[1]+60,
-                            pos[0]+60+1.5*self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size/2,
-                            pos[0]+60+self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size,
-                            pos[0]+60, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size,
-                            pos[0]+60-0.5*self.node_size, 4*self.node_size+pos[1]+60+sqrt(3)*self.node_size/2, fill="white", outline="black")
+                            pos[0]+self.node_size*6, 4*self.node_size+pos[1]+self.node_size*6,
+                            pos[0]+self.node_size*6+self.node_size, 4*self.node_size+pos[1]+self.node_size*6,
+                            pos[0]+self.node_size*6+1.5*self.node_size, 4*self.node_size+pos[1]+self.node_size*6+sqrt(3)*self.node_size/2,
+                            pos[0]+self.node_size*6+self.node_size, 4*self.node_size+pos[1]+self.node_size*6+sqrt(3)*self.node_size,
+                            pos[0]+self.node_size*6, 4*self.node_size+pos[1]+self.node_size*6+sqrt(3)*self.node_size,
+                            pos[0]+self.node_size*6-0.5*self.node_size, 4*self.node_size+pos[1]+self.node_size*6+sqrt(3)*self.node_size/2, fill="white", outline="black")
                     self.cv_topo.labelCt = Label(self.cv_topo, text="Controller", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
-                    self.cv_topo.labelCt.place(x=pos[0]+60, y=4*self.node_size+pos[1]+60+sqrt(3)*self.node_size)
+                    self.cv_topo.labelCt.place(x=pos[0]+self.node_size*6, y=4*self.node_size+pos[1]+self.node_size*6+sqrt(3)*self.node_size)
                 if node[0:] == "00:00:00:05:15:00":
                     self.cv_topo.labelRt = Label(self.cv_topo, text="Router", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
@@ -633,8 +633,7 @@ class ControllerGui():
                 if node[15:] == "00" :
                     if node[0:] == "00:00:00:04:15:00":
                         self.cv_topo.labelGw.place(x=wx , y=wy+self.node_size)
-                        self.cv_topo.labelGw.place(x=pos[0] , y=pos[1]+self.node_size)
-                        self.cv_topo.labelCt.place(x=pos[0]+60, y=4*self.node_size+pos[1]+60+sqrt(3)*self.node_size)
+                        self.cv_topo.labelCt.place(x=wx+self.node_size*6, y=4*self.node_size+wy+self.node_size*6+sqrt(3)*self.node_size)
                     if node[0:] == "00:00:00:05:15:00":
                         self.cv_topo.labelRt.place(x=wx , y=wy+self.node_size)
                 else:
