@@ -403,6 +403,7 @@ class ControllerGui():
     def refresh_network(self):
         """ refresh network """
 
+        self.node_size = 10
         self.G.clear()
         self.cv_topo.delete("all")
         self.cv_topo.labelGw.destroy()
@@ -415,7 +416,20 @@ class ControllerGui():
         self.ge_network()
         self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
         self.create_node()
-        self.cv_topo.shohid.set("hide")
+
+        self.zoom.width = fr_topo_width
+        self.zoom.height = fr_topo_height
+
+        self.cv_topo.configure(scrollregion=(0,0,self.zoom.width,self.zoom.height))
+        self.topoZoom(InOut = self.zoomState)
+        self.zoomIn.state(["!disabled"])
+        self.zoomOut.state(["!disabled"])
+        
+
+        self.cv_topo.shohid.set("show")
+        self.labelShowHide()
+        
+        
 
     def create_node(self):
         """ create node """
