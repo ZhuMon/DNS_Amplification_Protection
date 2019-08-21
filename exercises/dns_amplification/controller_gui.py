@@ -590,6 +590,7 @@ class ControllerGui():
         for h_mac, pos in self.hosts.items():
             self.cv_topo.itemconfig(self.hosts[h_mac], fill=self.host_color)
         name = self.tree.item(self.tree.selection())['values'][0]
+        
         if name == "DNS Server":
             name = "h3"
         elif name == "victim":
@@ -598,11 +599,40 @@ class ControllerGui():
             name = "s4"
         elif name == "router":
             name = "s5"
+        
         mac = self.event.name2mac(name)
+
+        x1, y1, x2, y2 = 0,0,0,0
+
         if mac[15:] == "00":
             self.cv_topo.itemconfig(self.switches[mac], fill=self.notice_color)
         else:
             self.cv_topo.itemconfig(self.hosts[mac], fill=self.notice_color)
+        
+        x,y = self.nodes[mac]
+        borderX1 = self.cv_topo.canvasx(fr_topo_width/2-self.node_size/2)
+        borderY1 = self.cv_topo.canvasy(fr_topo_width/2-self.node_size/2)
+        borderX2 = self.cv_topo.canvasx(fr_topo_width/2+self.node_size/2)
+        borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
+        
+
+        while borderX1 > x and self.cv_topo.canvasx(0) > 0:
+            self.cv_topo.xview_scroll(-1,"unit")
+            borderX1 = self.cv_topo.canvasx(fr_topo_width/2-self.node_size/2)
+
+        borderX2 = self.cv_topo.canvasx(fr_topo_width/2+self.node_size/2)
+        while borderX2 < x and self.cv_topo.canvasx(fr_topo_width) < self.zoom.width:
+            self.cv_topo.xview_scroll(1,"unit")
+            borderX2 = self.cv_topo.canvasx(fr_topo_width/2+self.node_size/2)
+
+        while borderY1 > y and self.cv_topo.canvasy(0) > 0:
+            self.cv_topo.yview_scroll(-1,"unit")
+            borderY1 = self.cv_topo.canvasy(fr_topo_width/2-self.node_size/2)
+
+        borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
+        while borderY2 < y and self.cv_topo.canvasy(fr_topo_height) < self.zoom.height:
+            self.cv_topo.yview_scroll(1,"unit")
+            borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
 
     def quit(self):
         #TODO clear others 
