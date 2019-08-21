@@ -32,19 +32,19 @@ class Object(object):
         assign(self, **kwargs)
 
 class MyScrollbar(Scrollbar, object):
-    def __init__(self, parent, canvas, nodes, node_size, shohid="", orient="horizental", command=None):
+    def __init__(self, parent, canvas, nodes, node_size, l_shohid="", orient="horizental", command=None):
         super(MyScrollbar, self).__init__(parent, orient=orient, command=command)
         self.cv = canvas
         self.nodes = nodes
         self.node_size = node_size
         self.orient = orient
-        self.shohid = shohid
+        self.l_shohid = l_shohid
 
-    def set(self, a, b, nodes={}, node_size=10, shohid=""):
+    def set(self, a, b, nodes={}, node_size=10, l_shohid=""):
         super(MyScrollbar, self).set(a,b)
         self.node_size = node_size
         self.nodes = nodes
-        self.shohid = shohid
+        self.l_shohid = l_shohid
         if self.cv.labelGw != None:
             self.cv.labelGw.place_forget()
             self.cv.labelRt.place_forget()
@@ -67,7 +67,7 @@ class MyScrollbar(Scrollbar, object):
                         self.cv.labelSv.place(x=wx , y=wy+self.node_size)
                     if node[0:] == "00:00:00:00:01:01":
                         self.cv.labelVt.place(x=wx , y=wy+self.node_size)
-        if self.shohid == "show":
+        if self.l_shohid == "show":
             self.cv.labelGw.place_forget()
             self.cv.labelRt.place_forget()
             self.cv.labelSv.place_forget()
@@ -154,22 +154,25 @@ class ControllerGui():
         self.ge_network()
         self.create_node()
 
-        self.cv_topo.shohid = StringVar()
-        self.cv_topo.shohid.set("show")
+        self.cv_topo.l_shohid = StringVar()
+        self.cv_topo.l_shohid.set("show")
+        self.cv_topo.c_shohid = StringVar()
+        self.cv_topo.c_shohid.set("hide")
 
 
         self.button_quit = Button(self.fr_mid, style="Q.TButton",command=self.quit)
 
         self.button_refresh = Button(self.fr_mid, style="R.TButton", command=self.refresh_network)
-        self.topo_xscroll = MyScrollbar(self.fr_topo, canvas = self.cv_topo, nodes = self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get(), orient="horizontal", command=self.cv_topo.xview)
-        self.topo_yscroll = MyScrollbar(self.fr_topo, canvas = self.cv_topo, nodes = self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get(), orient="vertical", command=self.cv_topo.yview)
-        self.cv_topo.configure(yscrollcommand=partial(self.topo_yscroll.set,node_size=self.node_size, shohid=self.cv_topo.shohid.get()), xscrollcommand=partial(self.topo_xscroll.set, node_size = self.node_size, shohid=self.cv_topo.shohid.get()))
+        self.topo_xscroll = MyScrollbar(self.fr_topo, canvas = self.cv_topo, nodes = self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get(), orient="horizontal", command=self.cv_topo.xview)
+        self.topo_yscroll = MyScrollbar(self.fr_topo, canvas = self.cv_topo, nodes = self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get(), orient="vertical", command=self.cv_topo.yview)
+        self.cv_topo.configure(yscrollcommand=partial(self.topo_yscroll.set,node_size=self.node_size, l_shohid=self.cv_topo.l_shohid.get()), xscrollcommand=partial(self.topo_xscroll.set, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get()))
 
         #self.cv.pack()
         self.cv_topo.bind('<Motion>' , self.move_handler)
         self.cv_topo.bind('<Button-1>', self.click_handler)
 
-        self.button_InfShowHide = Button(self.fr_mid, textvariable=self.cv_topo.shohid, command=self.labelShowHide)
+        self.button_lShowHide = Button(self.fr_mid, textvariable=self.cv_topo.l_shohid, command=self.labelShowHide)
+        self.button_cShowHide = Button(self.fr_mid, textvariable=self.cv_topo.c_shohid, command=self.controllerShowHide)
 
         self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_topo))
         self.edgeWarn_th.setDaemon(True)
@@ -196,7 +199,7 @@ class ControllerGui():
         # self.thres.place(x=480, y=420)
         # self.thresIn.place(x=600, y=420)
 
-        # self.button_InfShowHide.place(x=10, y=370)
+        # self.button_lShowHide.place(x=10, y=370)
         # self.enter.place(x=655, y=420)
         # self.button_quit.place(x=850, y=450)
         # self.button_refresh.place(x=850, y=400)
@@ -207,8 +210,9 @@ class ControllerGui():
         self.enter.grid(row=1, column=0, sticky="E")
         self.zoomIn.grid(row=2, column=0)
         self.zoomOut.grid(row=3, column=0)
-        self.button_InfShowHide.grid(row=4, column=0, pady=20)
-        self.rate_set.grid(row=5, column=0)
+        self.button_lShowHide.grid(row=4, column=0, pady=10)
+        self.button_cShowHide.grid(row=5, column=0, pady=10)
+        self.rate_set.grid(row=6, column=0)
         # self.rate_set[1].grid(row=6, column=0)
 
         self.button_refresh.grid(row=8, column = 0, pady=(30,0))
@@ -415,7 +419,7 @@ class ControllerGui():
         self.ge_network()
         self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
         self.create_node()
-        self.cv_topo.shohid.set("hide")
+        self.cv_topo.l_shohid.set("hide")
 
     def create_node(self):
         """ create node """
@@ -462,6 +466,8 @@ class ControllerGui():
 
         self.switches = {}
         self.hosts = {}
+        self.controllers = {}
+        self.ctrPos = []
         for node, pos in self.nodes.items():
             if node[15:] == "00" :
                 # sw = self.cv.create_image(pos[0]+10, pos[1]+10, image=self.photo_sw)
@@ -478,11 +484,11 @@ class ControllerGui():
                             pos[0]+6*self.node_size, 10*self.node_size+pos[1]+sqrt(3)*self.node_size,
                             pos[0]+5.5*self.node_size, 10*self.node_size+pos[1]+sqrt(3)*self.node_size/2, fill="white", outline="black")
                     self.cv_topo.labelCt = Label(self.cv_topo, text="Controller", width=8, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
+                    self.ctrPos = [pos[0]+6.5*self.node_size, 10*self.node_size+pos[1]+sqrt(3)*self.node_size/2]
                     self.cv_topo.labelCt.place(x=pos[0]+6*self.node_size, y=10*self.node_size+pos[1]+sqrt(3)*self.node_size)
                 if node[0:] == "00:00:00:05:15:00":
                     self.cv_topo.labelRt = Label(self.cv_topo, text="Router", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelRt.place(x=pos[0] , y=pos[1]+self.node_size)
-
 
             else:
                 host = self.cv_topo.create_rectangle(pos[0], pos[1], pos[0]+self.node_size, pos[1]+self.node_size, fill=self.host_color, outline="black")
@@ -494,6 +500,17 @@ class ControllerGui():
                 if node[0:] == "00:00:00:00:01:01":
                     self.cv_topo.labelVt = Label(self.cv_topo, text="Victim", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelVt.place(x=pos[0] , y=pos[1]+self.node_size)
+        for node, pos in self.nodes.items():
+            ctrx = self.ctrPos[0]
+            ctry = self.ctrPos[1]
+            if node[15:] == "00":
+                if node[0:] is not "00:00:00:02:15:00" or "00:00:00:03:15:00" or "00:00:00:05:15:00":
+                    ct = self.cv_topo.create_line(pos[0]+self.node_size/2, pos[1]+self.node_size/2, ctrx, ctry, fill="green", width=2)
+                    self.controllers[node] = ct
+
+        for node, pos in self.nodes.items():
+            if node[15:] == "00":
+                self.cv_topo.tag_raise(self.switches[node])
 
         self.overlaplist = []
         self.comparelist = []
@@ -670,7 +687,7 @@ class ControllerGui():
                 messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!")
 
     def labelShowHide(self):
-        if self.cv_topo.shohid.get() == "show":
+        if self.cv_topo.l_shohid.get() == "show":
             x0 = self.cv_topo.canvasx(0)
             y0 = self.cv_topo.canvasy(0)
             for node, pos in self.nodes.items():
@@ -687,20 +704,36 @@ class ControllerGui():
                         self.cv_topo.labelSv.place(x=wx , y=wy+self.node_size)
                     if node[0:] == "00:00:00:00:01:01":
                         self.cv_topo.labelVt.place(x=wx , y=wy+self.node_size)
-            self.cv_topo.shohid.set("hide")
+            self.cv_topo.l_shohid.set("hide")
             self.cv_topo.configure(
-                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, shohid=self.cv_topo.shohid.get()),
-                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get()))
-        elif self.cv_topo.shohid.get() == "hide":
+                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, l_shohid=self.cv_topo.l_shohid.get()),
+                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get()))
+        elif self.cv_topo.l_shohid.get() == "hide":
             self.cv_topo.labelGw.place_forget()
             self.cv_topo.labelRt.place_forget()
             self.cv_topo.labelSv.place_forget()
             self.cv_topo.labelVt.place_forget()
             self.cv_topo.labelCt.place_forget()
-            self.cv_topo.shohid.set("show")
+            self.cv_topo.l_shohid.set("show")
             self.cv_topo.configure(
-                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, shohid=self.cv_topo.shohid.get()),
-                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get()))
+                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, l_shohid=self.cv_topo.l_shohid.get()),
+                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get()))
+
+    def controllerShowHide(self):
+        if self.cv_topo.c_shohid.get() == "show":
+            self.cv_topo.itemconfig(self.controller, state="normal")
+            for node, pos in self.nodes.items():
+                if node[15:] == "00":
+                    if node[0:] is not "00:00:00:02:15:00" or "00:00:00:03:15:00" or "00:00:00:05:15:00":
+                        self.cv_topo.itemconfig(self.controllers[node], state="normal")
+            self.cv_topo.c_shohid.set("hide")
+        elif self.cv_topo.c_shohid.get() == "hide":
+            self.cv_topo.itemconfig(self.controller, state="hidden")
+            for node, pos in self.nodes.items():
+                if node[15:] == "00":
+                    if node[0:] is not "00:00:00:02:15:00" or "00:00:00:03:15:00" or "00:00:00:05:15:00":
+                        self.cv_topo.itemconfig(self.controllers[node], state="hidden")
+            self.cv_topo.c_shohid.set("show")
 
     def zoomRecord(self, event):
         self.zoom.x1 = self.cv_topo.canvasx(event.x)
@@ -760,8 +793,8 @@ class ControllerGui():
         self.labelShowHide()
         self.cv_topo.delete(self.zoom.rect)
         self.cv_topo.configure(
-                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, shohid=self.cv_topo.shohid.get()),
-                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, shohid=self.cv_topo.shohid.get()))
+                yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, l_shohid=self.cv_topo.l_shohid.get()),
+                xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get()))
 
         tmp = self.zoomState
         if self.zoom.width * 8 > 10000 and self.zoomState == "in":
