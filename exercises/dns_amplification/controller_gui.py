@@ -254,6 +254,7 @@ class ControllerGui():
         self.refreshPhoto = ImageTk.PhotoImage(refreshImage) 
         self.b_quitPhoto = ImageTk.PhotoImage(b_quitImage) 
         self.b_refreshPhoto = ImageTk.PhotoImage(b_refreshImage) 
+
         TBgImage = Image.open('Img/top_bg.png').resize((1100,100), Image.ANTIALIAS)
         BBgImage = Image.open('Img/bottom_bg.png').resize((1100,100), Image.ANTIALIAS)
         TopoBgImage = Image.open('Img/gray_bg.png').resize((400,400), Image.ANTIALIAS)
@@ -282,6 +283,24 @@ class ControllerGui():
         self.actzoutPhoto = ImageTk.PhotoImage(actzoutImage) 
         self.diszoutPhoto = ImageTk.PhotoImage(diszoutImage) 
 
+
+        upvlImage = Image.open('Img/up_vlabel.png').resize((180,42), Image.ANTIALIAS)
+        downvlImage = Image.open('Img/down_vlabel.png').resize((180,42), Image.ANTIALIAS)
+        uphlImage = Image.open('Img/up_hlabel.png').resize((180,42), Image.ANTIALIAS)
+        downhlImage = Image.open('Img/down_hlabel.png').resize((180,42), Image.ANTIALIAS)
+        upvcImage = Image.open('Img/up_vcontroller.png').resize((180,42), Image.ANTIALIAS)
+        downvcImage = Image.open('Img/down_vcontroller.png').resize((180,42), Image.ANTIALIAS)
+        uphcImage = Image.open('Img/up_hcontroller.png').resize((180,42), Image.ANTIALIAS)
+        downhcImage = Image.open('Img/down_hcontroller.png').resize((180,42), Image.ANTIALIAS)
+
+        self.upvlPhoto = ImageTk.PhotoImage(upvlImage) 
+        self.downvlPhoto = ImageTk.PhotoImage(upvlImage) 
+        self.uphlPhoto = ImageTk.PhotoImage(uphlImage) 
+        self.downhlPhoto = ImageTk.PhotoImage(uphlImage) 
+        self.upvcPhoto = ImageTk.PhotoImage(upvcImage) 
+        self.downvcPhoto = ImageTk.PhotoImage(upvcImage) 
+        self.uphcPhoto = ImageTk.PhotoImage(uphcImage) 
+        self.downhcPhoto = ImageTk.PhotoImage(uphcImage) 
 
         ####################  Style  ####################        
         self.style = Style()
@@ -330,6 +349,22 @@ class ControllerGui():
         self.style.map("out.zoom.TButton",
                 image = [("active", self.actzoutPhoto), ("disabled", self.diszoutPhoto)])
         self.style.configure("S.out.zoom.TButton", image = self.downzoutPhoto)
+        
+        self.style.configure("v.label.TButton", image = self.upvlPhoto)
+        self.style.map("v.label.TButton",
+                image = [("active", self.downvlPhoto)])
+
+        self.style.configure("h.label.TButton", image = self.uphlPhoto)
+        self.style.map("h.label.TButton",
+                image = [("active", self.downhlPhoto)])
+
+        self.style.configure("v.controller.TButton", image = self.upvcPhoto)
+        self.style.map("v.controller.TButton",
+                image = [("active", self.downvcPhoto)])
+
+        self.style.configure("h.controller.TButton", image = self.uphcPhoto)
+        self.style.map("h.controller.TButton",
+                image = [("active", self.downhcPhoto)])
 
         self.style.configure("TFrame",
                 background = self.bg, 
