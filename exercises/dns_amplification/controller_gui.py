@@ -258,6 +258,7 @@ class ControllerGui():
         self.refreshPhoto = ImageTk.PhotoImage(refreshImage) 
         self.b_quitPhoto = ImageTk.PhotoImage(b_quitImage) 
         self.b_refreshPhoto = ImageTk.PhotoImage(b_refreshImage) 
+
         TBgImage = Image.open('Img/top_bg.png').resize((1100,100), Image.ANTIALIAS)
         BBgImage = Image.open('Img/bottom_bg.png').resize((1100,100), Image.ANTIALIAS)
         TopoBgImage = Image.open('Img/gray_bg.png').resize((400,400), Image.ANTIALIAS)
@@ -286,6 +287,24 @@ class ControllerGui():
         self.actzoutPhoto = ImageTk.PhotoImage(actzoutImage) 
         self.diszoutPhoto = ImageTk.PhotoImage(diszoutImage) 
 
+
+        upvlImage = Image.open('Img/up_vlabel.png').resize((180,42), Image.ANTIALIAS)
+        downvlImage = Image.open('Img/down_vlabel.png').resize((180,42), Image.ANTIALIAS)
+        uphlImage = Image.open('Img/up_hlabel.png').resize((180,42), Image.ANTIALIAS)
+        downhlImage = Image.open('Img/down_hlabel.png').resize((180,42), Image.ANTIALIAS)
+        upvcImage = Image.open('Img/up_vcontroller.png').resize((180,42), Image.ANTIALIAS)
+        downvcImage = Image.open('Img/down_vcontroller.png').resize((180,42), Image.ANTIALIAS)
+        uphcImage = Image.open('Img/up_hcontroller.png').resize((180,42), Image.ANTIALIAS)
+        downhcImage = Image.open('Img/down_hcontroller.png').resize((180,42), Image.ANTIALIAS)
+
+        self.upvlPhoto = ImageTk.PhotoImage(upvlImage) 
+        self.downvlPhoto = ImageTk.PhotoImage(upvlImage) 
+        self.uphlPhoto = ImageTk.PhotoImage(uphlImage) 
+        self.downhlPhoto = ImageTk.PhotoImage(uphlImage) 
+        self.upvcPhoto = ImageTk.PhotoImage(upvcImage) 
+        self.downvcPhoto = ImageTk.PhotoImage(upvcImage) 
+        self.uphcPhoto = ImageTk.PhotoImage(uphcImage) 
+        self.downhcPhoto = ImageTk.PhotoImage(uphcImage) 
 
         ####################  Style  ####################        
         self.style = Style()
@@ -334,6 +353,22 @@ class ControllerGui():
         self.style.map("out.zoom.TButton",
                 image = [("active", self.actzoutPhoto), ("disabled", self.diszoutPhoto)])
         self.style.configure("S.out.zoom.TButton", image = self.downzoutPhoto)
+        
+        self.style.configure("v.label.TButton", image = self.upvlPhoto)
+        self.style.map("v.label.TButton",
+                image = [("active", self.downvlPhoto)])
+
+        self.style.configure("h.label.TButton", image = self.uphlPhoto)
+        self.style.map("h.label.TButton",
+                image = [("active", self.downhlPhoto)])
+
+        self.style.configure("v.controller.TButton", image = self.upvcPhoto)
+        self.style.map("v.controller.TButton",
+                image = [("active", self.downvcPhoto)])
+
+        self.style.configure("h.controller.TButton", image = self.uphcPhoto)
+        self.style.map("h.controller.TButton",
+                image = [("active", self.downhcPhoto)])
 
         self.style.configure("TFrame",
                 background = self.bg, 
@@ -407,6 +442,7 @@ class ControllerGui():
     def refresh_network(self):
         """ refresh network """
 
+        self.node_size = 10
         self.G.clear()
         self.cv_topo.delete("all")
         self.cv_topo.labelGw.destroy()
@@ -419,8 +455,19 @@ class ControllerGui():
         self.ge_network()
         self.cv_topo.create_image(0,0, image=self.topo_bgPhoto, anchor="nw")
         self.create_node()
-        self.cv_topo.l_shohid.set("hide")
 
+        self.zoom.width = fr_topo_width
+        self.zoom.height = fr_topo_height
+
+        self.cv_topo.configure(scrollregion=(0,0,self.zoom.width,self.zoom.height))
+        self.topoZoom(InOut = self.zoomState)
+        self.zoomIn.state(["!disabled"])
+        self.zoomOut.state(["!disabled"])
+        
+
+        self.cv_topo.l_shohid.set("show")
+        self.labelShowHide()
+        
     def create_node(self):
         """ create node """
 
@@ -607,6 +654,7 @@ class ControllerGui():
         for h_mac, pos in self.hosts.items():
             self.cv_topo.itemconfig(self.hosts[h_mac], fill=self.host_color)
         name = self.tree.item(self.tree.selection())['values'][0]
+        
         if name == "DNS Server":
             name = "h3"
         elif name == "victim":
@@ -615,11 +663,40 @@ class ControllerGui():
             name = "s4"
         elif name == "router":
             name = "s5"
+        
         mac = self.event.name2mac(name)
+
+        x1, y1, x2, y2 = 0,0,0,0
+
         if mac[15:] == "00":
             self.cv_topo.itemconfig(self.switches[mac], fill=self.notice_color)
         else:
             self.cv_topo.itemconfig(self.hosts[mac], fill=self.notice_color)
+        
+        x,y = self.nodes[mac]
+        borderX1 = self.cv_topo.canvasx(fr_topo_width/2-self.node_size/2)
+        borderY1 = self.cv_topo.canvasy(fr_topo_width/2-self.node_size/2)
+        borderX2 = self.cv_topo.canvasx(fr_topo_width/2+self.node_size/2)
+        borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
+        
+
+        while borderX1 > x and self.cv_topo.canvasx(0) > 0:
+            self.cv_topo.xview_scroll(-1,"unit")
+            borderX1 = self.cv_topo.canvasx(fr_topo_width/2-self.node_size/2)
+
+        borderX2 = self.cv_topo.canvasx(fr_topo_width/2+self.node_size/2)
+        while borderX2 < x and self.cv_topo.canvasx(fr_topo_width) < self.zoom.width:
+            self.cv_topo.xview_scroll(1,"unit")
+            borderX2 = self.cv_topo.canvasx(fr_topo_width/2+self.node_size/2)
+
+        while borderY1 > y and self.cv_topo.canvasy(0) > 0:
+            self.cv_topo.yview_scroll(-1,"unit")
+            borderY1 = self.cv_topo.canvasy(fr_topo_width/2-self.node_size/2)
+
+        borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
+        while borderY2 < y and self.cv_topo.canvasy(fr_topo_height) < self.zoom.height:
+            self.cv_topo.yview_scroll(1,"unit")
+            borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
 
     def quit(self):
         #TODO clear others 
