@@ -171,8 +171,8 @@ class ControllerGui():
         self.cv_topo.bind('<Motion>' , self.move_handler)
         self.cv_topo.bind('<Button-1>', self.click_handler)
 
-        self.button_lShowHide = Button(self.fr_mid, textvariable=self.cv_topo.l_shohid, command=self.labelShowHide)
-        self.button_cShowHide = Button(self.fr_mid, textvariable=self.cv_topo.c_shohid, command=self.controllerShowHide)
+        self.button_lShowHide = Button(self.fr_mid, style="h.label.TButton", textvariable=self.cv_topo.l_shohid, command=self.labelShowHide)
+        self.button_cShowHide = Button(self.fr_mid, style="v.controller.TButton", textvariable=self.cv_topo.c_shohid, command=self.controllerShowHide)
 
         self.edgeWarn_th = threading.Thread(target=self.edge_traffic_warn, args=(self.event,self.topology, self.cv_topo))
         self.edgeWarn_th.setDaemon(True)
@@ -189,6 +189,8 @@ class ControllerGui():
 
         self.rate_set = Checkbutton(self.fr_mid, text=modes[1], variable=self.v, onvalue="On", offvalue="Off", command=self.mitigation)
         self.typeSetting()
+
+        self.labelShowHide()
 
     def typeSetting(self):
         self.fr_bg.pack()
@@ -210,12 +212,12 @@ class ControllerGui():
         self.enter.grid(row=1, column=0, sticky="E")
         self.zoomIn.grid(row=2, column=0)
         self.zoomOut.grid(row=3, column=0)
-        self.button_lShowHide.grid(row=4, column=0, pady=10)
-        self.button_cShowHide.grid(row=5, column=0, pady=10)
-        self.rate_set.grid(row=6, column=0)
+        self.button_lShowHide.grid(row=4, column=0)
+        self.button_cShowHide.grid(row=5, column=0)
+        self.rate_set.grid(row=6, column=0, pady=(10,0))
         # self.rate_set[1].grid(row=6, column=0)
 
-        self.button_refresh.grid(row=8, column = 0, pady=(30,0))
+        self.button_refresh.grid(row=8, column = 0, pady=(10,0))
         self.button_quit.grid(row=9, column=0)
 
         self.topo_xscroll.pack(side="bottom", fill="x", ipady=0)
@@ -298,13 +300,13 @@ class ControllerGui():
         downhcImage = Image.open('Img/down_hcontroller.png').resize((180,42), Image.ANTIALIAS)
 
         self.upvlPhoto = ImageTk.PhotoImage(upvlImage) 
-        self.downvlPhoto = ImageTk.PhotoImage(upvlImage) 
+        self.downvlPhoto = ImageTk.PhotoImage(downvlImage) 
         self.uphlPhoto = ImageTk.PhotoImage(uphlImage) 
-        self.downhlPhoto = ImageTk.PhotoImage(uphlImage) 
+        self.downhlPhoto = ImageTk.PhotoImage(downhlImage) 
         self.upvcPhoto = ImageTk.PhotoImage(upvcImage) 
-        self.downvcPhoto = ImageTk.PhotoImage(upvcImage) 
+        self.downvcPhoto = ImageTk.PhotoImage(downvcImage) 
         self.uphcPhoto = ImageTk.PhotoImage(uphcImage) 
-        self.downhcPhoto = ImageTk.PhotoImage(uphcImage) 
+        self.downhcPhoto = ImageTk.PhotoImage(downhcImage) 
 
         ####################  Style  ####################        
         self.style = Style()
@@ -313,6 +315,7 @@ class ControllerGui():
                 font=self.fonts, relief="flat")
 
         self.style.map("TButton",
+                # background=[("active", self.bg), ("disabled", self.bg)],
                 background=[("active", "pink"), ("disabled", "#f0f0f0")],
                 foreground=[("active", "white"), ("disabled", "white")]
                 )
@@ -354,6 +357,10 @@ class ControllerGui():
                 image = [("active", self.actzoutPhoto), ("disabled", self.diszoutPhoto)])
         self.style.configure("S.out.zoom.TButton", image = self.downzoutPhoto)
         
+        self.style.configure("label.TButton", background=self.bg, padding=0)
+        self.style.map("label.TButton",
+                background=[("active", self.bg)])
+
         self.style.configure("v.label.TButton", image = self.upvlPhoto)
         self.style.map("v.label.TButton",
                 image = [("active", self.downvlPhoto)])
@@ -361,6 +368,10 @@ class ControllerGui():
         self.style.configure("h.label.TButton", image = self.uphlPhoto)
         self.style.map("h.label.TButton",
                 image = [("active", self.downhlPhoto)])
+
+        self.style.configure("controller.TButton", background=self.bg, padding=0)
+        self.style.map("controller.TButton",
+                background=[("active", self.bg)])
 
         self.style.configure("v.controller.TButton", image = self.upvcPhoto)
         self.style.map("v.controller.TButton",
@@ -377,6 +388,8 @@ class ControllerGui():
                 background = self.bg, 
                 )
 
+        self.style.configure("TCheckbutton",
+                background = self.bg)
     def ge_network(self):
         """ generate network """
 
@@ -466,7 +479,9 @@ class ControllerGui():
         
 
         self.cv_topo.l_shohid.set("show")
+        self.cv_topo.c_shohid.set("show")
         self.labelShowHide()
+        self.controllerShowHide()
         
     def create_node(self):
         """ create node """
@@ -782,9 +797,11 @@ class ControllerGui():
                     if node[0:] == "00:00:00:00:01:01":
                         self.cv_topo.labelVt.place(x=wx , y=wy+self.node_size)
             self.cv_topo.l_shohid.set("hide")
+            self.button_lShowHide.configure(style = "v.label.TButton")
             self.cv_topo.configure(
                 yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, l_shohid=self.cv_topo.l_shohid.get()),
                 xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get()))
+
         elif self.cv_topo.l_shohid.get() == "hide":
             self.cv_topo.labelGw.place_forget()
             self.cv_topo.labelRt.place_forget()
@@ -792,12 +809,14 @@ class ControllerGui():
             self.cv_topo.labelVt.place_forget()
             self.cv_topo.labelCt.place_forget()
             self.cv_topo.l_shohid.set("show")
+            self.button_lShowHide.configure(style = "h.label.TButton")
             self.cv_topo.configure(
                 yscrollcommand= partial(self.topo_yscroll.set, nodes=self.nodes, node_size=self.node_size, l_shohid=self.cv_topo.l_shohid.get()),
                 xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get()))
 
     def controllerShowHide(self):
         if self.cv_topo.c_shohid.get() == "show":
+            self.button_cShowHide.configure(style = "v.controller.TButton")
             self.cv_topo.itemconfig(self.controller, state="normal")
             for node, pos in self.nodes.items():
                 if node[15:] == "00":
@@ -805,6 +824,7 @@ class ControllerGui():
                         self.cv_topo.itemconfig(self.controllers[node], state="normal")
             self.cv_topo.c_shohid.set("hide")
         elif self.cv_topo.c_shohid.get() == "hide":
+            self.button_cShowHide.configure(style = "h.controller.TButton")
             self.cv_topo.itemconfig(self.controller, state="hidden")
             for node, pos in self.nodes.items():
                 if node[15:] == "00":
