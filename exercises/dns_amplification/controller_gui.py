@@ -22,7 +22,6 @@ fr_topo_height = 400
 fr_topo_width = 400
 qpktThreshold = 0
 rpktThreshold = 0 
-modes = ["Mitigation On","Mitigation Off"]
 
 def assign(obj, **kwargs):
     obj.__dict__.update(kwargs)
@@ -187,7 +186,7 @@ class ControllerGui():
             # self.rate_set.append(Radiobutton(self.fr_mid, text=text, variable=self.v, value=mode, command=self.mitigation))
         #     self.on_off_ypos += 25
 
-        self.rate_set = Checkbutton(self.fr_mid, text=modes[1], variable=self.v, onvalue="On", offvalue="Off", command=self.mitigation)
+        self.rate_set = Checkbutton(self.fr_mid, text="Mitigation", variable=self.v, onvalue="On", offvalue="Off", command=self.mitigation)
         self.typeSetting()
 
         self.labelShowHide()
@@ -656,11 +655,11 @@ class ControllerGui():
     def mitigation(self):
         if self.v.get() == "On":
             self.event.setMeterFlag(1)
-            self.rate_set.configure(text=modes[0])
+            messagebox.showinfo("Information", "Mitigation is opened !! Our defense system is operating")
             print "Mitigation is opened"
         elif self.v.get() == "Off":
             self.event.setMeterFlag(0)
-            self.rate_set.configure(text=modes[1])
+            messagebox.showinfo("Information", "Mitigation is closed !! Our defense system is stopped operatiing")
             print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
