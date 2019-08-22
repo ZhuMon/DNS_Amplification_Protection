@@ -227,7 +227,7 @@ class MainConsole( Frame ):
         self.changeAttackerNum(event=None, host_list = host_list)
        
         interval = Label(self.attack_frame, text="attack interval")
-        pkt_num = Label(self.attack_frame, text="attack packet num")
+        pkt_num = Label(self.attack_frame, text="num of attack packets")
 
         accept = Button(self.attack_frame, text="Accept", command=partial(self.acceptAttack, v), width=10)
         
@@ -468,8 +468,8 @@ class MainConsole( Frame ):
         elif level == "hostFunc":
             buttons = [
                 ( 'Attack', self.attack),
-                ( 'Stop', self.stopAttack),
-                ( 'Iperf', self.iperf)
+                ( 'Stop', self.stopAttack)#,
+                # ( 'Iperf', self.iperf)
             ]
         elif level == "hostView":
             f1 = Frame(f, width=self.width /2)

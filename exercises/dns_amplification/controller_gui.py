@@ -247,7 +247,7 @@ class ControllerGui():
         #self.ov_r_color = "red"
         #self.ov_q_color = "yellow"
         self.notice_color = "#5D5D5D"
-        self.ctrline_color = ""
+        self.ctrline_color = "#d7d7ff"
 
 
         ####################   Img   ####################
