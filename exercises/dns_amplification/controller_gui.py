@@ -247,6 +247,7 @@ class ControllerGui():
         #self.ov_r_color = "red"
         #self.ov_q_color = "yellow"
         self.notice_color = "#5D5D5D"
+        self.ctrline_color = ""
 
 
         ####################   Img   ####################
@@ -566,8 +567,8 @@ class ControllerGui():
             ctrx = self.ctrPos[0]
             ctry = self.ctrPos[1]
             if node[15:] == "00":
-                if node[0:] is not "00:00:00:02:15:00" or "00:00:00:03:15:00" or "00:00:00:05:15:00":
-                    ct = self.cv_topo.create_line(pos[0]+self.node_size/2, pos[1]+self.node_size/2, ctrx, ctry, fill="green", width=2)
+                if node[0:] != "00:00:00:02:15:00" and node[0:] != "00:00:00:03:15:00" and node[0:] != "00:00:00:05:15:00":
+                    ct = self.cv_topo.create_line(pos[0]+self.node_size/2, pos[1]+self.node_size/2, ctrx, ctry, fill=self.ctrline_color, width=2)
                     self.controllers[node] = ct
 
         for node, pos in self.nodes.items():
@@ -820,7 +821,7 @@ class ControllerGui():
             self.cv_topo.itemconfig(self.controller, state="normal")
             for node, pos in self.nodes.items():
                 if node[15:] == "00":
-                    if node[0:] is not "00:00:00:02:15:00" or "00:00:00:03:15:00" or "00:00:00:05:15:00":
+                    if node[0:] != "00:00:00:02:15:00" and node[0:] != "00:00:00:03:15:00" and node[0:] != "00:00:00:05:15:00":
                         self.cv_topo.itemconfig(self.controllers[node], state="normal")
             self.cv_topo.c_shohid.set("hide")
         elif self.cv_topo.c_shohid.get() == "hide":
@@ -828,7 +829,7 @@ class ControllerGui():
             self.cv_topo.itemconfig(self.controller, state="hidden")
             for node, pos in self.nodes.items():
                 if node[15:] == "00":
-                    if node[0:] is not "00:00:00:02:15:00" or "00:00:00:03:15:00" or "00:00:00:05:15:00":
+                    if node[0:] != "00:00:00:02:15:00" and node[0:] != "00:00:00:03:15:00" and node[0:] != "00:00:00:05:15:00":
                         self.cv_topo.itemconfig(self.controllers[node], state="hidden")
             self.cv_topo.c_shohid.set("show")
 
