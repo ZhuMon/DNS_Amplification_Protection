@@ -1,11 +1,12 @@
 import re
 from time import sleep
 from threading import Thread
+from functools import partial
 
 from Tkinter import *
 from ttk import *
 from Tkinter import Scale
-from functools import partial
+from PIL import Image, ImageTk
 import tkMessageBox as messagebox
 
 from mininet.log import setLogLevel
@@ -129,25 +130,31 @@ class Console( Frame ):
         self.text.delete('1.0','end')
     
 
-class MainConsole( Frame ):
+class MainConsole( Frame, object):
     " Console for Mininet. "
 
     menuStyle = { 'font': 'Geneva 12 bold'}
 
-    def __init__( self, net, parent = None):
-        Frame.__init__(self, parent)
-        self.top = self.winfo_toplevel()
-        self.top.title( 'Mininet' )
-        self.height = 400
-        self.width = 800
-        self.top.geometry(str(self.width)+'x'+str(self.height))
+    def __init__( self, net, parent = None, width = 800, height=400):
+        self.height = height
+        self.width = width
+        super(MainConsole, self).__init__(parent, height=self.height, width=self.width)
+        # self.top = self.winfo_toplevel()
+        # self.top.title( 'Mininet' )
+        # self.top.geometry(str(self.width)+'x'+str(self.height))
 
         self.net = net
+
+        self.initStyle()
+
+        self.menu_fr = Frame(self, height=130, width=800)
+        self.cv = Canvas(self.menu_fr, height=130, width = 800, highlightthickness=0)
+        self.cv.create_image(0,0,image=self.bgPhoto, anchor=NW)
+
         self.menubar = self.createMenuBar("menu")
         self.level2bar = self.createMenuBar(None)
         self.level3bar = self.createMenuBar(None)
 
-        self.initStyle()
         self.createCframe()
         self.controller_th = None
         
@@ -161,19 +168,45 @@ class MainConsole( Frame ):
         self.hostCount = len(self.net.hosts)
         self.bw = 0
 
+        self.cv.pack(expand=True, fill='both')
+        self.menu_fr.pack(expand=True, fill='both')
         self.pack(expand=True, fill='both')
 
     def initStyle(self):
+
+        self.fonts = ("arial", 12)
+
+        ##############  Img  ##############
+        bgImage = Image.open('Img/top_bg.png').resize((800,130), Image.ANTIALIAS)
+        self.bgPhoto = ImageTk.PhotoImage(bgImage)
+
+        ############## Style ##############
         self.style = Style()
-        self.style.configure("Menubar.TFrame"#,
-                # background="gray"
+        self.style.configure("TFrame",
+                background="white",
+                padding=0
                 )
+        # self.style.configure("Menubar.TFrame",
+                # background="white",
+                # )
         self.style.configure("Attack.TFrame",
-                background="white"
+                background="white",
+                # padding=0
                 )
         self.style.configure("TLabel",
-                    background="white"
+                font = self.fonts,
+                background="white"
                 )
+
+        self.style.configure("TCheckbutton",
+                font = self.fonts,
+                background="white"
+                )
+        self.style.configure("TButton",
+                font = self.fonts,
+                background="white"
+                )
+        
         self.style.configure("Selected.TButton",
                 background="red",
                 foreground="white"
@@ -182,6 +215,7 @@ class MainConsole( Frame ):
                 background=[("active", "pink")],
                 foreground=[("active", "white")]
                 )
+
         self.style.map("UnSelected.TButton",
                 background=[("active", "pink")],
                 foreground=[("active", "white")]
@@ -195,7 +229,7 @@ class MainConsole( Frame ):
 
     def createCframe(self):
         "Create a child frame."
-        self.cframe = Frame(self)
+        self.cframe = Frame(self, height=300, width=self.width)
         
         ############ Hosts -  View  - consoles ############
         self.consoles = {}
@@ -209,7 +243,7 @@ class MainConsole( Frame ):
         self.selected = [None, None]
 
         ############ Hosts - Function - Attack ############
-        self.attack_frame = Frame(self.cframe, style="Attack.TFrame")
+        self.attack_frame = Frame(self.cframe, style="Attack.TFrame", height=270)
         host_list = [h.name for h in self.net.hosts]
         host_list.remove('h3')
         choose_victim = Label(self.attack_frame, text="Choose a victim: ")#, width=15)
@@ -231,16 +265,14 @@ class MainConsole( Frame ):
 
         accept = Button(self.attack_frame, text="Accept", command=partial(self.acceptAttack, v), width=10)
         
-        block = [Label(self.attack_frame, text="",width=4 ) for i in range(0,15)]
+        block = [Label(self.attack_frame, text="\n  ",width=4 ) for i in range(0,15)]
 
         block[0].grid(row=0, column=0)
-        # block[1].grid(row=3, column=3)
-        block[2].grid(row=4, column=4)
-        block[3].grid(row=5, column=5)
+        block[1].grid(row=3, column=7)
+        block[2].grid(row=4, column=7)
+        block[3].grid(row=5, column=7)
         block[4].grid(row=6, column=7)
         block[5].grid(row=7, column=7)
-        block[6].grid(row=8, column=7)
-        block[7].grid(row=9, column=7)
 
         choose_victim.grid(row=1, column=1)
         v.grid(row=2, column=1)
@@ -251,7 +283,7 @@ class MainConsole( Frame ):
         # a.grid(row=2, column=5)
         interval.grid(row=2, column=4, columnspan=2)
         pkt_num.grid(row=2,column=6)
-        accept.grid(row=14, column=14)
+        accept.grid(row=8, column=8)
 
         
     
@@ -285,7 +317,7 @@ class MainConsole( Frame ):
     def attack(self):
         self.clearWidget(4)
         self.attack_frame.pack(expand = True, fill = "both")
-        self.cframe.pack(expand = True, fill = "both")
+        self.cframe.pack(expand=True, fill = "both", anchor=NW)
 
     def changeAttackerNum(self, event, host_list):
         if self.attacker != []:
@@ -305,7 +337,7 @@ class MainConsole( Frame ):
             a = Combobox(self.attack_frame, values=host_list, width=6)
             a.current(i+1)
             r = IntVar()
-            w = Scale(self.attack_frame, from_=0, to=1,orient=HORIZONTAL,resolution=0.01)
+            w = Scale(self.attack_frame, from_=0, to=1,orient=HORIZONTAL,resolution=0.01, background="white")
             random = Checkbutton(self.attack_frame, text="random", variable=r,onvalue=1, offvalue=0)
 
             t = IntVar()
@@ -354,11 +386,6 @@ class MainConsole( Frame ):
         for host in self.net.hosts:
             self.consoles[host.name].handleInt()
             self.consoles[host.name].sendCmd("echo \"========= End =========\"")
-
-
-    def iperf(self):
-        self.clearWidget(4)
-        None
 
     def hostView(self):
         self.clearWidget(3)
@@ -449,13 +476,13 @@ class MainConsole( Frame ):
             self.controller_th.start()
 
     def createMenuBar(self, level=None):
-        f = Frame(self, style="Menubar.TFrame")
+        f = Frame(self.cv, style="Menubar.TFrame")
         buttons = []
         
         if level == "menu":
             buttons = [
                 ( 'Hosts', self.hostPage),
-                ( 'Switches', self.switchPage),
+                # ( 'Switches', self.switchPage),
                 ( 'Controller', self.callController ),
                 ( 'Quit', self.quit)
             ]
@@ -496,8 +523,8 @@ class MainConsole( Frame ):
                 name = 'h'+str(i+1)
                 cmd1 = partial(self.select, name, 0)
                 cmd2 = partial(self.select, name, 1)
-                b1 = Button(f1, text=name, command=cmd1, width=4, style="UnSelected.TButton")
-                b2 = Button(f2, text=name, command=cmd2, width=4, style="UnSelected.TButton")
+                b1 = Button(f1, text=name, command=cmd1, width=3, style="UnSelected.TButton")
+                b2 = Button(f2, text=name, command=cmd2, width=3, style="UnSelected.TButton")
 
                 self.viewBtnLen = 8
                 if i < self.viewBtnLen:
@@ -517,7 +544,7 @@ class MainConsole( Frame ):
 
             f1.pack(side="left")
             f2.pack(side="right")
-            f.pack(padx = 4, pady = 4, fill = 'x')
+            f.pack(padx = 4, pady = 4, expand=False, fill="none")
             return Object(frame=f, subframe=[f1,f2], buttons=btn_obj)
                 
                 
@@ -533,7 +560,7 @@ class MainConsole( Frame ):
                     if name == "Clear":
                         self.clearViewBtn = b
         
-        f.pack(padx = 4, pady = 4, fill = 'x')
+        f.pack(padx = 4, pady = 4, fill = 'none', expand=False, anchor='nw')
         return Object(frame = f, buttons = btn_obj)
 
     def clearWidget(self, level):
@@ -556,5 +583,8 @@ if __name__ == '__main__':
     setLogLevel('info')
     network = TreeNet(depth=2, fanout=4)
     # network = None
-    app = MainConsole(network)
+    root = Tk()
+    root.title( 'Mininet' ) 
+    root.geometry('800x400')
+    app = MainConsole(network, parent=root, width=800, height=400)
     app.mainloop()
