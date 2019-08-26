@@ -441,7 +441,7 @@ def ip2name(ip_in):
             return h
     print "can't find ip:",ip_in,"in ip2name"
 
-def main(p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build/basic.json'):
+def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build/basic.json'):
     """
         main function
     """
@@ -529,7 +529,7 @@ def main(p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build
             API[s] = runtimeAPI
 
             
-        event = myEvent(topology, direction, sw_links)
+        event.init(topology, direction, sw_links)
         event.set()
         event.recordName(hosts,sw_mac)
 
@@ -693,4 +693,5 @@ if __name__ == '__main__':
         parser.exit(1)
 
     # main(args.p4info, args.bmv2_json)
-    main()
+    event = myEvent()
+    main(event)

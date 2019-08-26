@@ -14,16 +14,9 @@ from mininet.topolib import TreeNet
 from mininet.examples.consoles import Graph
 
 import mycontroller 
-# Make it easier to construct and assign objects
+from event import myEvent
+from Object import Object
 
-def assign( obj, **kwargs ):
-    "Set a bunch of fields in an object."
-    obj.__dict__.update( kwargs )
-
-class Object( object ):
-    "Generic object you can stuff junk into."
-    def __init__( self, **kwargs ):
-        assign( self, **kwargs )
 
 class Console( Frame ):
     "A simple console on a host"
@@ -157,15 +150,10 @@ class MainConsole( Frame, object):
 
         self.createCframe()
         self.controller_th = None
+        self.event = myEvent()
         
 
-        # graph = Graph(cframe)
-        # self.consoles['graph'] = Object(frame = graph, consoles = [graph])
-        # self.graph = graph
-        # self.graphVisible = False
-        self.updates = 0
         self.hostCount = len(self.net.hosts)
-        self.bw = 0
 
         self.menu_fr.pack(expand=True, fill='both')
         self.cv.pack(expand=True, fill='both')
@@ -426,10 +414,19 @@ class MainConsole( Frame, object):
         n = -1 if self.normal_frame.r_var.get() == 1 else float(self.normal_frame.w_scale.get())
         self.consoles[victim.get()].sendCmd("python ge_dns.py "+str(self.normal_frame.t_var.get())+" "+str(n)+" | python victim.py")
         
+        self.event.clearAttacker()
         for a, random, r, w, num_in, t  in self.attacker:
             n = -1 if r.get() == 1 else float(w.get())
             self.consoles[a.get()].sendCmd("python ge_dns.py "+str(t.get())+" "+str(n)+" | python attacker.py "+victimIP)
+            self.event.putAttacker(
+                    name = a.get(),
+                    mac = self.net.hosts[int(a.get()[1:])-1].MAC())
 
+            victimMac = self.net.hosts[int(self.attack_frame.v_combo.get()[1:])-1].MAC()
+        self.event.setVictim(
+                    name = self.attack_frame.v_combo.get(),
+                    mac = victimMac)
+        
         self.hostView()
 
     def stopAttack(self):
@@ -521,7 +518,7 @@ class MainConsole( Frame, object):
 
     def callController(self):
         if self.controller_th == None or self.controller_th.isAlive() == False:
-            self.controller_th = Thread(target=mycontroller.main)
+            self.controller_th = Thread(target=mycontroller.main, args=(self.event,))
             self.controller_th.setDaemon(True)
             self.controller_th.start()
 
