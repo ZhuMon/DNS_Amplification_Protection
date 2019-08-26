@@ -32,7 +32,10 @@ if __name__ == '__main__':
     sleep(1)
     
     # app = ConsoleApp(exercise.net, width=4 )
-    app = MainConsole(exercise.net)
+    root = Tk()
+    root.title( 'Mininet' ) 
+    root.geometry('800x400')
+    app = MainConsole(exercise.net, parent=root)
     
     app.mainloop()
     # gui_th = threading.Thread(target=app.mainloop)

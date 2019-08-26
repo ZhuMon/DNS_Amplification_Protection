@@ -1,14 +1,20 @@
 from threading import _Event
+from Object import Object
 
 class myEvent(_Event):
-    def __init__(self, topology, direction, node_links):
+    def __init__(self):
+        super(myEvent, self).__init__()
+        self.victim = Object(name = "h1", mac = "00:00:00:00:01:01")
+        self.attacker = [Object(name = "h2", mac = "00:00:00:00:02:02")]
+
+
+    def init(self, topology, direction, node_links):
         """
         topology = {1:{mac1:port1, mac2:port2}, 2:...}
         dircection = {1:{mac1:'q', mac2:'r'}, 2:...}
         node_links = {s1:[[1:h1],[2:s6]], h1:...}
 
         """
-        super(myEvent, self).__init__()
         self.topology = topology
         self.direction = direction
         self.node_links = node_links 
@@ -190,3 +196,23 @@ class myEvent(_Event):
         
     def getMeterFlag(self):
         return self.meter_flag
+
+
+    def setVictim(self, name = None, mac = None):
+        self.victim.name = name
+        self.victim.mac = mac
+
+    def getVictim(self):
+        return self.victim
+
+
+    def putAttacker(self, name = None, mac = None):
+        a = Object(name = name, mac = mac)
+        self.attacker.append(a)
+
+    def getAttacker(self):
+        return self.attacker
+
+    def clearAttacker(self):
+        self.attacker = []
+
