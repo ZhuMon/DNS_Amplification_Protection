@@ -4,7 +4,7 @@ from Object import Object
 class myEvent(_Event):
     def __init__(self):
         super(myEvent, self).__init__()
-        self.victim = Object(name = "h1", mac = "00:00:00:00:01:01")
+        self.victim = Object(name = "h7", mac = "00:00:00:00:0b:07")
         self.attacker = [Object(name = "h2", mac = "00:00:00:00:02:02")]
 
 
@@ -52,7 +52,7 @@ class myEvent(_Event):
     def changeName(self, name):
         if name == "h3":
             name = "DNS Server"
-        elif name == "h1":
+        elif name == self.victim.name:
             name = "victim"
         elif name == "s4":
             name = "gateway sw"
@@ -199,8 +199,10 @@ class myEvent(_Event):
 
 
     def setVictim(self, name = None, mac = None):
+        self.node_name[self.victim.mac] = self.victim.name
         self.victim.name = name
         self.victim.mac = mac
+        self.node_name[self.victim.mac] = self.victim.name
 
     def getVictim(self):
         return self.victim

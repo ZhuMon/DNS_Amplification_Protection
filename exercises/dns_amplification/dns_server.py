@@ -41,7 +41,14 @@ class IPOption_MRI(IPOption):
 def handle_pkt(pkt):
     if UDP in pkt and pkt[UDP].dport == 53:
         global r_num
-        print r_num, ". got a packet ", pkt[DNS].id
+        if r_num%10 == 1:
+            print "Get  "+str(r_num)+"st packet, id: ",pkt.getlayer(DNS).id
+        elif r_num%10 == 2:
+            print "Get  "+str(r_num)+"nd packet, id: ",pkt.getlayer(DNS).id
+        elif r_num%10 == 3:
+            print "Get  "+str(r_num)+"rd packet, id: ",pkt.getlayer(DNS).id
+        else:
+            print "Get  "+str(r_num)+"th packet, id: ",pkt.getlayer(DNS).id
         r_num += 1
         # print pkt.show()
         sys.stdout.flush()
@@ -59,7 +66,14 @@ def pass_pkt(q,r):
     # print "Ether_src: ", q[Ether].src
     p = p / IP(dst=q[IP].src) / UDP(dport=q[UDP].sport, sport=53) / r.getlayer(DNS)
     global s_num
-    print s_num, ". send : ", p[DNS].id
+    if s_num%10 == 1:
+        print "Send "+str(s_num)+"st packet, id: ",p.getlayer(DNS).id
+    elif s_num%10 == 2:
+        print "Send "+str(s_num)+"nd packet, id: ",p.getlayer(DNS).id
+    elif s_num%10 == 3:
+        print "Send "+str(s_num)+"rd packet, id: ",p.getlayer(DNS).id
+    else:
+        print "Send "+str(s_num)+"th packet, id: ",p.getlayer(DNS).id
     s_num += 1
     # print p.show()
     sendp(p, iface = iface, verbose=False)

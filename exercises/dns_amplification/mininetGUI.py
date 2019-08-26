@@ -31,7 +31,7 @@ class Console( Frame ):
         self.height, self.width, self.title = height, width-10, title
 
         self.textStyle = {
-            'font' : 'Monaco 12',
+            'font' : 'Mono 12',
             'bg': 'white',
             'fg': 'black',
             'width': 32,

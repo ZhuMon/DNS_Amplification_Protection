@@ -31,7 +31,15 @@ def handle_pkt(pkt):
     if UDP in pkt and pkt[UDP].sport == 53:
         global num
         num = num + 1
-	print num," ",pkt.getlayer(DNS).id
+        if num%10 == 1:
+            print "Get  "+str(num)+"st packet, id: ",pkt.getlayer(DNS).id
+        elif num%10 == 2:
+            print "Get  "+str(num)+"nd packet, id: ",pkt.getlayer(DNS).id
+        elif num%10 == 3:
+            print "Get  "+str(num)+"rd packet, id: ",pkt.getlayer(DNS).id
+        else:
+            print "Get  "+str(num)+"th packet, id: ",pkt.getlayer(DNS).id
+
         sys.stdout.flush()
 
 def recv_pkt(iface):
@@ -70,20 +78,21 @@ def main():
             pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
             pkt = pkt /IP(dst=addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[int(b)].getlayer(DNS)
             sendp(pkt, iface = iface, verbose=False)
-            print i, "send a packet"
-            # sniff(iface = iface, 
-                    # prn = lambda x: handle_pkt(x),
-                    # count = 1,
-            #         timeout = 5)
+            if i%10 == 1:
+                print "Send "+str(i)+"st packet, id: ",pkt.getlayer(DNS).id
+            elif i%10 == 2:
+                print "Send "+str(i)+"nd packet, id: ",pkt.getlayer(DNS).id
+            elif i%10 == 3:
+                print "Send "+str(i)+"rd packet, id: ",pkt.getlayer(DNS).id
+            else:
+                print "Send "+str(i)+"th packet, id: ",pkt.getlayer(DNS).id
 
             time.sleep(float(a))
             
-            #print "sniffing on %s" % iface
         while True:
             None
     except KeyboardInterrupt:
         sys.exit(0)
-    # sniff(iface = iface, prn = lambda x: handle_pkt(x))
 
 
 if __name__ == '__main__':

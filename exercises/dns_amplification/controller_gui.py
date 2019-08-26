@@ -7,6 +7,7 @@ from functools import partial
 from Tkinter import *
 import tkMessageBox as messagebox
 from ttk import *
+import tkFont
 from PIL import Image, ImageTk
 
 import numpy as np
@@ -26,14 +27,15 @@ rpktThreshold = 0
 
 
 class MyScrollbar(Scrollbar, object):
-    def __init__(self, parent, canvas, nodes, node_size, l_shohid="", c_shohid="", orient="horizental", command=None):
+    def __init__(self, parent, canvas, nodes, node_size, event = object,l_shohid="", c_shohid="", orient="horizental", command=None):
         super(MyScrollbar, self).__init__(parent, orient=orient, command=command)
         self.cv = canvas
         self.nodes = nodes
         self.node_size = node_size
-        self.orient = orient
+        self.event = event
         self.l_shohid = l_shohid
         self.c_shohid = c_shohid
+        self.orient = orient
 
     def set(self, a, b, nodes={}, node_size=10, l_shohid="", c_shohid=""):
         super(MyScrollbar, self).set(a,b)
@@ -61,7 +63,7 @@ class MyScrollbar(Scrollbar, object):
                 else:
                     if node[0:] == "00:00:00:00:03:03":
                         self.cv.labelSv.place(x=wx , y=wy+self.node_size)
-                    if node[0:] == "00:00:00:00:01:01":
+                    if node[0:] == self.event.getVictim().mac:
                         self.cv.labelVt.place(x=wx , y=wy+self.node_size)
         if self.l_shohid == "show":
             self.cv.labelGw.place_forget()
@@ -172,9 +174,27 @@ class ControllerGui():
         self.button_quit = Button(self.fr_mid, style="Q.TButton",command=self.quit)
 
         self.button_refresh = Button(self.fr_mid, style="R.TButton", command=self.refresh_network)
-        self.topo_xscroll = MyScrollbar(self.fr_topo, canvas = self.cv_topo, nodes = self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get(), c_shohid=self.cv_topo.c_shohid.get(), orient="horizontal", command=self.cv_topo.xview)
-        self.topo_yscroll = MyScrollbar(self.fr_topo, canvas = self.cv_topo, nodes = self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get(), c_shohid=self.cv_topo.c_shohid.get(), orient="vertical", command=self.cv_topo.yview)
-        self.cv_topo.configure(yscrollcommand=partial(self.topo_yscroll.set,node_size=self.node_size, l_shohid=self.cv_topo.l_shohid.get(), c_shohid=self.cv_topo.c_shohid.get()), xscrollcommand=partial(self.topo_xscroll.set, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get(), c_shohid=self.cv_topo.c_shohid.get()))
+        self.topo_xscroll = MyScrollbar(self.fr_topo, 
+                canvas = self.cv_topo, nodes = self.nodes, 
+                node_size = self.node_size, event = self.event, 
+                l_shohid=self.cv_topo.l_shohid.get(), 
+                c_shohid=self.cv_topo.c_shohid.get(), 
+                orient="horizontal", command=self.cv_topo.xview)
+        self.topo_yscroll = MyScrollbar(self.fr_topo, 
+                canvas = self.cv_topo, nodes = self.nodes, 
+                node_size = self.node_size, event = self.event, 
+                l_shohid=self.cv_topo.l_shohid.get(), 
+                c_shohid=self.cv_topo.c_shohid.get(), 
+                orient="vertical", command=self.cv_topo.yview)
+        self.cv_topo.configure(
+                yscrollcommand=partial(self.topo_yscroll.set,
+                    node_size=self.node_size, 
+                    l_shohid=self.cv_topo.l_shohid.get(), 
+                    c_shohid=self.cv_topo.c_shohid.get()), 
+                xscrollcommand=partial(self.topo_xscroll.set, 
+                    node_size = self.node_size, 
+                    l_shohid=self.cv_topo.l_shohid.get(), 
+                    c_shohid=self.cv_topo.c_shohid.get()))
 
         #self.cv.pack()
         self.cv_topo.bind('<Motion>' , self.move_handler)
@@ -245,6 +265,7 @@ class ControllerGui():
 
         self.node_size = 10
         self.fonts = ("arial", 12)
+        # self.fonts = tkFont.Font(family="mono", size=12)
 
         ####################  Color  ####################
         self.bg_tp = "black" 
@@ -321,8 +342,8 @@ class ControllerGui():
         ####################  Style  ####################        
         self.style = Style()
 
-        # self.style.configure("TButton",
-                # font=self.fonts, relief="flat")
+        self.style.configure("TButton",
+                font=self.fonts, relief="flat")
 
         # self.style.map("TButton",
                 # # background=[("active", self.bg), ("disabled", self.bg)],
@@ -346,13 +367,16 @@ class ControllerGui():
 
         self.style.configure("R.TButton",
                 background=self.bg,
+                font=self.fonts, relief="flat", 
                 image = self.refreshPhoto, padding=0)
         self.style.map("R.TButton",
                 background=[("active",self.bg)],
                 image=[("active",self.b_refreshPhoto)],
                 )
 
-        self.style.configure("zoom.TButton", background=self.bg, padding=0)
+        self.style.configure("zoom.TButton", 
+                font=self.fonts, relief="flat", 
+                background=self.bg, padding=0)
         self.style.map("zoom.TButton",
                 background=[("active", self.bg), ("disabled", self.bg)])
 
@@ -367,7 +391,9 @@ class ControllerGui():
                 image = [("active", self.actzoutPhoto), ("disabled", self.diszoutPhoto)])
         self.style.configure("S.out.zoom.TButton", image = self.downzoutPhoto)
         
-        self.style.configure("label.TButton", background=self.bg, padding=0)
+        self.style.configure("label.TButton", 
+                font=self.fonts, relief="flat", 
+                background=self.bg, padding=0)
         self.style.map("label.TButton",
                 background=[("active", self.bg)])
 
@@ -379,7 +405,9 @@ class ControllerGui():
         self.style.map("h.label.TButton",
                 image = [("active", self.downhlPhoto)])
 
-        self.style.configure("controller.TButton", background=self.bg, padding=0)
+        self.style.configure("controller.TButton", 
+                font=self.fonts, relief="flat", 
+                background=self.bg, padding=0)
         self.style.map("controller.TButton",
                 background=[("active", self.bg)])
 
@@ -393,12 +421,15 @@ class ControllerGui():
 
         self.style.configure("TFrame",
                 background = self.bg, 
+                font=self.fonts
                 )
         self.style.configure("TLabel",
                 background = self.bg, 
+                font=self.fonts
                 )
 
         self.style.configure("TCheckbutton",
+                font=self.fonts,
                 background = self.bg)
     def ge_network(self):
         """ generate network """
@@ -569,7 +600,7 @@ class ControllerGui():
                 if node[0:] == "00:00:00:00:03:03":
                     self.cv_topo.labelSv = Label(self.cv_topo, text=" DNS\nServer", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelSv.place(x=pos[0] , y=pos[1]+self.node_size)
-                if node[0:] == "00:00:00:00:01:01":
+                if node[0:] == self.event.getVictim().mac:
                     self.cv_topo.labelVt = Label(self.cv_topo, text="Victim", width=7, foreground="white", background="black", borderwidth=0, anchor="center", font=("arial", 10))
                     self.cv_topo.labelVt.place(x=pos[0] , y=pos[1]+self.node_size)
         for node, pos in self.nodes.items():
@@ -683,7 +714,7 @@ class ControllerGui():
         if name == "DNS Server":
             name = "h3"
         elif name == "victim":
-            name = "h1"
+            name = self.event.getVictim().name
         elif name == "gateway sw":
             name = "s4"
         elif name == "router":
@@ -800,16 +831,14 @@ class ControllerGui():
                         self.cv_topo.labelGw.place(x=wx , y=wy+self.node_size)
                         if self.cv_topo.c_shohid.get() == "hide":
                             self.cv_topo.labelCt.place(x=wx+6*self.node_size, y=10*self.node_size+wy+sqrt(3)*self.node_size)
-                            print "controller is showing"
                         elif self.cv_topo.c_shohid.get() == "show":
                             self.cv_topo.labelCt.place_forget()
-                            print "controller is hiding"
                     if node[0:] == "00:00:00:05:15:00":
                         self.cv_topo.labelRt.place(x=wx , y=wy+self.node_size)
                 else:
                     if node[0:] == "00:00:00:00:03:03":
                         self.cv_topo.labelSv.place(x=wx , y=wy+self.node_size)
-                    if node[0:] == "00:00:00:00:01:01":
+                    if node[0:] == self.event.getVictim().mac:
                         self.cv_topo.labelVt.place(x=wx , y=wy+self.node_size)
             self.cv_topo.l_shohid.set("hide")
             self.button_lShowHide.configure(style = "v.label.TButton")
