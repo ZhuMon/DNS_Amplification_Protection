@@ -32,13 +32,13 @@ def handle_pkt(pkt):
         global num
         num = num + 1
         if num%10 == 1:
-            print "Get  "+str(num)+"st packet, id: ",pkt.getlayer(DNS).id
+            print "Get  %4dst packet, id: %5d"%(num,pkt.getlayer(DNS).id)
         elif num%10 == 2:
-            print "Get  "+str(num)+"nd packet, id: ",pkt.getlayer(DNS).id
+            print "Get  %4dnd packet, id: %5d"%(num,pkt.getlayer(DNS).id)
         elif num%10 == 3:
-            print "Get  "+str(num)+"rd packet, id: ",pkt.getlayer(DNS).id
+            print "Get  %4drd packet, id: %5d"%(num,pkt.getlayer(DNS).id)
         else:
-            print "Get  "+str(num)+"th packet, id: ",pkt.getlayer(DNS).id
+            print "Get  %4dth packet, id: %5d"%(num,pkt.getlayer(DNS).id)
 
         sys.stdout.flush()
 
@@ -79,13 +79,13 @@ def main():
             pkt = pkt /IP(dst=addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[int(b)].getlayer(DNS)
             sendp(pkt, iface = iface, verbose=False)
             if i%10 == 1:
-                print "Send "+str(i)+"st packet, id: ",pkt.getlayer(DNS).id
+                print "Send %4dst packet, id: %5d"%(i,pkt.getlayer(DNS).id)
             elif i%10 == 2:
-                print "Send "+str(i)+"nd packet, id: ",pkt.getlayer(DNS).id
+                print "Send %4dnd packet, id: %5d"%(i,pkt.getlayer(DNS).id)
             elif i%10 == 3:
-                print "Send "+str(i)+"rd packet, id: ",pkt.getlayer(DNS).id
+                print "Send %4drd packet, id: %5d"%(i,pkt.getlayer(DNS).id)
             else:
-                print "Send "+str(i)+"th packet, id: ",pkt.getlayer(DNS).id
+                print "Send %4dth packet, id: %5d"%(i,pkt.getlayer(DNS).id)
 
             time.sleep(float(a))
             

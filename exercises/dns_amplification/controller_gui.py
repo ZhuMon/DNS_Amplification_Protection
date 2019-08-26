@@ -342,8 +342,8 @@ class ControllerGui():
         ####################  Style  ####################        
         self.style = Style()
 
-        self.style.configure("TButton",
-                font=self.fonts, relief="flat")
+        # self.style.configure("TButton",
+        #         font=self.fonts, relief="flat")
 
         # self.style.map("TButton",
                 # # background=[("active", self.bg), ("disabled", self.bg)],
