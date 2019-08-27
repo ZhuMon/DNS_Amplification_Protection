@@ -446,6 +446,18 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
         main function
     """
 
+    global topology, link_num, mac_portNum, sw_mac
+    global hosts, host_ip, sw_links, direction, API
+    topology = {}
+    link_num = 0
+    mac_portNum = {} # {mac: 2, mac1: 3}
+    sw_mac = {}      # {s1: mac, ...} 
+    hosts = {}       # {h1: mac, ...}
+    host_ip = {}     # {h1: ip, ...}
+    sw_links = {}    # {s1: [[1,h1],[2,h5]], s2:...}
+    direction = {}   # {1: {mac1: 'q', mac2: 'r'}, 2: ...}
+    API = {}         # runtimeAPI {s1: connectThrift.. , s2...}
+
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
@@ -578,6 +590,7 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
         rule_has_set['s4'] = True
         active_API = {}
         active_API['s4'] = runtimeAPI
+        aboutClose = 0
         while event.is_set() is True:
 
             print "=================="
@@ -611,13 +624,16 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                         write_register(api, "f_reg", 0, flag-1)
                         quick_cool_down[sw_name] += 1
                     
-                
                     if flag > 0:
                         print sw_name,"mode on..."
-                        for i in range(0, 65536):
-                            t_id = read_register(api, "reg_ingress", i)
-                            if t_id > 0:
-                                write_register(api, "reg_ingress", i, t_id-1)
+                        if sw_name == "s4" and flag == 1:
+                            aboutClose = 1
+                        elif sw_name == "s4":
+                            aboutClose = 0
+                        # for i in range(0, 65536):
+                            # t_id = read_register(api, "reg_ingress", i)
+                            # if t_id > 0:
+                        #         write_register(api, "reg_ingress", i, t_id-1)
                                     # print "reg[",i,"] = ",t_id-1
                     else:
                         # clean API...
@@ -625,6 +641,10 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                             rule_has_set[sw_name] = False
                             quick_cool_down[sw_name] = 0
                             active_API.pop(sw_name)
+                        elif aboutClose == 1:
+                            aboutClose = 0
+                            for i in range(0, 65536):
+                                write_register(api, "reg_ingress", i, 0)
 
                 for i in range(0, 256):
                     f = read_register(runtimeAPI, "fr_reg", i)
@@ -646,6 +666,7 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                             rule_has_set[s] = True
                             quick_cool_down[s] = 0
                             write_register(API[s], "f_reg", 0, 5)
+                            
                             
                     write_register(runtimeAPI, "fr_reg", i, 0) # clean
             else: # clean flag

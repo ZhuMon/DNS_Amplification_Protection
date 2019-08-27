@@ -675,6 +675,8 @@ class ControllerGui():
                     edgeWidth_r = 7 if edgeWidth_r < 7 else edgeWidth_r
                     cv_topo.itemconfig(event.getObjID(mac1, mac2)[1], fill=self.edgeColorCtr(self.r_color, edgeWidth_r, "r"), width=edgeWidth_r)
 
+            self.labelShowHide()
+            self.labelShowHide()
             for i in range(0, 10):
                 if event.is_set() is False:
                     break
@@ -757,7 +759,6 @@ class ControllerGui():
             borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
 
     def quit(self):
-        #TODO clear others 
         self.G.clear()
         self.cv_topo.delete("all")
         #self.cv.delete("all")
