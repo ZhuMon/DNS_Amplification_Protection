@@ -49,6 +49,7 @@ class myEvent(_Event):
     
     def cleanObjID(self):
         self.objID = {}
+
     def changeName(self, name):
         if name == "h3":
             name = "DNS Server"
@@ -179,7 +180,6 @@ class myEvent(_Event):
         out = []
         for n, links in self.node_links.items():
             if self.changeName(n) == name:
-                # print links
                 for l in links:
                     col1 = self.changeName(l[1])
                     col2 = l[0]
@@ -202,7 +202,7 @@ class myEvent(_Event):
         self.node_name[self.victim.mac] = self.victim.name
         self.victim.name = name
         self.victim.mac = mac
-        self.node_name[self.victim.mac] = self.victim.name
+        self.node_name[self.victim.mac] = "victim"
 
     def getVictim(self):
         return self.victim
