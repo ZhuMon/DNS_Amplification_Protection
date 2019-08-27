@@ -42,6 +42,6 @@ ge_link:
 	python ge_link.py
 
 clean: stop
-	rm switch.txt host.json
+	rm -f switch.txt host.json
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
