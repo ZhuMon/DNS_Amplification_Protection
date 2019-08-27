@@ -285,7 +285,7 @@ class MainConsole( Frame, object):
         self.normal_frame.v_label = Label(self.normal_frame, text=self.attack_frame.v_combo.get())
         self.normal_frame.i_label = Label(self.normal_frame, text="Interval")
         self.normal_frame.r_var = IntVar()
-        self.normal_frame.w_scale = Scale(self.normal_frame, from_=0, to=1,orient=HORIZONTAL,resolution=0.01, background="white")
+        self.normal_frame.w_scale = Scale(self.normal_frame, from_=0.04, to=1,orient=HORIZONTAL,resolution=0.01, background="white")
         self.normal_frame.w_scale.set(0.3)
         self.normal_frame.r_cb = Checkbutton(self.normal_frame, text="random", variable=self.normal_frame.r_var,onvalue=1, offvalue=0)
         self.normal_frame.n_label = Label(self.normal_frame, text="num of normal packets")
@@ -373,7 +373,7 @@ class MainConsole( Frame, object):
             a = Combobox(self.attack_frame, values=host_list, width=6)
             a.current(i+1)
             r = IntVar()
-            w = Scale(self.attack_frame, from_=0, to=1,orient=HORIZONTAL,resolution=0.01, background="white")
+            w = Scale(self.attack_frame, from_=0.04, to=1,orient=HORIZONTAL,resolution=0.01, background="white")
             w.set(0.3)
             random = Checkbutton(self.attack_frame, text="random", variable=r,onvalue=1, offvalue=0)
 

@@ -72,12 +72,14 @@ def main():
 
     try:
         N = raw_input()
+        socket = conf.L2socket(iface=iface) 
         for i in range(0,int(N)):
             a = raw_input()
             b = raw_input()
             pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
             pkt = pkt /IP(dst=addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[int(b)].getlayer(DNS)
-            sendp(pkt, iface = iface, verbose=False)
+            
+            sendp(pkt, iface = iface, verbose=False, socket=socket)
             if i%10 == 1:
                 print "Send %4dst packet, id: %5d"%(i,pkt.getlayer(DNS).id)
             elif i%10 == 2:
