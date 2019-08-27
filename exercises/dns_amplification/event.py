@@ -4,7 +4,7 @@ from Object import Object
 class myEvent(_Event):
     def __init__(self):
         super(myEvent, self).__init__()
-        self.victim = Object(name = "h7", mac = "00:00:00:00:0b:07")
+        self.victim = Object(name = "h1", mac = "00:00:00:00:01:01")
         self.attacker = [Object(name = "h2", mac = "00:00:00:00:02:02")]
 
 
