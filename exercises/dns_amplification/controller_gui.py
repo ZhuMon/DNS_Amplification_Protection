@@ -698,11 +698,11 @@ class ControllerGui():
     def mitigation(self):
         if self.v.get() == "On":
             self.event.setMeterFlag(1)
-            messagebox.showinfo("Information", "Mitigation is opened !! Our defense system is operating")
+            messagebox.showinfo("Information", "Mitigation is opened !! Our defense system is operating", parent=self.root)
             print "Mitigation is opened"
         elif self.v.get() == "Off":
             self.event.setMeterFlag(0)
-            messagebox.showinfo("Information", "Mitigation is closed !! Our defense system is stopped operatiing")
+            messagebox.showinfo("Information", "Mitigation is closed !! Our defense system is stopped operatiing", parent=self.root)
             print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
@@ -810,7 +810,7 @@ class ControllerGui():
             int(self.usrIn.get())
         except ValueError:
             self.usrIn.set("")
-            messagebox.showerror("Error", "You enter the wrong type !!\nPlease enter a number with type \"int\"")
+            messagebox.showerror("Error", "You enter the wrong type !!\nPlease enter a number with type \"int\"", parent=self.root)
         else:
             if 0 <= int(self.usrIn.get()) <= 1000:
                 self.event.thr_res_num = int(self.usrIn.get())
@@ -819,7 +819,7 @@ class ControllerGui():
                 print "You change the threshold to " + str(self.event.thr_res_num)
             else:
                 self.usrIn.set("")
-                messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!")
+                messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!", parent=self.root)
 
     def labelShowHide(self):
         if self.cv_topo.l_shohid.get() == "show":
