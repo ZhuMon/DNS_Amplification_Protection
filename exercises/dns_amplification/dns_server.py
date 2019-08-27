@@ -13,7 +13,6 @@ from scapy.all import rdpcap
 from scapy.all import *
 from scapy.layers.inet import _IPOption_HDR
 
-
 def get_if():
     ifs=get_if_list()
     iface=None
@@ -38,6 +37,7 @@ class IPOption_MRI(IPOption):
                                    [],
                                    IntField("", 0),
                                    length_from=lambda pkt:pkt.count*4) ]
+
 def handle_pkt(pkt):
     if UDP in pkt and pkt[UDP].dport == 53:
         global r_num
@@ -52,10 +52,11 @@ def handle_pkt(pkt):
         r_num += 1
         # print pkt.show()
         sys.stdout.flush()
-        for rp in r_pkt:
-            if pkt[DNS].id == rp[DNS].id and pkt.qd == rp.qd:
-                pass_pkt(pkt, rp)
-                break
+        pass_pkt(pkt, r_pkt[str(pkt[DNS].id)+str(pkt.qd)])
+        # for rp in r_pkt:
+            # if pkt[DNS].id == rp[DNS].id and pkt.qd == rp.qd:
+                # pass_pkt(pkt, rp)
+        #         break
 
 
     #    hexdump(pkt)
@@ -93,11 +94,11 @@ def main():
     
     #pcaps = rdpcap(sys.argv[1])
     pcaps = rdpcap("dns0313_2_onlyDNS.pcapng")
-    r_pkt = []
+    r_pkt = {}
 
     for pkt in pcaps:
         if pkt.qr == 1: # the packet is response
-            r_pkt.append(pkt)
+            r_pkt[str(pkt[DNS].id)+str(pkt.qd)] = pkt
 
 
     print "sniffing on %s" % iface
