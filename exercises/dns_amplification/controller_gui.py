@@ -615,6 +615,8 @@ class ControllerGui():
             if node[15:] == "00":
                 self.cv_topo.tag_raise(self.switches[node])
 
+        self.cv_topo.tag_raise(self.cv_topo.controller)
+
         self.overlaplist = []
         self.comparelist = []
         for no, link in sorted(self.topology.items()):
