@@ -254,16 +254,16 @@ class MainConsole( Frame, object):
         self.attack_frame.a_name_label = Label(self.attack_frame, text="name")#, width=10)
         self.changeAttackerNum(event=None, host_list = host_list)
        
-        self.attack_frame.i_label = Label(self.attack_frame, text="attack interval")
-        self.attack_frame.p_num_label = Label(self.attack_frame, text="num of attack packets")
+        self.attack_frame.i_label = Label(self.attack_frame, text="attack interval\n(second)", justify="center")
+        self.attack_frame.p_num_label = Label(self.attack_frame, text="num of\nattack packets", justify="center")
 
         self.attack_frame.acpt_btn = Button(self.attack_frame, text="Accept", command=partial(self.acceptAttack, self.attack_frame.v_combo), width=10)
         
         block = [Label(self.attack_frame, text="\n  ",width=4 ) for i in range(0,15)]
 
-        block[0].grid(row=0, column=0)
+        block[0].grid(row=1, column=0)
         block[1].grid(row=3, column=7)
-        block[2].grid(row=4, column=7)
+        block[2].grid(row=4, column=4)
         block[3].grid(row=5, column=7)
         block[4].grid(row=6, column=7)
         block[5].grid(row=7, column=7)
@@ -274,16 +274,16 @@ class MainConsole( Frame, object):
         self.attack_frame.a_num_label.  grid(row=2, column=2)
         self.attack_frame.a_num_combo.  grid(row=3, column=2)
         self.attack_frame.a_name_label. grid(row=2, column=3)
-        self.attack_frame.i_label.      grid(row=2, column=4, columnspan=2)
-        self.attack_frame.p_num_label.  grid(row=2,column=6)
-        self.attack_frame.acpt_btn.     grid(row=8, column=8)
+        self.attack_frame.i_label.      grid(row=2, column=5, columnspan=2)
+        self.attack_frame.p_num_label.  grid(row=2,column=8)
+        self.attack_frame.acpt_btn.     grid(row=8, column=9)
         
     
         ############ Hosts - Function - Normal ############
         self.normal_frame = Frame(self.cframe, style="TFrame", height=self.cframe_height)
         self.normal_frame.h_label = Label(self.normal_frame, text="Victim")
         self.normal_frame.v_label = Label(self.normal_frame, text=self.attack_frame.v_combo.get())
-        self.normal_frame.i_label = Label(self.normal_frame, text="Interval")
+        self.normal_frame.i_label = Label(self.normal_frame, text="Interval (second) ", justify="center")
         self.normal_frame.r_var = IntVar()
         self.normal_frame.w_scale = Scale(self.normal_frame, from_=0.04, to=1,orient=HORIZONTAL,resolution=0.01, background="white")
         self.normal_frame.w_scale.set(0.3)
@@ -382,9 +382,9 @@ class MainConsole( Frame, object):
             num_in = Entry(self.attack_frame, textvariable=t, width=8)
             
             a.grid(row=3+i, column=3)
-            w.grid(row=3+i, column=4)
-            random.grid(row=3+i, column=5)
-            num_in.grid(row=3+i, column=6)
+            w.grid(row=3+i, column=5)
+            random.grid(row=3+i, column=6)
+            num_in.grid(row=3+i, column=8)
 
             self.attacker.append([a, random, r, w, num_in, t])
             
