@@ -393,6 +393,10 @@ class MainConsole( Frame, object):
 
     def acceptAttack(self, victim):
         tmp = []
+        if self.controller_th == None or self.controller_th.isAlive() == False:
+            messagebox.showerror("Error", "The controller is closed !!")
+            return
+
         for a, random, r, w, num_in, t in self.attacker:
             if victim.get() == a.get():
                 messagebox.showerror("Error", "Can not attack itself !!")

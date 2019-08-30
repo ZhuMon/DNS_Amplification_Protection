@@ -41,16 +41,16 @@ class IPOption_MRI(IPOption):
 
 def handle_pkt(pkt, socket, r_pkt):
     if UDP in pkt and pkt[UDP].dport == 53:
-        # global r_num
-        # if r_num%10 == 1:
-            # print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
-        # elif r_num%10 == 2:
-            # print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
-        # elif r_num%10 == 3:
-            # print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
-        # else:
-            # print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
-        # r_num += 1
+        global r_num
+        if r_num%10 == 1:
+            print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
+        elif r_num%10 == 2:
+            print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
+        elif r_num%10 == 3:
+            print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
+        else:
+            print "Get  %4dst packet, id: %5d"%(r_num,pkt.getlayer(DNS).id)
+        r_num += 1
         # print pkt.show()
         sys.stdout.flush()
         pass_pkt(pkt, r_pkt[str(pkt[DNS].id)+str(pkt.qd)], socket)
@@ -67,16 +67,16 @@ def pass_pkt(q,r, socket):
     p = Ether(src = get_if_hwaddr(iface), dst="FF:FF:FF:FF:FF:FF")
     # print "Ether_src: ", q[Ether].src
     p = p / IP(dst=q[IP].src) / UDP(dport=q[UDP].sport, sport=53) / r.getlayer(DNS)
-    # global s_num
-    # if s_num%10 == 1:
-        # print "Send %4dst packet, id: %5d"%(s_num,p.getlayer(DNS).id)
-    # elif s_num%10 == 2:
-        # print "Send %4dnd packet, id: %5d"%(s_num,p.getlayer(DNS).id)
-    # elif s_num%10 == 3:
-        # print "Send %4drd packet, id: %5d"%(s_num,p.getlayer(DNS).id)
-    # else:
-        # print "Send %4dth packet, id: %5d"%(s_num,p.getlayer(DNS).id)
-    # s_num += 1
+    global s_num
+    if s_num%10 == 1:
+        print "Send %4dst packet, id: %5d"%(s_num,p.getlayer(DNS).id)
+    elif s_num%10 == 2:
+        print "Send %4dnd packet, id: %5d"%(s_num,p.getlayer(DNS).id)
+    elif s_num%10 == 3:
+        print "Send %4drd packet, id: %5d"%(s_num,p.getlayer(DNS).id)
+    else:
+        print "Send %4dth packet, id: %5d"%(s_num,p.getlayer(DNS).id)
+    s_num += 1
     # print p.show()
     # global socket
     sendp(p, iface = iface, verbose=False, socket=socket)

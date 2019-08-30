@@ -29,6 +29,10 @@ from scapy.packet import bind_layers
 # from p4.v1 import p4runtime_pb2
 # from p4.v1 import p4runtime_pb2_grpc
 
+from Tkinter import *
+import tkMessageBox as messagebox
+from ttk import *
+
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -591,6 +595,8 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
         active_API = {}
         active_API['s4'] = runtimeAPI
         aboutClose = 0
+        miti_mode = 0
+        s_reg_i = {} # record s_reg index of new switch 
         while event.is_set() is True:
 
             print "=================="
@@ -606,26 +612,36 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                     
                     res_num = event.getPktNum(sw_mac[sw_name], None, 'r')
                     flag = read_register(api, "f_reg", 0)
+
+                    if res_num >= thr_res_num:
+                        quick_cool_down[sw_name] = 0
+                        if flag >= 5:
+                            flag += 1
+                        else:
+                            flag = 5
+
+                        write_register(api, "f_reg", 0, flag)
+
+                    elif res_num < thr_res_num and flag > 0 and quick_cool_down[sw_name] >= 3:
+                        # print "less response num... quick cool down"
+                        write_register(api, "f_reg", 0, int(flag/2))
+                        flag = int(flag/2)
+                    elif res_num < thr_res_num and flag > 0:
+                        write_register(api, "f_reg", 0, flag-1)
+                        flag -= 1
+                        quick_cool_down[sw_name] += 1
+                    
                     print "------------"
                     print sw_name,"res_num: ", res_num
                     print "flag: ", flag
                     print "threshold: ", thr_res_num
 
-                    if res_num >= thr_res_num:
-                        quick_cool_down[sw_name] = 0
-                        if flag >= 5:
-                            write_register(api, "f_reg", 0, flag+1)
-                        else:
-                            write_register(api, "f_reg", 0, 5)
-                    elif res_num < thr_res_num and flag > 0 and quick_cool_down[sw_name] >= 3:
-                        # print "less response num... quick cool down"
-                        write_register(api, "f_reg", 0, int(flag/2))
-                    elif res_num < thr_res_num and flag > 0:
-                        write_register(api, "f_reg", 0, flag-1)
-                        quick_cool_down[sw_name] += 1
-                    
                     if flag > 0:
                         print sw_name,"mode on..."
+                        if miti_mode == 0:
+                            messagebox.showwarning("Notice", "The mitigation is working")
+                            miti_mode = 1
+
                         if sw_name == "s4" and flag == 1:
                             aboutClose = 1
                         elif sw_name == "s4":
@@ -638,13 +654,18 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                     else:
                         # clean API...
                         if sw_name != "s4":
+                            
+                            write_register(runtimeAPI, "s_reg", s_reg_i[sw_name], 0)
+                            s_reg_i.pop(sw_name)
                             rule_has_set[sw_name] = False
                             quick_cool_down[sw_name] = 0
                             active_API.pop(sw_name)
                         elif aboutClose == 1:
                             aboutClose = 0
+                            miti_mode = 0
                             for i in range(0, 65536):
                                 write_register(api, "reg_ingress", i, 0)
+
 
                 for i in range(0, 256):
                     f = read_register(runtimeAPI, "fr_reg", i)
@@ -656,6 +677,7 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                         ip = num2ip(num) # find the ip of the host from num
                         name = ip2name(ip)# find the host name
                         s = sw_links[name][0][1] # find switch the host connect
+
                         if rule_has_set.has_key(s) is False or rule_has_set[s] == False:
                             print "Add new switch to help :",s
                             setMeter(API[s])
@@ -665,6 +687,7 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                             active_API[s] = API[s]
                             rule_has_set[s] = True
                             quick_cool_down[s] = 0
+                            s_reg_i[s] = i
                             write_register(API[s], "f_reg", 0, 5)
                             
                             
