@@ -510,23 +510,20 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
         for i in range(0, len(sw)):
             sw[i].MasterArbitrationUpdate()
 
+        # install rules
         for s, mac in sw_mac.items():
             writePInRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], etherType=0x88cc, sw_addr=mac)
             writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=0, sw_addr=mac)
             writePOutRule(p4info_helper, ingress_sw=sw[int(s[1:])-1], padding=1, sw_addr=mac)
 
-
-
+        # detect topology
         for j in range(0,len(sw)):
             for i in range(1,15):
                 sendPacketOut(p4info_helper, sw[j], i, 0, 0)
-
         for j in range(0,len(sw)):
             for i in range(0,14):
                 recvPacketIn(sw[j])
         
-        # print len(topology)
-
         # re-Master
         for i in range(0, len(sw)):
             sw[i].MasterArbitrationUpdate()
@@ -545,6 +542,7 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
             API[s] = runtimeAPI
 
             
+        # init threads
         event.init(topology, direction, sw_links)
         event.set()
         event.recordName(hosts,sw_mac)
@@ -567,26 +565,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
         setMeter(runtimeAPI)
 
             
-        # tmp = ""
-        # mcast = 0
-        # while tmp != 'f':
-            # print "--------------"
-            # begin = time.time()
-            # print "send packet out"
-            
-            # sendPacketOut(p4info_helper, sw[3], 0, mcast, 1)
-            # mcast += 1
-            # print "recieve packet in"
-            # try:
-                # content = sw[3].RecvPktIn(tp=False)
-            # except Exception, e:
-                # print e
-            # end = time.time()
-            # print end-begin
-        #     tmp = raw_input()
-            # if content != None and content.WhichOneof('update')=='packet':
-                # packet = content.packet.payload
-            #     pkt = Ether(_pkt=packet)
         m = 0
         quick_cool_down = {}
         quick_cool_down['s4'] = 0
@@ -666,7 +644,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                             for i in range(0, 65536):
                                 write_register(api, "reg_ingress", i, 0)
 
-
                 for i in range(0, 256):
                     f = read_register(runtimeAPI, "fr_reg", i)
                     if f > 300:
@@ -694,8 +671,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                 for s,api in active_API.items():
                     write_register(api, "f_reg", 0, 0)
 
-
-
             event.controller_lock = True
 
             m += 1
@@ -703,7 +678,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                 if event.is_set() is False:
                     break
                 sleep(1)
-
 
     except KeyboardInterrupt:
         print " Shutting down."
