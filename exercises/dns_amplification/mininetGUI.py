@@ -404,6 +404,15 @@ class MainConsole( Frame, object):
             if a.get() in tmp:
                 messagebox.showerror("Error", "There are the same attacker")
                 return
+            try:
+                t.get()
+            except ValueError:
+                messagebox.showerror("Error", "You enter the wrong type !!\nPlease enter a number with type \"int\"")
+                return
+            else:
+                if 0 > t.get() or t.get() > 5000:
+                    messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 5000 (both includiing) !!")
+                    return
             tmp.append(a.get())
 
         # print victim.get(), a_num_combo.get(), attacker.get()
