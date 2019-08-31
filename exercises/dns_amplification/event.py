@@ -138,12 +138,14 @@ class myEvent(_Event):
                 for no in edgeID:
                     if self.q_pkt_num.has_key(no) is False:
                         self.q_pkt_num[no] = 0
-                    num += self.q_pkt_num[no]
+                    if self.q_pkt_num[no] > num:
+                        num = self.q_pkt_num[no]
             elif q_or_r == 'r':
                 for no in edgeID:
                     if self.r_pkt_num.has_key(no) is False:
                         self.r_pkt_num[no] = 0
-                    num += self.r_pkt_num[no]
+                    if self.r_pkt_num[no] > num:
+                        num = self.r_pkt_num[no]
             return num
 
         else:
