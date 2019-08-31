@@ -25,10 +25,6 @@ from scapy.contrib import lldp
 from scapy.config import conf
 from scapy.packet import bind_layers
 
-# from concurrent import futures
-# from p4.v1 import p4runtime_pb2
-# from p4.v1 import p4runtime_pb2_grpc
-
 from Tkinter import *
 import tkMessageBox as messagebox
 from ttk import *
@@ -55,6 +51,8 @@ API = {}         # runtimeAPI {s1: connectThrift.. , s2...}
         
         
 def GePacketOut(egress_port, mcast, padding):
+    """ Generate packet_out packet with bytearray format """
+
     out1 = "{0:09b}".format(egress_port)
     out2 = "{0:016b}".format(mcast)
     out3 = "{0:07b}".format(padding)
@@ -63,6 +61,17 @@ def GePacketOut(egress_port, mcast, padding):
     return a
 
 def ParsePacketIn(pin):
+    """ 
+        Parse packet_in packet with bytearray format to dictionary
+        byte<6>:dstAddr
+        byte<6>:srcAddr
+        byte<2>:type
+        bit<9>:sport
+        bit<9>:dport
+        bit<6>:padding
+    """
+    
+
     srcAddr = ""
     dstAddr = ""
 
@@ -97,6 +106,10 @@ def ParsePacketIn(pin):
     return pktIn
 
 def recordLink(p):
+    """
+        After got a packet_in, record the link in topology
+    """
+
     link = {}
     link[p['srcAddr']] = p['sport']
     link[p['dstAddr']] = p['dport']
@@ -112,26 +125,28 @@ def recordLink(p):
         link_num += 1
         
 def sendPacketOut(p4info_helper, sw, port, mcast, padding):
+    """ send packet_out from controller to switch """
     packet = GePacketOut(port, mcast, padding) #padding must be 0
     packet_out = p4info_helper.buildPacketOut(payload = str(packet))
     # print packet_out
     sw.SendPktOut(packet_out)
 
 def recvPacketIn(sw):
+    """ Handle receiving packet_in from switch """
     try:
         content = sw.RecvPktIn()
         if content != None and content.WhichOneof('update')=='packet':
             packet = content.packet.payload
-            # print content
             pkt = bytearray(packet)
             p = ParsePacketIn(pkt)
-            # print p
             recordLink(p)
     except Exception, e:
         None
 
+################## Write Rule on switch ###################
 
 def writeIPRules(p4info_helper, ingress_sw, dst_eth_addr, dst_ip, mask, port):
+    """ Install ip packet transfer rule on switch """
     table_entry = p4info_helper.buildTableEntry(
         table_name = "MyIngress.ipv4_lpm",
         match_fields = {
@@ -145,6 +160,8 @@ def writeIPRules(p4info_helper, ingress_sw, dst_eth_addr, dst_ip, mask, port):
     ingress_sw.WriteTableEntry(table_entry)
 
 def writeRecordRules(p4info_helper, ingress_sw, qr_code):
+    """ Install record num of dns_reponse_packet rule on switch """
+
     table_entry = p4info_helper.buildTableEntry(
         table_name = "MyIngress.dns_response_record",
         match_fields = {
@@ -154,17 +171,8 @@ def writeRecordRules(p4info_helper, ingress_sw, qr_code):
         )
     ingress_sw.WriteTableEntry(table_entry)
 
-def writeHash1Rule(p4info_helper, ingress_sw):
-    table_entry = p4info_helper.buildTableEntry(
-        table_name = "MyIngress.dns_request_hash_lpm",
-        match_fields = {
-            "hdr.dns.qr": 0
-        },
-        action_name = "MyIngress.dns_request_hash_1",
-        )
-    ingress_sw.WriteTableEntry(table_entry)
-
 def writeIPFrRule(p4info_helper, ingress_sw, macAddr):
+    """ Install "count num of query packet with same IP" rule on switch """
     table_entry = p4info_helper.buildTableEntry(
         table_name = "MyIngress.ip_frequency_table",
         match_fields = {
@@ -175,6 +183,7 @@ def writeIPFrRule(p4info_helper, ingress_sw, macAddr):
     ingress_sw.WriteTableEntry(table_entry)
     
 def writePInRule(p4info_helper, ingress_sw, etherType, sw_addr):
+    """ Install switch send back to controller rule on switch """
     table_entry = p4info_helper.buildTableEntry(
         table_name = "MyIngress.pkt_in_table",
         match_fields = {
@@ -187,7 +196,8 @@ def writePInRule(p4info_helper, ingress_sw, etherType, sw_addr):
     ingress_sw.WriteTableEntry(table_entry)
     
 def writePOutRule(p4info_helper, ingress_sw, padding, sw_addr):
-    if padding == 0:
+    """ Install "handle packet_out packet" rule on switch"""
+    if padding == 0: # send to another switch
         table_entry = p4info_helper.buildTableEntry(
             table_name = "MyIngress.pkt_out_table",
             match_fields = {
@@ -198,7 +208,7 @@ def writePOutRule(p4info_helper, ingress_sw, padding, sw_addr):
                 "swAddr": sw_addr
             })
         ingress_sw.WriteTableEntry(table_entry)
-    elif padding == 1:
+    elif padding == 1: # send back to controller
         table_entry = p4info_helper.buildTableEntry(
             table_name = "MyIngress.pkt_out_table",
             match_fields = {
@@ -241,16 +251,19 @@ def printCounter(p4info_helper, sw, counter_name, index):
             )
 
 def read_register(runtimeAPI, name, index):
+    """ read register by thrift """
     reg = runtimeAPI.get_res("register", name, 
                             runtime_CLI.ResType.register_array)
     return runtimeAPI.client.bm_register_read(0, reg.name, index)
 
 def write_register(runtimeAPI, name, index, value):
+    """ write register by thrift """
     register = runtimeAPI.get_res("register", name, 
                             runtime_CLI.ResType.register_array)
     runtimeAPI.client.bm_register_write(0, register.name, index, value)
 
 def connectThrift(port, bmv2_file_path):
+    """ use runtimeCLI to connect Thrift """
     standard_client, mc_client = utils.thrift_connect(
         'localhost', port,
         runtime_CLI.RuntimeAPI.get_thrift_services(runtime_CLI.PreType.SimplePre)
@@ -259,14 +272,9 @@ def connectThrift(port, bmv2_file_path):
     runtime_CLI.load_json_config(standard_client, bmv2_file_path)
     return runtime_CLI.RuntimeAPI(runtime_CLI.PreType.SimplePre, standard_client, mc_client)
 
-# def stop_controller(event):
-    # while event.is_set() is True:
-        # None
-#     raise GUIQuit()
-
 def record_switch_port():
     """ 
-        record how many port switch/host has used
+        record how many port the switch/host has used
         mac_portNum = {mac:num(port), ...}
     """
     tmp = {} # {mac1: [2,1,3], ...}
@@ -285,7 +293,7 @@ def record_switch_port():
         mac_portNum[mac] = len(port)
     
 def find_the_other_mac(mac1, port1):
-    """ from mac and port TO find the mac at the other side """
+    """ FROM mac and port TO find the mac at the other side """
 
     for no, link in topology.items():
         m1 = link.keys()[0]
@@ -308,7 +316,6 @@ def mac2name(mac):
 
 def read_all_reg(event, bmv2_file_path, sw_num):
 
-    # print mac_portNum
     while event.is_set():
         event.cleanFlag()
         while event.controller_lock == False:
@@ -329,27 +336,20 @@ def read_all_reg(event, bmv2_file_path, sw_num):
                 if event.isUpdated(mac, mac2, 'q') is False:
                     event.putPktNum(q_num, mac, mac2, 'q')
                     n = event.getPktNum(mac, mac2, 'q')
-                    # if n > 0:
-                    #     print sw, "<->", mac2name(mac2), "query:", n
                 if event.isUpdated(mac, mac2, 'r') is False:
                     event.putPktNum(r_num, mac, mac2, 'r')
                     n = event.getPktNum(mac, mac2, 'r')
-                    # if n > 0:
-                    #     print sw, "<->", mac2name(mac2), "response:", n
-
-                # if num > 0:
-                    # print mac, "<->", mac2, ":", num
 
         event.controller_lock = True
 
-        # print "---------------------"
         for i in range(0, 10):
             if event.is_set() is False:
                 break
             sleep(1)
 
 def find_path(p4info_helper, sw, host_ip):
-    """ find all path of node to the other node 
+    """ 
+        find all path of node to the other node 
         and write rule on switches
     """
     for no, links in topology.items():
@@ -367,7 +367,6 @@ def find_path(p4info_helper, sw, host_ip):
         else:
             sw_links[m2].append([p2, m1])
 
-    # print sw_links
     path = {} # {s1: { h1: [1,2,4,2,1], h2: [...]}, s2:...}
     for s, s_mac in sw_mac.items():
         s = s.encode('utf-8')
@@ -383,9 +382,9 @@ def find_path(p4info_helper, sw, host_ip):
             writeIPRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], dst_eth_addr= dst_eth_addr, dst_ip=host_ip[h].encode('utf-8'), mask=32, port=path[s][h][0])
             # print s, "->", h_mac, dst_eth_addr, path[s][h][0]
         writeRecordRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], qr_code=1)
-    # print path
 
 def recursive(src, dst, stack, path):
+    """ for find_path """
     if stack != [] and stack[len(stack)-1] == dst:
         return stack, path
 
@@ -428,6 +427,7 @@ def find_qr_path():
             direction[no][mac2] = 'q'
 
 def num2ip(num):
+    """ num(16670061) to IP(10.0.0.1) """
     num_x = "{0:08x}".format(num)
     num_str = str(num_x)
     ip = ""
@@ -440,6 +440,7 @@ def num2ip(num):
     return ip
 
 def ip2name(ip_in):
+    """ ip(10.0.1.1) to name(h1) """
     for h, ip in host_ip.items():
         if ip_in == ip:
             return h
@@ -532,7 +533,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
 
 
         # s4 is gateway switch
-        # writeHash1Rule(p4info_helper, ingress_sw=sw[3])
         writeIPFrRule(p4info_helper, ingress_sw = sw[3], macAddr = sw_mac['s4'])
 
         find_path(p4info_helper, sw, host_ip)
@@ -682,8 +682,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                             print "Add new switch to help :",s
                             setMeter(API[s])
                             sw[int(s[1:])-1].MasterArbitrationUpdate()
-                            # writeHash1Rule(p4info_helper, 
-                                    # ingress_sw=sw[int(s[1:])-1])
                             active_API[s] = API[s]
                             rule_has_set[s] = True
                             quick_cool_down[s] = 0
@@ -716,7 +714,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
     print "====== Close Controller ======"
 
 if __name__ == '__main__': 
-    # parser = argparse.ArgumentParser(description='P4Runtime Controller')
     parser = runtime_CLI.get_parser()
     parser.add_argument('--p4info', help='p4info proto in text format from p4c',
                         type=str, action="store", required=False,
@@ -736,6 +733,5 @@ if __name__ == '__main__':
         print "\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json
         parser.exit(1)
 
-    # main(args.p4info, args.bmv2_json)
     event = myEvent()
     main(event)

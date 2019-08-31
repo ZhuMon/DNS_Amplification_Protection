@@ -46,17 +46,6 @@ header ipv4_t {
     ip4Addr_t dstAddr;
 }
 
-/*header ipv6_t {
-    bit<4>    version;
-    bit<8>    trafficClass;
-    bit<20>   flowLabel;
-    bit<16>   payloadLen;
-    bit<8>    nextHeader;
-    bit<8>    hlim;
-    ip6Addr_t srcAddr;
-    ip6Addr_t dstAddr;
-}*/
-
 header udp_t {
     bit<16>   sport;
     bit<16>   dport;
@@ -90,7 +79,6 @@ header lldp_t {
     bit<7> padding;
 }
 
-/*@controller_header("packet_in")*/
 header packet_in_t {
     bit<9> sport;
     bit<9> dport;
@@ -98,7 +86,6 @@ header packet_in_t {
 }
 
 
-/*@controller_header("packet_out")*/
 header packet_out_t {
     bit<9> egress_port;    
     bit<16> mcast;     
@@ -106,7 +93,6 @@ header packet_out_t {
 }
 
 struct metadata {
-    //bit<32>   meter_tag;
 }
 
 struct headers {
@@ -205,7 +191,6 @@ control MyIngress(inout headers hdr,
     register<bit<32>>(1)   f_reg;  // flag to determine if do project
     register<bit<32>>(256) fr_reg; // record frequecy of each ip response
     register<bit<32>>(256) s_reg;  // record the host ip address
-    //meter(10, MeterType.packets) my_meter;
     meter(MAX_NUM, MeterType.bytes) ingress_meter_stats;
     MeterColor ingress_meter_output = MeterColor_GREEN;
 
@@ -254,55 +239,12 @@ control MyIngress(inout headers hdr,
         default_action = NoAction;
     }
 
-    action dns_request_hash_1(){
-        index = ip_last % 64;
-        index = index << 10;
-        index = index + ((bit<32>)hdr.dns.id % 1024);
-    }
-
-    table dns_request_hash_lpm{
-        key = {
-            hdr.dns.qr: exact;
-        }
-        actions = {
-            dns_request_hash_1;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction;
-    }
-    
-    /*action dns_response_hash_1(ip4Addr_t dstAddr, bit<16> id){*/
-        /*bit<32> index;*/
-        /*bit<32> tmp;*/
-        /*index = (dstAddr << 24) >> 24;*/
-        /*index = index % 64;*/
-        /*index = index << 10;*/
-        /*index = index + ((bit<32>)hdr.dns.id % 1024);*/
-        /*ingress_meter_stats.execute_meter<MeterColor>((bit<32>) standard_metadata.ingress_port, ingress_meter_output);*/
-    /*}*/
-
-    /*table dns_response_hash_lpm{*/
-        /*key = {*/
-            /*hdr.ipv4.dstAddr: lpm;*/
-            /*hdr.dns.id: exact;*/
-        /*}*/
-        /*actions = {*/
-            /*dns_response_hash_1;*/
-            /*NoAction;*/
-        /*}*/
-        /*size = 1024;*/
-        /*default_action = NoAction;*/
-    /*}*/
-
     action send_to_cpu(macAddr_t swAddr){
         standard_metadata.egress_spec = CPU_PORT;
         hdr.ethernet.dstAddr = swAddr;
         hdr.packet_in.setValid();
-        /*hdr.ethernet.etherType = TYPE_LLDP;*/
         hdr.packet_in.sport = hdr.lldp.port;
         hdr.packet_in.dport = standard_metadata.ingress_port;
-        /*hdr.lldp.setInvalid();*/
     }
 
     table pkt_in_table{
@@ -319,7 +261,6 @@ control MyIngress(inout headers hdr,
 
     action lldp_forward(macAddr_t swAddr){
         standard_metadata.egress_spec = hdr.packet_out.egress_port;
-        /*hdr.packet_out.setInvalid();*/
         hdr.ethernet.setValid();
         hdr.lldp.setValid();
         hdr.ethernet.etherType = TYPE_LLDP;
@@ -380,11 +321,9 @@ control MyIngress(inout headers hdr,
                     ip_frequency_table.apply();
                     if (hdr.dns.qr == 0){ //dns is request
                         ip_last = (hdr.ipv4.srcAddr << 24) >> 24;
-                        /*index = 0;*/
                         index = ip_last % 64;
                         index = index << 10;
                         index = index + ((bit<32>)hdr.dns.id % 1024);
-                        /*dns_request_hash_lpm.apply();*/
                         
                         // check the ip whether this switch afford
                         s_reg.read(tmp, ip_last);
@@ -405,7 +344,8 @@ control MyIngress(inout headers hdr,
 
                         reg_ingress.read(tmp, index);
                         s_reg.read(s, ip_last);
-                        // if change threshold of ip_f, remember to change controller's 
+                        // if change threshold of ip_f, 
+                        //    remember to change controller's 
                         if (ip_f > 300 || s != 0){
                             s_reg.write(ip_last, hdr.ipv4.dstAddr);
                             ipv4_lpm.apply();

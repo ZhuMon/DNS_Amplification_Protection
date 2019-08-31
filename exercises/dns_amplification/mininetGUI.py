@@ -217,11 +217,9 @@ class MainConsole( Frame, object):
         for node in nodes:
             self.consoles[node.name] = Console(parent, self.net, node, width=self.width/2, title = title)
         
-
     def createCframe(self):
         "Create a child frame."
         self.cframe = Frame(self, height=self.cframe_height, width=self.width)
-        
         ############ Hosts -  View  - consoles ############
         self.consoles = {}
         titles = {
@@ -232,7 +230,6 @@ class MainConsole( Frame, object):
             nodes = getattr(self.net, name)
             self.createConsoles( self.cframe, nodes, titles[name] )
         self.selected = [None, None]
-
         ############ Hosts - Function - Attack ############
         self.attack_frame = Frame(self.cframe, style="Attack.TFrame", height=self.cframe_height)
 
@@ -277,8 +274,6 @@ class MainConsole( Frame, object):
         self.attack_frame.i_label.      grid(row=2, column=5, columnspan=2)
         self.attack_frame.p_num_label.  grid(row=2,column=8)
         self.attack_frame.acpt_btn.     grid(row=8, column=9)
-        
-    
         ############ Hosts - Function - Normal ############
         self.normal_frame = Frame(self.cframe, style="TFrame", height=self.cframe_height)
         self.normal_frame.h_label = Label(self.normal_frame, text="Victim")
@@ -318,11 +313,13 @@ class MainConsole( Frame, object):
         self.normal_frame.ok_btn.grid(row=8, column=12)
     
     def hostPage(self):
+        """ Display host page """
         self.clearWidget(2)
         self.level2bar = self.createMenuBar("hosts")
         self.clearViewBtn.pack_forget()
 
     def select(self, nodeName, index):
+        """ Select a console to display """
         if self.selected[index] is not None:
             # self.cframe.pack_forget()
             self.level3bar.buttons[index][int(self.selected[index].node.name[1:])].configure(style="UnSelected.TButton")
@@ -338,24 +335,27 @@ class MainConsole( Frame, object):
         elif index == 1:
             self.selected[index].pack(expand = True, fill = 'both', side="right")
         
-
     def hostFunc(self):
+        """ Display host function """
         self.clearWidget(3)
         self.level3bar = self.createMenuBar("hostFunc")
         self.clearViewBtn.pack_forget()
 
     def normal(self, event=None):
+        """ Display host-function-normal """
         self.clearWidget(4)
         self.normal_frame.pack(fill="both")
         self.cframe.pack(fill = "both", anchor=NW)
         self.normal_frame.v_label.configure(text=self.attack_frame.v_combo.get())
 
     def attack(self):
+        """ Display host-function-attack """
         self.clearWidget(4)
         self.attack_frame.pack(fill = "both")
         self.cframe.pack( fill = "both", anchor=NW)
 
     def changeAttackerNum(self, event, host_list):
+        """ According attacker number to display option """
         if self.attacker != []:
             for a, random, r, w, num_in, t in self.attacker:
                 a.grid_forget()
@@ -388,10 +388,8 @@ class MainConsole( Frame, object):
 
             self.attacker.append([a, random, r, w, num_in, t])
             
-            
-            
-
     def acceptAttack(self, victim):
+        """ Send command to each console """
         tmp = []
         if self.controller_th == None or self.controller_th.isAlive() == False:
             messagebox.showerror("Error", "The controller is closed !!")
@@ -423,7 +421,7 @@ class MainConsole( Frame, object):
             self.consoles[host.name].handleInt()
             self.consoles[host.name].clear()
 
-
+        # h3 is dns server 
         self.consoles['h3'].sendCmd("python dns_server.py")
 
         n = -1 if self.normal_frame.r_var.get() == 1 else float(self.normal_frame.w_scale.get())
@@ -445,11 +443,13 @@ class MainConsole( Frame, object):
         self.hostView()
 
     def stopAttack(self):
+        """ host-function-stop : Stop all console """
         for host in self.net.hosts:
             self.consoles[host.name].handleInt()
             self.consoles[host.name].sendCmd("echo \"========= End =========\"")
 
     def hostView(self):
+        """ Display host-view """
         self.clearWidget(3)
         self.level3bar = self.createMenuBar("hostView")
         if self.selected[0] != None or self.selected[1] != None:
@@ -471,11 +471,13 @@ class MainConsole( Frame, object):
             self.displayBtn(1, btn_index)
 
     def clearView(self):
+        """ Clear all consoles """
         for host in self.net.hosts:
             self.consoles[host.name].clear()
 
     def moveViewBtn(self, group, side):
         """ 
+        the event handler to move the all consoles button right or left
         group: int : 0 or 1
         side:  str : "left" or "right"
         """
@@ -508,7 +510,6 @@ class MainConsole( Frame, object):
             self.hostViewBarRight[group] -= 1
             for i in range(self.hostViewBarLeft[group], self.hostViewBarRight[group]+1):
                 self.level3bar.buttons[group][i].pack(side="left")
-            # self.level3bar.buttons[group][self.hostViewBarLeft[group]].pack(side="left", anchor="w")
             self.level3bar.buttons[group][-1].pack(side="left")
 
             if self.hostViewBarLeft[group] == 1:
@@ -517,7 +518,10 @@ class MainConsole( Frame, object):
                 self.level3bar.buttons[group][0].state(["!disabled"])
         
     def displayBtn(self, group, btn_index):
-        """ Used in Host - View """
+        """ 
+            Used in Host - View 
+            Make sure the showing console's button is visible
+        """
         left = self.hostViewBarLeft[group] - btn_index
         right = btn_index - self.hostViewBarRight[group]
         while left > 0:
@@ -528,10 +532,8 @@ class MainConsole( Frame, object):
             self.moveViewBtn(group, "right")
             right -= 1
 
-    def switchPage(self):
-        self.clearWidget(2)
-
     def callController(self):
+        """ Call controller """
         if self.controller_th == None or self.controller_th.isAlive() == False:
             self.controller_th = Thread(target=mycontroller.main, args=(self.event,))
             self.controller_th.setDaemon(True)
@@ -544,7 +546,6 @@ class MainConsole( Frame, object):
         if level == "menu":
             buttons = [
                 ( 'Hosts', self.hostPage),
-                # ( 'Switches', self.switchPage),
                 ( 'Controller', self.callController ),
                 ( 'Quit', self.quit)
             ]
