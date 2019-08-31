@@ -27,6 +27,7 @@ rpktThreshold = 0
 
 
 class MyScrollbar(Scrollbar, object):
+    """ scrollbar management """
     def __init__(self, parent, canvas, nodes, node_size, event = object,l_shohid="", c_shohid="", orient="horizental", command=None):
         super(MyScrollbar, self).__init__(parent, orient=orient, command=command)
         self.cv = canvas
@@ -222,6 +223,7 @@ class ControllerGui():
         self.labelShowHide()
 
     def typeSetting(self):
+        """ manage objects position """
         self.fr_bg.pack()
         self.fr_tp.pack(side="bottom")
         # self.fr_tb.pack(side="right")
@@ -262,6 +264,7 @@ class ControllerGui():
 
 
     def initStyle(self):
+        """ manage style """
 
         self.node_size = 10
         self.fonts = ("arial", 12)
@@ -525,7 +528,7 @@ class ControllerGui():
         self.controllerShowHide()
         
     def create_node(self):
-        """ create node """
+        """ create nodes and lines """
 
         for node, pos in self.nodes.items():
             pos[0] = (pos[0]+2)*100
@@ -683,6 +686,7 @@ class ControllerGui():
                 sleep(1)
 
     def edgeColorCtr(self, color, width, pkttype="q"):
+        """ make line color change with its width """
         r = int(color[1:3], 16)
         g = int(color[3:5], 16)
         b = int(color[5:7], 16)
@@ -698,13 +702,14 @@ class ControllerGui():
         return "#{0:02x}{1:02x}{2:02x}".format(r,g,b)
 
     def mitigation(self):
+        """ call conttoller to open defense system """
         if self.v.get() == "On":
             self.event.setMeterFlag(1)
-            messagebox.showinfo("Information", "Mitigation is opened !! Our defense system is operating", parent=self.root)
+            messagebox.showinfo("Mitigation is opened", "Our defense system is operating", parent=self.root)
             print "Mitigation is opened"
         elif self.v.get() == "Off":
             self.event.setMeterFlag(0)
-            messagebox.showinfo("Information", "Mitigation is closed !! Our defense system is stopped operatiing", parent=self.root)
+            messagebox.showinfo("Mitigation is closed", "Our defense system is stopped operating", parent=self.root)
             print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):
@@ -759,6 +764,7 @@ class ControllerGui():
             borderY2 = self.cv_topo.canvasy(fr_topo_width/2+self.node_size/2)
 
     def quit(self):
+        """ end the controller gui """
         self.G.clear()
         self.cv_topo.delete("all")
         #self.cv.delete("all")
@@ -767,7 +773,7 @@ class ControllerGui():
         # exit()
 
     def move_handler(self, event):
-        """ detect if mouse is focus, show information """
+        """ detect if mouse is in the zone of node, show information """
         self.var.set('')
         
         for node, pos in self.nodes.items():
@@ -807,6 +813,7 @@ class ControllerGui():
 
 
     def getThreshold(self):
+        """ change the threshold of mitigation """
         try:
             int(self.usrIn.get())
         except ValueError:
@@ -823,6 +830,7 @@ class ControllerGui():
                 messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!", parent=self.root)
 
     def labelShowHide(self):
+        """ show and hide all labels on topology """
         if self.cv_topo.l_shohid.get() == "show":
             x0 = self.cv_topo.canvasx(0)
             y0 = self.cv_topo.canvasy(0)
@@ -862,6 +870,7 @@ class ControllerGui():
                 xscrollcommand= partial(self.topo_xscroll.set, nodes=self.nodes, node_size = self.node_size, l_shohid=self.cv_topo.l_shohid.get(), c_shohid=self.cv_topo.c_shohid.get()))
 
     def controllerShowHide(self):
+        """ show and hide controller, its label and line which is connected with it """
         if self.cv_topo.c_shohid.get() == "show":
             x = self.cv_topo.ctrPos
             self.cv_topo.ctrCenter = [(x[0]+x[2])/2, x[5]]
@@ -895,10 +904,12 @@ class ControllerGui():
                         self.cv_topo.itemconfig(self.cv_topo.controllers[node], state="hidden")
 
     def zoomRecord(self, event):
+        """ record the mouse position you clicked """
         self.zoom.x1 = self.cv_topo.canvasx(event.x)
         self.zoom.y1 = self.cv_topo.canvasy(event.y)
 
     def zoomCreate(self, event):
+        """ record the position in the rectangle area you chose """
         self.cv_topo.delete(self.zoom.rect)
         self.zoom.x2 = self.cv_topo.canvasx(event.x)
         self.zoom.y2 = self.cv_topo.canvasy(event.y)
@@ -908,6 +919,7 @@ class ControllerGui():
     
 
     def zoomRelease(self, event=None, InOut="in"):
+        """ topology zoom in and out """
         
         op = "*" if InOut=="in" else "/"
         if self.zoom.area < 1:
@@ -990,6 +1002,7 @@ class ControllerGui():
         self.topoZoom(InOut=tmp)
 
     def topoZoom(self, InOut="in"):
+        """ check zoom state to decide to unbind or bind events """
         self.cv_topo.unbind("<Button-1>")
         self.cv_topo.unbind("<B1-Motion>")
         self.cv_topo.unbind("<ButtonRelease-1>")
