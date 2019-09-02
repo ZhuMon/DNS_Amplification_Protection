@@ -705,11 +705,11 @@ class ControllerGui():
         """ call conttoller to open defense system """
         if self.v.get() == "On":
             self.event.setMeterFlag(1)
-            messagebox.showinfo("Mitigation is opened", "Our defense system is operating", parent=self.root)
+            # messagebox.showinfo("Mitigation is opened", "Our defense system is operating", parent=self.root)
             print "Mitigation is opened"
         elif self.v.get() == "Off":
             self.event.setMeterFlag(0)
-            messagebox.showinfo("Mitigation is closed", "Our defense system is stopped operating", parent=self.root)
+            # messagebox.showinfo("Mitigation is closed", "Our defense system is stopped operating", parent=self.root)
             print "Mitigation is closed"
 
     def dbClick2ShowNode(self, event):

@@ -573,7 +573,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
         active_API = {}
         active_API['s4'] = runtimeAPI
         aboutClose = 0
-        miti_mode = 0
         s_reg_i = {} # record s_reg index of new switch 
         while event.is_set() is True:
 
@@ -616,9 +615,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
 
                     if flag > 0:
                         print sw_name,"mode on..."
-                        if miti_mode == 0:
-                            messagebox.showwarning("Notice", "The mitigation is working")
-                            miti_mode = 1
 
                         if sw_name == "s4" and flag == 1:
                             aboutClose = 1
@@ -640,7 +636,6 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                             active_API.pop(sw_name)
                         elif aboutClose == 1:
                             aboutClose = 0
-                            miti_mode = 0
                             for i in range(0, 65536):
                                 write_register(api, "reg_ingress", i, 0)
 
