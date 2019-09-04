@@ -30,7 +30,6 @@ import tkMessageBox as messagebox
 from ttk import *
 
 import networkx as nx
-import matplotlib.pyplot as plt
 
 from controller_gui import ControllerGui
 from event import myEvent
