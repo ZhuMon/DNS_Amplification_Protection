@@ -20,20 +20,9 @@ def get_if():
         exit(1)
     return iface
 
-def handle_pkt(pkt):
-    if UDP in pkt and pkt[UDP].sport == 53:
-        print "got a response"
-        print pkt.show()
-        sys.stdout.flush()
 
 def main():
     
-    #if len(sys.argv)<4:
-    #    print('pass 3 argument: <dns_ip> <victim_ip> "<file.pcap>"')
-    #    exit(1)
-
-    #addr = socket.gethostbyname(sys.argv[1])
-    #vic_addr = socket.gethostbyname(sys.argv[2])
     addr = "10.0.3.3"
     vic_addr = "10.0.1.1"
     if len(sys.argv) > 0:
@@ -42,7 +31,6 @@ def main():
     iface = get_if()
     print("iface: ", iface)
 
-    #pcap = rdpcap(sys.argv[3])
     pcap = rdpcap("dns0313_2_onlyDNS.pcapng")
 
     q_pkt = []
@@ -71,11 +59,6 @@ def main():
             time.sleep(a)
     except KeyboardInterrupt:
         sys.exit(0)
-    #print pkt.show()
-    #print "----"
-    #sniff(iface = iface, 
-    #        prn = lambda x: handle_pkt(x),
-    #        count = 1)
 
 
 if __name__ == '__main__':

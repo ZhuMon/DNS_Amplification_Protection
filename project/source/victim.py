@@ -22,8 +22,6 @@ def get_if():
     return iface
 
 def handle_pkt(pkt):
-    # print num," got a response"
-    # print pkt.show()
     if UDP in pkt and pkt[UDP].sport == 53:
         global num
         num = num + 1
@@ -46,11 +44,6 @@ def recv_pkt(iface):
 
 def main():
     
-    #if len(sys.argv)<3:
-    #    print('pass 2 argument: <destination> "<file.pcap>"')
-    #    exit(1)
-
-    # addr = socket.gethostbyname("10.0.3.3") # dns_server
     addr = "10.0.3.3"
     iface = get_if()
     print("iface: ", iface)
