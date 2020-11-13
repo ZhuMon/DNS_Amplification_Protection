@@ -541,7 +541,7 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
 
         # build runtimeCLI
         for s, mac in sw_mac.items():
-            runtimeAPI = connectThrift(9089+int(s[1:]),bmv2_file_path)
+            runtimeAPI = connectThrift(9089+int(s[1:]),None) #,bmv2_file_path)
             API[s] = runtimeAPI
 
             

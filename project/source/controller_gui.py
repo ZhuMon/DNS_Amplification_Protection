@@ -475,7 +475,7 @@ class ControllerGui():
 
         edge = []
         for no, link in sorted(self.topology.items()):
-            keys = link.keys()
+            keys = list(link.keys())
             edge.append((keys[0],keys[1]))
 
         self.G.add_edges_from(edge)
