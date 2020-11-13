@@ -30,7 +30,7 @@ endif
 all: run
 
 run: ge_link build
-	sudo python $(RUN_SCRIPT) -t $(TOPO) $(run_args)
+	sudo python -s $(RUN_SCRIPT) -t $(TOPO) $(run_args)
 
 stop:
 	sudo mn -c

@@ -366,17 +366,20 @@ def find_path(p4info_helper, sw, host_ip):
         else:
             sw_links[m2].append([p2, m1])
 
+    print sw_links
     path = {} # {s1: { h1: [1,2,4,2,1], h2: [...]}, s2:...}
     for s, s_mac in sw_mac.items():
         s = s.encode('utf-8')
+        print s
         path[s] = {}
         for h, h_mac in hosts.items():
             h = h.encode('utf-8')
             h_mac = h_mac.encode('utf-8')
+            print h, h_mac
             path[s][h] = [] # [1, 2, 10, 2, 1]
             stack = [s]      # [s2, s4...]
             stack, path[s][h] = recursive(s, h, stack, path[s][h])
-            # print path[s][h] 
+            
             dst_eth_addr = find_the_other_mac(s_mac, path[s][h][0]).encode('utf-8')
             writeIPRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], dst_eth_addr= dst_eth_addr, dst_ip=host_ip[h].encode('utf-8'), mask=32, port=path[s][h][0])
             # print s, "->", h_mac, dst_eth_addr, path[s][h][0]

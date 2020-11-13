@@ -8,7 +8,7 @@ sys.path.append(
             '../../utils/'))
 from run_exercise import *
 
-def parse_link(unparsed_links):
+def parse_link(unparsed_links, hosts):
     links = []
     for link in unparsed_links:
         s, t = link[0], link[1]
@@ -30,22 +30,26 @@ def parse_link(unparsed_links):
         else:
             switch_links.append(link)
 
-    link_sort_key = lambda x: x['node1'] + x['node2']
+    #link_sort_key = lambda x: x['node1'] + x['node2']
 
-    host_links.sort(key = link_sort_key)
-    switch_links.sort(key = link_sort_key)
+    #host_links.sort(key = link_sort_key)
+    #switch_links.sort(key = link_sort_key)
 
     host_file = open("host.json", "w")
 
     for link in host_links:
         host_name = link['node1']
-        host_sw   = link['node2']
-        host_num = int(host_name[1:])
-        sw_num   = int(host_sw[1:])
-        host_ip = "10.0.%d.%d" % (sw_num, host_num)
-        host_mac = '00:00:00:00:%02x:%02x' % (sw_num, host_num)
+        # host_sw   = link['node2']
+        # host_num = int(host_name[1:])
+        # sw_num   = int(host_sw[1:])
+        # host_ip = "10.0.%d.%d" % (sw_num, host_num)
+        # host_mac = '00:00:00:00:%02x:%02x' % (sw_num, host_num)
         
-        addSwitchPort(host_sw, host_name, host_ip, host_mac)
+        # addSwitchPort(host_sw, host_name, host_ip, host_mac)
+        sw_name, sw_port = parse_switch_node(link['node2'])
+        host_ip = hosts[host_name]['ip']
+        host_mac = hosts[host_name]['mac']
+        addSwitchPort(sw_name, host_name, host_ip, host_mac)
 
     host_file.write(json.dumps(sw_port_mapping, sort_keys = True, indent=4, separators=(',', ': ')))
 
@@ -57,6 +61,15 @@ def addSwitchPort(sw, node2, ip, mac):
     portno = len(sw_port_mapping[sw])+1
     sw_port_mapping[sw][portno] = {"name":node2,"ip":ip, "mac":mac}
 
+def parse_switch_node(node):
+        assert(len(node.split('-')) == 2)
+        sw_name, sw_port = node.split('-')
+        try:
+            sw_port = int(sw_port[1])
+        except:
+            raise Exception('Invalid switch node in topology file: {}'.format(node))
+        return sw_name, sw_port
+
 def main():
     json_file = open("topology.json", "r")
     topology = json.load(json_file)
@@ -64,7 +77,7 @@ def main():
     sw_file = open("switch.txt", "w")
 
     hosts = topology["hosts"]
-    parse_link(topology["links"])
+    parse_link(topology["links"], hosts)
     switches = topology["switches"]
 
     for i in range(1,len(switches)+1):
