@@ -4,10 +4,12 @@ from time import sleep
 from math import sqrt,cos,sin,pi
 from functools import partial
 
-from Tkinter import *
-import tkMessageBox as messagebox
-from ttk import *
-import tkFont
+from tkinter import *
+# import tkMessageBox as messagebox
+from tkinter import messagebox
+# from tkinter.ttk import Style
+from tkinter.ttk import *
+from tkinter import font as tkFont
 from PIL import Image, ImageTk
 
 import numpy as np
@@ -447,7 +449,7 @@ class ControllerGui():
         myCos = lambda x: np.cos(np.deg2rad(x))
         mySin = lambda x: np.sin(np.deg2rad(x))
         for s, mac in sorted(self.sw_mac.items()):
-            self.G.add_node(mac.encode('utf-8'))
+            self.G.add_node(mac) #.encode('utf-8'))
             if s in connected_gw:
                 pos[mac] = (0.2+1.1*myCos(90+15.0*connected_gw.index(s)), -1.4+connected_gw.index(s)*0.225)
                 # pos[mac] = (-1, -1.2+connected_gw.index(s)*0.225)
@@ -467,7 +469,7 @@ class ControllerGui():
            
 
         for h, mac in sorted(self.h_mac.items()):
-            self.G.add_node(mac.encode('utf-8'))
+            self.G.add_node(mac) #.encode('utf-8'))
             # pos[mac] = (0,int(h[1:])/15)
             # fixed.append(mac)
 
@@ -622,8 +624,8 @@ class ControllerGui():
         self.overlaplist = []
         self.comparelist = []
         for no, link in sorted(self.topology.items()):
-            mac1 = link.keys()[0]
-            mac2 = link.keys()[1]
+            mac1 = list(link.keys())[0]
+            mac2 = list(link.keys())[1]
             self.overlaplist.append(self.event.getObjID(mac1, mac2)[0])
             self.overlaplist.append(self.event.getObjID(mac1, mac2)[1])
 
@@ -652,8 +654,8 @@ class ControllerGui():
             edgeWidth_q = 2
             edgeWidth_r = 2
             for no, link in sorted(topology.items()):
-                mac1 = link.keys()[0]
-                mac2 = link.keys()[1]
+                mac1 = list(link.keys())[0]
+                mac2 = list(link.keys())[1]
                 pktNum_q = event.getPktNum(mac1, mac2, 'q')
                 pktNum_r = event.getPktNum(mac1, mac2, 'r')
                 pktMax = pktNum_q if pktNum_q > pktMax else pktMax
@@ -705,11 +707,11 @@ class ControllerGui():
         if self.v.get() == "On":
             self.event.setMeterFlag(1)
             # messagebox.showinfo("Mitigation is opened", "Our defense system is operating", parent=self.root)
-            print "Mitigation is opened"
+            print("Mitigation is opened")
         elif self.v.get() == "Off":
             self.event.setMeterFlag(0)
             # messagebox.showinfo("Mitigation is closed", "Our defense system is stopped operating", parent=self.root)
-            print "Mitigation is closed"
+            print("Mitigation is closed")
 
     def dbClick2ShowNode(self, event):
         """ click one row to show node position """
@@ -823,7 +825,7 @@ class ControllerGui():
                 self.event.thr_res_num = int(self.usrIn.get())
                 qpktThreshold = self.usrIn.get()
                 rpktThreshold = self.usrIn.get()
-                print "You change the threshold to " + str(self.event.thr_res_num)
+                print("You change the threshold to " + str(self.event.thr_res_num))
             else:
                 self.usrIn.set("")
                 messagebox.showwarning("Warning", "Please enter a number which value is between 0 to 1000 (both includiing) !!", parent=self.root)

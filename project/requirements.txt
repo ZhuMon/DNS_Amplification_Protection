@@ -1,3 +1,6 @@
 numpy
 pillow
 networkx
+grpcio
+crcmod
+scapy

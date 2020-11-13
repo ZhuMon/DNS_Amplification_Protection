@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 2017-present Open Networking Foundation
 #
@@ -19,6 +19,9 @@ import json
 import os
 import sys
 
+sys.path.append(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+            '.'))
 import bmv2
 import helper
 

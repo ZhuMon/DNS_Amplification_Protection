@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright 2013-present Barefoot Networks, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,7 +45,7 @@ def configureP4Switch(**switch_args):
                 P4RuntimeSwitch.__init__(self, *opts, **kwargs)
 
             def describe(self):
-                print "%s -> gRPC port: %d" % (self.name, self.grpc_port)
+                print("%s -> gRPC port: %d" % (self.name, self.grpc_port))
 
         return ConfiguredP4RuntimeSwitch
     else:
@@ -59,7 +59,7 @@ def configureP4Switch(**switch_args):
                 P4Switch.__init__(self, *opts, **kwargs)
 
             def describe(self):
-                print "%s -> Thrift port: %d" % (self.name, self.thrift_port)
+                print("%s -> Thrift port: %d" % (self.name, self.thrift_port))
 
         return ConfiguredP4Switch
 
@@ -119,12 +119,11 @@ class ExerciseTopo(Topo):
         self.sw_port_mapping[sw].append((portno, node2))
 
     def printPortMapping(self):
-        print "Switch port mapping:"
+        print("Switch port mapping:")
         for sw in sorted(self.sw_port_mapping.keys()):
-            print "%s: " % sw,
+            print("%s: " % sw)
             for portno, node2 in self.sw_port_mapping[sw]:
-                print "%d:%s\t" % (portno, node2),
-            print
+                print("%d:%s\t" % (portno, node2))
 
 
 class ExerciseRunner:
@@ -147,7 +146,7 @@ class ExerciseRunner:
     """
     def logger(self, *items):
         if not self.quiet:
-	    print(' '.join(items))
+            print(' '.join(items))
 
     def formatLatency(self, l):
         """ Helper method for parsing link latencies from the topology json. """
@@ -305,7 +304,7 @@ class ExerciseRunner:
             P4Runtime, depending if any command or runtime JSON files were
             provided for the switches.
         """
-        for sw_name, sw_dict in self.switches.iteritems():
+        for sw_name, sw_dict in self.switches.items():
             if 'cli_input' in sw_dict:
                 self.program_switch_cli(sw_name, sw_dict)
             if 'runtime_json' in sw_dict:
@@ -320,7 +319,7 @@ class ExerciseRunner:
         """
         for host_name in self.topo.hosts():
             h = self.net.get(host_name)
-            h_iface = h.intfs.values()[0]
+            h_iface = list(h.intfs.values())[0]
             link = h_iface.link
 
             sw_iface = link.intf1 if link.intf1 != h_iface else link.intf2

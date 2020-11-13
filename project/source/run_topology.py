@@ -3,14 +3,15 @@ import os
 from time import sleep
 import threading
 
-from Tkinter import *
-from ttk import *
+from tkinter import *
+# from tkinter.ttk import Combobox, Progressbar
+from tkinter.ttk import *
 
 from mininet.examples.consoles import *
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
-            '../utils/'))
+            '../../utils/'))
 
 from run_exercise import *
 from mininetGUI import *

@@ -6,6 +6,9 @@ from time import sleep
 sys.path.append(
         os.path.join(os.path.dirname(os.path.abspath(__file__)),
             '../../utils/'))
+sys.path.append(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+            '../../utils/p4runtime_lib'))
 from run_exercise import *
 
 def parse_link(unparsed_links):

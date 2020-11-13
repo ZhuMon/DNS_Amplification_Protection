@@ -25,7 +25,7 @@ endif
 all: run
 
 run: ge_link build
-	sudo python $(RUN_SCRIPT) -t $(TOPO) $(run_args)
+	sudo python3 -B $(RUN_SCRIPT) -t $(TOPO) $(run_args)
 
 stop:
 	sudo mn -c
@@ -39,7 +39,7 @@ dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 
 ge_link:
-	python ge_link.py
+	python3 -B ge_link.py
 
 clean: stop
 	rm -f *.pyc

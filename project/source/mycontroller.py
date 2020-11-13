@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import argparse
 import grpc
 import os
@@ -13,7 +13,10 @@ from threading import Thread
 # Probably there's a better way of doing this.
 sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                 '../utils/'))
+                 '../../utils/'))
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                 '../../utils/p4runtime_lib'))
 import p4runtime_lib.bmv2
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 import p4runtime_lib.helper
@@ -25,9 +28,10 @@ from scapy.contrib import lldp
 from scapy.config import conf
 from scapy.packet import bind_layers
 
-from Tkinter import *
-import tkMessageBox as messagebox
-from ttk import *
+from tkinter import *
+# import tkMessageBox as messagebox
+from tkinter import messagebox
+from tkinter.ttk import *
 
 import networkx as nx
 
@@ -126,7 +130,7 @@ def recordLink(p):
 def sendPacketOut(p4info_helper, sw, port, mcast, padding):
     """ send packet_out from controller to switch """
     packet = GePacketOut(port, mcast, padding) #padding must be 0
-    packet_out = p4info_helper.buildPacketOut(payload = str(packet))
+    packet_out = p4info_helper.buildPacketOut(payload = packet)
     # print packet_out
     sw.SendPktOut(packet_out)
 
@@ -139,7 +143,7 @@ def recvPacketIn(sw):
             pkt = bytearray(packet)
             p = ParsePacketIn(pkt)
             recordLink(p)
-    except Exception, e:
+    except Exception as e:
         None
 
 ################## Write Rule on switch ###################
@@ -229,25 +233,25 @@ def setMeter(runtimeAPI):
     runtimeAPI.client.bm_meter_array_set_rates(0, meter.name, new_rates)
 
 def printGrpcError(e):
-    print "gRPC Error:", e.details(),
+    print(f"gRPC Error: {e.details()}")
     status_code = e.code()
-    print "(%s)" % status_code.name,
+    print("(%s)" % status_code.name)
     traceback = sys.exc_info()[2]
-    print "[%s:%d]" % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno)
+    print("[%s:%d]" % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno))
 
 def printRegister(p4info_helper, sw, register_name, index):
     for response in sw.ReadRegisters(p4info_helper.get_registers_id(register_name), index, dry_run=False):
         for entity in response.entities:
             register = entity.register_entry
-            print "%s %s %d: %s" % (sw.name, register_name, index, register.data.data.enum)
+            print("%s %s %d: %s" % (sw.name, register_name, index, register.data.data.enum))
 
 def printCounter(p4info_helper, sw, counter_name, index):
     for response in sw.ReadCounters(p4info_helper.get_counters_id(counter_name), index):
         for entity in response.entities:
             counter = entity.counter_entry
-            print "%s %s %d: %d" % (
+            print("%s %s %d: %d" % (
                 sw.name, counter_name, index, counter.data.packet_count
-            )
+            ))
 
 def read_register(runtimeAPI, name, index):
     """ read register by thrift """
@@ -278,11 +282,11 @@ def record_switch_port():
     """
     tmp = {} # {mac1: [2,1,3], ...}
     for no, links in topology.items():
-        m1 = links.keys()[0]
-        m2 = links.keys()[1]
-        if tmp.has_key(m1) is False:
+        m1 = list(links.keys())[0]
+        m2 = list(links.keys())[1]
+        if tmp.__contains__(m1) is False:
             tmp[m1] = []
-        if tmp.has_key(m2) is False:
+        if tmp.__contains__(m2) is False:
             tmp[m2] = []
         
         tmp[m1].append(links[m1])
@@ -295,10 +299,10 @@ def find_the_other_mac(mac1, port1):
     """ FROM mac and port TO find the mac at the other side """
 
     for no, link in topology.items():
-        m1 = link.keys()[0]
-        m2 = link.keys()[1]
-        p1 = link.values()[0]
-        p2 = link.values()[1]
+        m1 = list(link.keys())[0]
+        m2 = list(link.keys())[1]
+        p1 = list(link.values())[0]
+        p2 = list(link.values())[1]
         if mac1 == m1 and port1 == p1:
             return m2
         elif mac1 == m2 and port1 == p2:
@@ -352,33 +356,33 @@ def find_path(p4info_helper, sw, host_ip):
         and write rule on switches
     """
     for no, links in topology.items():
-        m1 = mac2name(links.keys()[0])
-        m2 = mac2name(links.keys()[1])
-        p1 = links.values()[0]
-        p2 = links.values()[1]
-        if sw_links.has_key(m1) is False:
+        m1 = mac2name(list(links.keys())[0])
+        m2 = mac2name(list(links.keys())[1])
+        p1 = list(links.values())[0]
+        p2 = list(links.values())[1]
+        if sw_links.__contains__(m1) is False:
             sw_links[m1] = [[p1,m2]]
         else:
             sw_links[m1].append([p1, m2])
 
-        if sw_links.has_key(m2) is False:
+        if sw_links.__contains__(m2) is False:
             sw_links[m2] = [[p2,m1]]
         else:
             sw_links[m2].append([p2, m1])
 
     path = {} # {s1: { h1: [1,2,4,2,1], h2: [...]}, s2:...}
     for s, s_mac in sw_mac.items():
-        s = s.encode('utf-8')
+        s = s #.encode('utf-8')
         path[s] = {}
         for h, h_mac in hosts.items():
-            h = h.encode('utf-8')
-            h_mac = h_mac.encode('utf-8')
+            h = h #.encode('utf-8')
+            h_mac = h_mac #.encode('utf-8')
             path[s][h] = [] # [1, 2, 10, 2, 1]
             stack = [s]      # [s2, s4...]
             stack, path[s][h] = recursive(s, h, stack, path[s][h])
             # print path[s][h] 
-            dst_eth_addr = find_the_other_mac(s_mac, path[s][h][0]).encode('utf-8')
-            writeIPRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], dst_eth_addr= dst_eth_addr, dst_ip=host_ip[h].encode('utf-8'), mask=32, port=path[s][h][0])
+            dst_eth_addr = find_the_other_mac(s_mac, path[s][h][0]) #.encode('utf-8')
+            writeIPRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], dst_eth_addr= dst_eth_addr, dst_ip=host_ip[h], mask=32, port=path[s][h][0]) #.encode('utf-8'), mask=32, port=path[s][h][0])
             # print s, "->", h_mac, dst_eth_addr, path[s][h][0]
         writeRecordRules(p4info_helper, ingress_sw=sw[int(s[1:])-1], qr_code=1)
 
@@ -407,8 +411,8 @@ def recursive(src, dst, stack, path):
 def find_qr_path():
     """ find direction of packet on each link """
     for no, link in topology.items():
-        mac1 = link.keys()[0]
-        mac2 = link.keys()[1]
+        mac1 = list(link.keys())[0]
+        mac2 = list(link.keys())[1]
         n1 = mac2name(mac1)
         n2 = mac2name(mac2)
         stack1 = [n1] 
@@ -443,7 +447,7 @@ def ip2name(ip_in):
     for h, ip in host_ip.items():
         if ip_in == ip:
             return h
-    print "can't find ip:",ip_in,"in ip2name"
+    print("can't find ip:",ip_in,"in ip2name")
 
 def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='./build/basic.json'):
     """
@@ -488,7 +492,7 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
             # Install the P4 program on the switches
             s.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
                     bmv2_json_file_path=bmv2_file_path)
-            print "Installed P4 Program using SetForwardingPipelineConfig on s"+str(i)
+            print("Installed P4 Program using SetForwardingPipelineConfig on s"+str(i))
             sw.append(s)
 
 
@@ -575,8 +579,8 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
         s_reg_i = {} # record s_reg index of new switch 
         while event.is_set() is True:
 
-            print "=================="
-            print m*10,"second"
+            print("==================")
+            print(m*10,"second")
 
             while event.controller_lock is False:
                 None
@@ -607,13 +611,13 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                         flag -= 1
                         quick_cool_down[sw_name] += 1
                     
-                    print "------------"
-                    print sw_name,"res_num: ", res_num
-                    print "flag: ", flag
-                    print "threshold: ", thr_res_num
+                    print("------------")
+                    print(sw_name,"res_num: ", res_num)
+                    print("flag: ", flag)
+                    print("threshold: ", thr_res_num)
 
                     if flag > 0:
-                        print sw_name,"mode on..."
+                        print(sw_name,"mode on...")
 
                         if sw_name == "s4" and flag == 1:
                             aboutClose = 1
@@ -649,8 +653,8 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                         name = ip2name(ip)# find the host name
                         s = sw_links[name][0][1] # find switch the host connect
 
-                        if rule_has_set.has_key(s) is False or rule_has_set[s] == False:
-                            print "Add new switch to help :",s
+                        if rule_has_set.__contains__(s) is False or rule_has_set[s] == False:
+                            print("Add new switch to help :",s)
                             setMeter(API[s])
                             sw[int(s[1:])-1].MasterArbitrationUpdate()
                             active_API[s] = API[s]
@@ -674,12 +678,12 @@ def main(event, p4info_file_path='./build/basic.p4.p4info.txt' ,bmv2_file_path='
                 sleep(1)
 
     except KeyboardInterrupt:
-        print " Shutting down."
+        print(" Shutting down.")
     except grpc.RpcError as e:
         printGrpcError(e)
 
     ShutdownAllSwitchConnections()
-    print "====== Close Controller ======"
+    print("====== Close Controller ======")
 
 if __name__ == '__main__': 
     parser = runtime_CLI.get_parser()
@@ -694,11 +698,11 @@ if __name__ == '__main__':
 
     if not os.path.exists(args.p4info):
         parser.print_help()
-        print "\np4info file not found: %s\nHave you run 'make'?" % args.p4info
+        print("\np4info file not found: %s\nHave you run 'make'?" % args.p4info)
         parser.exit(1)
     if not os.path.exists(args.bmv2_json):
         parser.print_help()
-        print "\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json
+        print("\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json)
         parser.exit(1)
 
     event = myEvent()

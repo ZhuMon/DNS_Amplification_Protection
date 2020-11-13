@@ -173,7 +173,7 @@ class P4InfoHelper(object):
         if match_fields:
             table_entry.match.extend([
                 self.get_match_field_pb(table_name, match_field_name, value)
-                for match_field_name, value in match_fields.iteritems()
+                for match_field_name, value in match_fields.items()
             ])
 
         if default_action:
@@ -185,7 +185,7 @@ class P4InfoHelper(object):
             if action_params:
                 action.params.extend([
                     self.get_action_param_pb(action_name, field_name, value)
-                    for field_name, value in action_params.iteritems()
+                    for field_name, value in action_params.items()
                 ])
         return table_entry
 
@@ -215,10 +215,10 @@ class P4InfoHelper(object):
  
     def buildPacketOut(self, payload, metadata=None):
         packet_out = p4runtime_pb2.PacketOut()
-        packet_out.payload = str(payload)
+        packet_out.payload = bytes(payload)
         if metadata:
             packet_out.metadata.extend([
                 self.get_packetout_metadata_pb(metadata_name, value)
-                for metadata_name, value in metadata.iteritems()
+                for metadata_name, value in metadata.items()
             ])
         return packet_out

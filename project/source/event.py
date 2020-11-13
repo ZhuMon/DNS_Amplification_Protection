@@ -1,7 +1,7 @@
-from threading import _Event
+from threading import Event
 from Object import Object
 
-class myEvent(_Event):
+class myEvent(Event):
     def __init__(self):
         super(myEvent, self).__init__()
         self.victim = Object(name = "h1", mac = "00:00:00:00:01:01")
@@ -65,12 +65,12 @@ class myEvent(_Event):
 
     def recordName(self, hosts, switches):
         for h, h_mac in hosts.items():
-            h_mac = h_mac.encode('utf-8')
+            h_mac = h_mac #.encode('utf-8')
             h = self.changeName(h)
             self.node_name[h_mac] = h
         
         for s, s_mac in switches.items():
-            s_mac = s_mac.encode('utf-8')
+            s_mac = s_mac #.encode('utf-8')
             s = self.changeName(s)
             self.node_name[s_mac] = s
 
@@ -103,8 +103,8 @@ class myEvent(_Event):
     def findEdge(self, mac1, mac2):
         """ return the index in topology """
         for no, link in self.topology.items():
-            m1 = link.keys()[0]
-            m2 = link.keys()[1]
+            m1 = list(link.keys())[0]
+            m2 = list(link.keys())[1]
             if m1 == mac1 and m2 == mac2:
                 return no
             elif m1 == mac2 and m2 == mac1:
@@ -114,9 +114,9 @@ class myEvent(_Event):
         if edgeID == None and mac1 != None and mac2 != None:
             edgeID = self.findEdge(mac1, mac2)
         elif mac1 == None or mac2 == None:
-            print "putObjID error"
+            print("putObjID error")
 
-        if self.objID.has_key(edgeID) == False:
+        if self.objID.__contains__(edgeID) == False:
             self.objID[edgeID] = []
         self.objID[edgeID].append(objID)
 
@@ -136,13 +136,13 @@ class myEvent(_Event):
             num = 0
             if q_or_r == 'q':
                 for no in edgeID:
-                    if self.q_pkt_num.has_key(no) is False:
+                    if self.q_pkt_num.__contains__(no) is False:
                         self.q_pkt_num[no] = 0
                     if self.q_pkt_num[no] > num:
                         num = self.q_pkt_num[no]
             elif q_or_r == 'r':
                 for no in edgeID:
-                    if self.r_pkt_num.has_key(no) is False:
+                    if self.r_pkt_num.__contains__(no) is False:
                         self.r_pkt_num[no] = 0
                     if self.r_pkt_num[no] > num:
                         num = self.r_pkt_num[no]
@@ -151,18 +151,18 @@ class myEvent(_Event):
         else:
             edgeID = self.findEdge(mac1, mac2)
             if q_or_r == 'q':
-                if self.q_pkt_num.has_key(edgeID) is False:
+                if self.q_pkt_num.__contains__(edgeID) is False:
                     self.q_pkt_num[edgeID] = 0
                 return self.q_pkt_num[edgeID]
             elif q_or_r == 'r':
-                if self.r_pkt_num.has_key(edgeID) is False:
+                if self.r_pkt_num.__contains__(edgeID) is False:
                     self.r_pkt_num[edgeID] = 0
                 return self.r_pkt_num[edgeID]
 
     def putPktNum(self, num, mac1, mac2, q_or_r = 'q'):
         edgeID = self.findEdge(mac1, mac2)
         if q_or_r == 'q':
-            if self.q_all_pkt_num.has_key(edgeID):
+            if self.q_all_pkt_num.__contains__(edgeID):
                 self.q_pkt_num[edgeID] = num - self.q_all_pkt_num[edgeID]
             else:
                 self.q_pkt_num[edgeID] = num
@@ -170,7 +170,7 @@ class myEvent(_Event):
             self.q_all_pkt_num[edgeID] = num
             self.q_edge_update_flag[edgeID] = True
         elif q_or_r == 'r':
-            if self.r_all_pkt_num.has_key(edgeID):
+            if self.r_all_pkt_num.__contains__(edgeID):
                 self.r_pkt_num[edgeID] = num - self.r_all_pkt_num[edgeID]
             else:
                 self.r_pkt_num[edgeID] = num

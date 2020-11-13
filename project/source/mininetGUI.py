@@ -3,11 +3,12 @@ from time import sleep
 from threading import Thread
 from functools import partial
 
-from Tkinter import *
-from ttk import *
-from Tkinter import Scale
+from tkinter import *
+# from tkinter.ttk import Combobox, Style
+from tkinter.ttk import *
+from tkinter import Scale, messagebox
 from PIL import Image, ImageTk
-import tkMessageBox as messagebox
+# import tkMessageBox as messagebox
 
 from mininet.log import setLogLevel
 from mininet.topolib import TreeNet
@@ -243,7 +244,7 @@ class MainConsole( Frame, object):
         
         self.attack_frame.a_label = Label(self.attack_frame, text="Choose attacker:")#, width=15)
         self.attack_frame.a_num_label = Label(self.attack_frame, text="num")#, width=15)
-        self.attack_frame.a_num_combo = Combobox(self.attack_frame, values=range(1, 6), width=5)
+        self.attack_frame.a_num_combo = Combobox(self.attack_frame, values=list(range(1, 6)), width=5)
         self.attack_frame.a_num_combo.current(0)
         self.attack_frame.a_num_combo.bind("<<ComboboxSelected>>", partial(self.changeAttackerNum, host_list = host_list))
         
