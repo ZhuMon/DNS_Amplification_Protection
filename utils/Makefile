@@ -39,7 +39,7 @@ dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 
 ge_link:
-	python ge_link.py
+	sudo python ge_link.py
 
 clean: stop
 	rm -f *.pyc

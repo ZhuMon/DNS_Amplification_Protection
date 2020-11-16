@@ -10,7 +10,7 @@ from mininet.examples.consoles import *
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
-            '../utils/'))
+            '../../utils/'))
 
 from run_exercise import *
 from mininetGUI import *
