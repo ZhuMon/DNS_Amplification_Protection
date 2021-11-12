@@ -1,9 +1,6 @@
-# P4 Tutorial
+# DNS Amplification Protection
 
 ## Introduction
-
-Welcome to the P4 Tutorial! We've prepared a set of exercises to help
-you get started with P4 programming, organized into several modules:
 
 1. Introduction and Language Basics
 * [Basic Forwarding](./exercises/basic)
@@ -16,3 +13,5 @@ you get started with P4 programming, organized into several modules:
 * [DNS Server](./exercises/dns_server)
 * [DNS_Amplification](./exercises/dns_amplification)
 
+4. Project
+* [DNS Amplification Protection](./project)
