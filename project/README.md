@@ -20,7 +20,7 @@ sudo python setup.py install
 
 ## Start
 ```
-$ git clone https://github.com/ZhuMon/P4_exercise.git
-$ cd P4_exercise/project/source
+$ git clone https://github.com/ZhuMon/DNS_Amplification_Protection.git
+$ cd DNS_Amplification_Protection/project/source
 $ make
 ```
